@@ -47,7 +47,7 @@ describe('error wrapping functions', () => {
             win.onerror('Uncaught TypeError: x is not a function', 'https://example.com/app.js', 42, 13, undefined)
 
             expect(captureFn).toHaveBeenCalledTimes(1)
-            const exception = captureFn.mock.calls[0][0].$exception_list[0]
+            const exception = captureFn.mock.calls[0][0].exception_list[0]
             expect(exception.type).toBe('TypeError')
             expect(exception.value).toBe('x is not a function')
             expect(exception.stacktrace?.frames?.[0]).toMatchObject({

@@ -49,7 +49,7 @@ export interface PostHogMCPOptions extends PostHogOptions {
  * `posthog-node` client — `capture`, `identify`, `flush`, `shutdown`, feature
  * flags, etc. all work unchanged — with `captureToolCall` / `captureInitialize`
  * added on top. The MCP methods build canonical `$mcp_*` events and run them
- * through the same sanitize → truncate → `$exception` fan-out pipeline as
+ * through the same sanitize → truncate → `edp_exception` fan-out pipeline as
  * `instrument()`, then hand them to the inherited `capture()` (so the client's
  * own `beforeSend` applies).
  *
@@ -85,7 +85,7 @@ export class PostHogMCP extends PostHog {
     applyMcpLibIdentity(this)
   }
 
-  /** Capture a tool invocation. Emits `$mcp_tool_call` (+ an `$exception` sibling on error). */
+  /** Capture a tool invocation. Emits `$mcp_tool_call` (+ an `edp_exception` sibling on error). */
   captureToolCall(data: ToolCallCaptureData): void {
     const event = baseEvent(MCPAnalyticsEventType.mcpToolsCall, data)
     event.resourceName = data.toolName
@@ -232,7 +232,7 @@ export class PostHogMCP extends PostHog {
 
 /**
  * Builds the shared scaffold for an MCP event: event type, identity/session
- * routing, groups, person `$set`, and custom properties. Method callers layer
+ * routing, groups, person `edp_set`, and custom properties. Method callers layer
  * the event-specific fields on top.
  */
 function baseEvent(eventType: MCPAnalyticsEventType, common: McpCaptureCommon): McpEvent {

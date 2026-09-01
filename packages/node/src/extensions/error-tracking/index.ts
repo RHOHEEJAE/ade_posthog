@@ -52,17 +52,17 @@ export default class ErrorTracking {
     const properties: EventMessage['properties'] = { ...additionalProperties }
 
     const exceptionProperties = builder.buildFromUnknown(error, hint)
-    exceptionProperties.$exception_list = await builder.modifyFrames(exceptionProperties.$exception_list)
+    exceptionProperties.exception_list = await builder.modifyFrames(exceptionProperties.exception_list)
 
     const injectedReleaseId = CoreErrorTracking.getInjectedReleaseId()
     if (injectedReleaseId) {
-      properties.$release_id = injectedReleaseId
+      properties.release_id = injectedReleaseId
     }
 
     return {
-      event: '$exception',
+      event: 'edp_exception',
       // Leave distinctId resolution to prepareEventMessage which checks request context
-      // and falls back to a random UUID with $process_person_profile = false
+      // and falls back to a random UUID with process_person_profile = false
       distinctId: distinctId,
       properties: {
         ...exceptionProperties,
@@ -89,7 +89,7 @@ export default class ErrorTracking {
             hint
           )
           const exceptionProperties = eventMessage.properties
-          const exceptionType = exceptionProperties?.$exception_list[0]?.type ?? 'Exception'
+          const exceptionType = exceptionProperties?.exception_list[0]?.type ?? 'Exception'
           const isRateLimited = this._rateLimiter.consumeRateLimit(exceptionType)
           if (isRateLimited) {
             this._logger.info('Skipping exception capture because of client rate limiting.', {

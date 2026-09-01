@@ -13,7 +13,7 @@ export function createRecorder(label) {
     return [
       e.event,
       p.$mcp_tool_name ? `tool=${p.$mcp_tool_name}` : null,
-      p.$session_id ? `session=${String(p.$session_id).slice(0, 12)}…` : null,
+      p.session_id ? `session=${String(p.session_id).slice(0, 12)}…` : null,
       p.$mcp_client_name ? `client=${p.$mcp_client_name}` : null,
       p.$mcp_is_error ? 'ERROR' : null,
     ]
@@ -28,9 +28,9 @@ export function createRecorder(label) {
 
   const client = {
     capture: (event) => record(event),
-    identify: (event) => record({ ...event, event: '$identify' }),
+    identify: (event) => record({ ...event, event: 'edp_identify' }),
     captureException: (error, distinctId, properties) =>
-      record({ event: '$exception', distinctId, properties: { ...properties, message: String(error) } }),
+      record({ event: 'edp_exception', distinctId, properties: { ...properties, message: String(error) } }),
     flush: async () => {},
     shutdown: async () => {},
   }

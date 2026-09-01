@@ -21,10 +21,10 @@ describe('Pages PostHogPageView', () => {
         mockRouter = { asPath: '/initial', isReady: true }
     })
 
-    it('captures a $pageview event on mount', () => {
+    it('captures a edp_pageview event on mount', () => {
         render(<PostHogPageView />)
-        expect(mockCapture).toHaveBeenCalledWith('$pageview', {
-            $current_url: 'http://localhost/initial',
+        expect(mockCapture).toHaveBeenCalledWith('edp_pageview', {
+            current_url: 'http://localhost/initial',
         })
     })
 
@@ -39,20 +39,20 @@ describe('Pages PostHogPageView', () => {
         })
         mockRouter = { asPath: '/search?q=hello&page=2#section', isReady: true }
         render(<PostHogPageView />)
-        expect(mockCapture).toHaveBeenCalledWith('$pageview', {
-            $current_url: expectedUrl,
+        expect(mockCapture).toHaveBeenCalledWith('edp_pageview', {
+            current_url: expectedUrl,
         })
     })
 
-    it('captures a new $pageview when asPath changes', () => {
+    it('captures a new edp_pageview when asPath changes', () => {
         const { rerender } = render(<PostHogPageView />)
         expect(mockCapture).toHaveBeenCalledTimes(1)
 
         mockRouter = { asPath: '/new-page', isReady: true }
         rerender(<PostHogPageView />)
         expect(mockCapture).toHaveBeenCalledTimes(2)
-        expect(mockCapture).toHaveBeenLastCalledWith('$pageview', {
-            $current_url: 'http://localhost/new-page',
+        expect(mockCapture).toHaveBeenLastCalledWith('edp_pageview', {
+            current_url: 'http://localhost/new-page',
         })
     })
 
@@ -76,8 +76,8 @@ describe('Pages PostHogPageView', () => {
         mockRouter = { asPath: '/initial', isReady: true }
         rerender(<PostHogPageView />)
         expect(mockCapture).toHaveBeenCalledTimes(1)
-        expect(mockCapture).toHaveBeenCalledWith('$pageview', {
-            $current_url: 'http://localhost/initial',
+        expect(mockCapture).toHaveBeenCalledWith('edp_pageview', {
+            current_url: 'http://localhost/initial',
         })
     })
 })

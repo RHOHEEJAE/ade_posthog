@@ -35,7 +35,7 @@ const send = async (apiHost, route, compressed) => {
                     source: 'browser-next-capture-v1-live',
                     synthetic: true,
                     ...(compressed ? { compression_probe: 'compressible-payload-'.repeat(200) } : {}),
-                    $process_person_profile: false,
+                    process_person_profile: false,
                 },
             },
         ],

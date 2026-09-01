@@ -28,7 +28,7 @@ test.describe('Session recording - linked flags', () => {
         page: Page,
         context: BrowserContext,
         startOptionsOverrides: Partial<StartOptions> = {},
-        expectedStartingEvents: string[] = ['$pageview']
+        expectedStartingEvents: string[] = ['edp_pageview']
     ) => {
         await start(
             {
@@ -100,7 +100,7 @@ test.describe('Session recording - linked flags', () => {
         await recorderPromise
 
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'edp_snapshot')
         await assertThatRecordingStarted(page)
     })
 
@@ -137,7 +137,7 @@ test.describe('Session recording - linked flags', () => {
         await recorderPromise
 
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'edp_snapshot')
         await assertThatRecordingStarted(page)
     })
 
@@ -179,7 +179,7 @@ test.describe('Session recording - linked flags', () => {
         await recorderPromise
 
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'edp_snapshot')
         await assertThatRecordingStarted(page)
     })
 
@@ -265,7 +265,7 @@ test.describe('Session recording - linked flags', () => {
             },
         })
 
-        await page.expectCapturedEventsToBe(['$opt_in', '$pageview'])
+        await page.expectCapturedEventsToBe(['edp_opt_in', 'edp_pageview'])
 
         await page.resetCapturedEvents()
 
@@ -274,7 +274,7 @@ test.describe('Session recording - linked flags', () => {
             ph?.startSessionRecording({ linked_flag: true })
         })
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'edp_snapshot')
         await assertThatRecordingStarted(page)
     })
 })

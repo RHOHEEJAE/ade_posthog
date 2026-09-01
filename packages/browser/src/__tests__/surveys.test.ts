@@ -274,7 +274,7 @@ describe('surveys', () => {
             callback: expect.any(Function),
         })
         expect(instance._send_request).toHaveBeenCalledTimes(1)
-        expect(instance.persistence?.props.$surveys).toEqual(firstSurveys)
+        expect(instance.persistence?.props.surveys).toEqual(firstSurveys)
 
         surveysResponse = { surveys: secondSurveys }
         surveys.getSurveys((data) => {
@@ -372,12 +372,12 @@ describe('surveys', () => {
             callback: expect.any(Function),
         })
         expect(instance._send_request).toHaveBeenCalledTimes(1)
-        expect(instance.persistence?.props.$surveys).toEqual(firstSurveys)
+        expect(instance.persistence?.props.surveys).toEqual(firstSurveys)
 
         surveysResponse = { surveys: secondSurveys }
 
         expect(await getSurveys(true)).toEqual(secondSurveys)
-        expect(instance.persistence?.props.$surveys).toEqual(secondSurveys)
+        expect(instance.persistence?.props.surveys).toEqual(secondSurveys)
         expect(instance._send_request).toHaveBeenCalledTimes(2)
     })
 
@@ -667,7 +667,7 @@ describe('surveys', () => {
             { schedule: SurveySchedule.Recurring, currentIteration: null, expected: deferredBeforeFlagsLoad },
             { schedule: SurveySchedule.Recurring, currentIteration: 2, expected: deferredBeforeFlagsLoad },
         ])(
-            'checks a $schedule survey on iteration $currentIteration against a cached internal targeting flag before flags load',
+            'checks a $schedule survey on iteration currentIteration against a cached internal targeting flag before flags load',
             ({ schedule, currentIteration, expected }) => {
                 instance.featureFlags.hasLoadedFlags = false
                 const surveyManager = (surveys as any)._surveyManager as SurveyManager
@@ -690,7 +690,7 @@ describe('surveys', () => {
             { state: 'have loaded', hasLoadedFlags: true },
         ])('returns a cached-eligible API survey to a one-shot caller when flags $state', ({ hasLoadedFlags }) => {
             instance.featureFlags.hasLoadedFlags = hasLoadedFlags
-            instance.persistence?.register({ $surveys: [apiSurveyWithCachedTargetingFlags] })
+            instance.persistence?.register({ surveys: [apiSurveyWithCachedTargetingFlags] })
             const callback = jest.fn()
 
             surveys.getActiveMatchingSurveys(callback)
@@ -1811,9 +1811,9 @@ describe('surveys', () => {
 
             const [, properties] = (instance.capture as jest.Mock).mock.calls.find(([event]) => event === 'survey sent')
             expect(properties).toEqual(
-                expect.objectContaining({ $survey_completed: false, $survey_response_q1: 'yes' })
+                expect.objectContaining({ survey_completed: false, survey_response_q1: 'yes' })
             )
-            expect(properties).not.toHaveProperty('$survey_response_q2')
+            expect(properties).not.toHaveProperty('survey_response_q2')
         })
 
         it('does not send a partial event when the prefilled question does not auto-submit', () => {
@@ -1844,7 +1844,7 @@ describe('surveys', () => {
             expect(completed).toBe(true)
             expect(instance.capture).toHaveBeenCalledWith(
                 'survey sent',
-                expect.objectContaining({ $survey_completed: true })
+                expect.objectContaining({ survey_completed: true })
             )
         })
     })

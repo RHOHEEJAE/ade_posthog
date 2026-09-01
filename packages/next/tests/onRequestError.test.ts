@@ -38,8 +38,8 @@ describe('Next.js onRequestError', () => {
         error.digest = 'digest-123'
         const cookie = postHogCookie('phc_test123', {
             distinct_id: 'user_123',
-            $device_id: 'device_456',
-            $sesid: [1708700000000, 'session_789', 1708700000000],
+            device_id: 'device_456',
+            sesid: [1708700000000, 'session_789', 1708700000000],
         })
 
         await onRequestError(
@@ -66,9 +66,9 @@ describe('Next.js onRequestError', () => {
             'user_123',
             expect.objectContaining({
                 $http_method: 'POST',
-                $pathname: '/checkout#payment',
-                $session_id: 'session_789',
-                $device_id: 'device_456',
+                pathname: '/checkout#payment',
+                session_id: 'session_789',
+                device_id: 'device_456',
                 nextjs_error_digest: 'digest-123',
                 nextjs_router_kind: 'App Router',
                 nextjs_route_path: '/checkout',
@@ -101,7 +101,7 @@ describe('Next.js onRequestError', () => {
             error,
             'user_custom',
             expect.objectContaining({
-                $pathname: '/api/items#details',
+                pathname: '/api/items#details',
                 custom_property: 'custom-value',
             })
         )
@@ -123,7 +123,7 @@ describe('Next.js onRequestError', () => {
             error,
             undefined,
             expect.objectContaining({
-                $pathname: '/account',
+                pathname: '/account',
             })
         )
     })
@@ -153,7 +153,7 @@ describe('Next.js onRequestError', () => {
                 await onRequestError(new Error('edge error'), { headers: {} }, {})
             },
         },
-    ])('skips capture when $name', async ({ run }) => {
+    ])('skips capture when name', async ({ run }) => {
         await run()
 
         expect(mockGetOrCreateNodeClient).not.toHaveBeenCalled()
@@ -201,7 +201,7 @@ describe('Next.js onRequestError', () => {
             },
             assertCapture: () => undefined,
         },
-    ])('does not throw when $name', async ({ captureError, setup, run, assertCapture }) => {
+    ])('does not throw when name', async ({ captureError, setup, run, assertCapture }) => {
         const warnSpy = jest.spyOn(console, 'warn').mockImplementation()
         setup(captureError)
 

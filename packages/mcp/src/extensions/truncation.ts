@@ -203,16 +203,16 @@ function truncateStackFrames(frames: StackFrame[] | undefined): StackFrame[] | u
 
 /**
  * Bounds an `ErrorProperties` payload: truncates each exception's `value`
- * (message) and caps its stack frames. Operates on the core `$exception_list`
+ * (message) and caps its stack frames. Operates on the core `exception_list`
  * shape produced by `captureException`.
  */
 function truncateExceptionList(error: ErrorProperties): ErrorProperties {
-  if (!Array.isArray(error.$exception_list)) {
+  if (!Array.isArray(error.exception_list)) {
     return error
   }
   return {
     ...error,
-    $exception_list: error.$exception_list.map((exception) => {
+    exception_list: error.exception_list.map((exception) => {
       const next = { ...exception }
       if (typeof next.value === 'string') {
         next.value = truncateString(next.value, MAX_ERROR_MESSAGE_LENGTH)
@@ -439,7 +439,7 @@ export function truncateEvent<T extends Event | McpEvent>(event: T): T {
   // tens of characters; anything past the metadata cap is junk, not a model.
   result.llmModel = truncateString(result.llmModel, MAX_METADATA_LENGTH)
 
-  // Error field limits — operate on the core `$exception_list` shape
+  // Error field limits — operate on the core `exception_list` shape
   if (result.error != null && typeof result.error === 'object') {
     result.error = truncateExceptionList(result.error as ErrorProperties)
   }

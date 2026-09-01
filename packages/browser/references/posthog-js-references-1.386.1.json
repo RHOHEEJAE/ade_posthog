@@ -594,9 +594,9 @@
           "title": "get_property",
           "examples": [
             {
-              "id": "grab_value_for_'$user_id'_after_the_posthog_library_has_loaded",
-              "name": "grab value for '$user_id' after the posthog library has loaded",
-              "code": "\n\n// grab value for '$user_id' after the posthog library has loaded\nposthog.init('<YOUR PROJECT TOKEN>', {\n    loaded: function(posthog) {\n        user_id = posthog.get_property('$user_id');\n    }\n});\n\n\n\n"
+              "id": "grab_value_for_'user_id'_after_the_posthog_library_has_loaded",
+              "name": "grab value for 'user_id' after the posthog library has loaded",
+              "code": "\n\n// grab value for 'user_id' after the posthog library has loaded\nposthog.init('<YOUR PROJECT TOKEN>', {\n    loaded: function(posthog) {\n        user_id = posthog.get_property('user_id');\n    }\n});\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -769,7 +769,7 @@
               "name": "key"
             },
             {
-              "description": "(optional) If send_event: false, we won't send an $feature_flag_call event to PostHog. If fresh: true, we won't return cached values from localStorage - only values loaded from the server.",
+              "description": "(optional) If send_event: false, we won't send an feature_flag_call event to PostHog. If fresh: true, we won't return cached values from localStorage - only values loaded from the server.",
               "isOptional": true,
               "type": "FeatureFlagOptions",
               "name": "options"
@@ -812,7 +812,7 @@
         },
         {
           "category": "Feature flags",
-          "description": "Get a feature flag evaluation result including both the flag value and payload.\nBy default, this method emits the `$feature_flag_called` event.",
+          "description": "Get a feature flag evaluation result including both the flag value and payload.\nBy default, this method emits the `edp_feature_flag_called` event.",
           "details": null,
           "id": "getFeatureFlagResult",
           "showDocs": true,
@@ -1183,7 +1183,7 @@
             {
               "id": "disable_event_tracking",
               "name": "disable event tracking",
-              "code": "\n\n// disable event tracking\nif (posthog.isFeatureEnabled('feature', { send_event: false })) {\n    // flag checked without sending $feature_flag_call event\n}\n\n\n\n"
+              "code": "\n\n// disable event tracking\nif (posthog.isFeatureEnabled('feature', { send_event: false })) {\n    // flag checked without sending feature_flag_call event\n}\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -1195,7 +1195,7 @@
               "name": "key"
             },
             {
-              "description": "(optional) If send_event: false, we won't send an $feature_flag_call event to PostHog. If fresh: true, we won't return cached values from localStorage - only values loaded from the server.",
+              "description": "(optional) If send_event: false, we won't send an feature_flag_call event to PostHog. If fresh: true, we won't return cached values from localStorage - only values loaded from the server.",
               "isOptional": true,
               "type": "FeatureFlagOptions",
               "name": "options"
@@ -1366,7 +1366,7 @@
         {
           "category": "Privacy",
           "description": "Opts the user into data capturing and persistence.",
-          "details": "Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance. By default, captures an `$opt_in` event unless disabled.",
+          "details": "Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance. By default, captures an `edp_opt_in` event unless disabled.",
           "id": "opt_in_capturing",
           "showDocs": true,
           "title": "opt_in_capturing",
@@ -1882,7 +1882,7 @@
         },
         {
           "category": "Identification",
-          "description": "Marks the current user as a test user by setting the `$internal_or_test_user` person property to `true`. This also enables person processing for the current user.\nThis is useful for using in a cohort your internal/test filters for your posthog org.",
+          "description": "Marks the current user as a test user by setting the `internal_or_test_user` person property to `true`. This also enables person processing for the current user.\nThis is useful for using in a cohort your internal/test filters for your posthog org.",
           "details": null,
           "id": "setInternalOrTestUser",
           "showDocs": true,
@@ -1918,7 +1918,7 @@
             {
               "id": "set_properties",
               "name": "set properties",
-              "code": "\n\n// set properties\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // $set properties\n    { initial_url: '/blog' }   // $set_once properties\n)\n\n\n\n"
+              "code": "\n\n// set properties\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // edp_set properties\n    { initial_url: '/blog' }   // edp_set_once properties\n)\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -2268,7 +2268,7 @@
           "name": "properties"
         },
         {
-          "description": "pre-compiled regex pattern for matching selector against $elements_chain",
+          "description": "pre-compiled regex pattern for matching selector against elements_chain",
           "type": "string | null",
           "name": "selector_regex"
         },
@@ -2476,7 +2476,7 @@
       "name": "ErrorTrackingSuppressionRuleValue",
       "properties": [
         {
-          "type": "'$exception_types' | '$exception_values'",
+          "type": "'exception_types' | 'exception_values'",
           "name": "key"
         },
         {
@@ -3386,7 +3386,7 @@
           "name": "editorParams"
         },
         {
-          "description": "Whether the `$elements_chain` property should be sent as a string or as an array\nfalse",
+          "description": "Whether the `elements_chain` property should be sent as a string or as an array\nfalse",
           "type": "boolean",
           "name": "elementsChainAsString"
         },
@@ -4044,7 +4044,7 @@
       "properties": [
         {
           "type": "string",
-          "name": "$el_text"
+          "name": "el_text"
         },
         {
           "type": "string[]",

@@ -180,7 +180,7 @@ describe('instrument() on an MCP SDK v2 high-level server', () => {
     const toolCalls = eventCapture.findCapturesByEvent('$mcp_tool_call')
     expect(toolCalls).toHaveLength(1)
     expect(toolCalls[0].properties.$mcp_is_error).toBe(true)
-    expect(eventCapture.findCapturesByEvent('$exception')).toHaveLength(1)
+    expect(eventCapture.findCapturesByEvent('edp_exception')).toHaveLength(1)
   })
 
   /**
@@ -250,7 +250,7 @@ describe('instrument() on an MCP SDK v2 high-level server', () => {
     // Not 'RateLimitError' — the class does not survive v2's flattening.
     expect(call.properties.$mcp_error_type).toBe('Error')
 
-    const exceptionList = eventCapture.findCapturesByEvent('$exception')[0].properties.$exception_list as {
+    const exceptionList = eventCapture.findCapturesByEvent('edp_exception')[0].properties.exception_list as {
       type: string
       value: string
     }[]

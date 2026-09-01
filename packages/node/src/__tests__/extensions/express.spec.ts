@@ -115,8 +115,8 @@ describe('Express extension', () => {
       const event = batchEvents!.find((e: any) => e.event === 'handler_event')
       expect(event).toBeDefined()
       expect(event.distinct_id).toBe('user-456')
-      expect(event.properties.$session_id).toBe('session-123')
-      expect(event.properties.$current_url).toBe('/api/test?query=1')
+      expect(event.properties.session_id).toBe('session-123')
+      expect(event.properties.current_url).toBe('/api/test?query=1')
       expect(event.properties.$request_method).toBe('POST')
       expect(event.properties.$request_path).toBe('/api/test')
       expect(event.properties.$user_agent).toBe('TestAgent/1.0')
@@ -136,7 +136,7 @@ describe('Express extension', () => {
         expectedCurrentUrl: '/api/test?token=secret',
         expectedRequestPath: '/api/test',
       },
-    ])('should $name', async ({ options, expectedCurrentUrl, expectedRequestPath }) => {
+    ])('should name', async ({ options, expectedCurrentUrl, expectedRequestPath }) => {
       await posthog.shutdown()
       posthog = createPostHog(options)
       const middleware = createRequestContextMiddleware(posthog)
@@ -153,7 +153,7 @@ describe('Express extension', () => {
 
       const batchEvents = getLastBatchEvents()
       const event = batchEvents!.find((e: any) => e.event === 'handler_event')
-      expect(event.properties.$current_url).toBe(expectedCurrentUrl)
+      expect(event.properties.current_url).toBe(expectedCurrentUrl)
       expect(event.properties.$request_path).toBe(expectedRequestPath)
     })
 
@@ -171,7 +171,7 @@ describe('Express extension', () => {
         posthog.capture({
           event: 'handler_event',
           properties: {
-            $session_id: 'explicit-session',
+            session_id: 'explicit-session',
           },
         })
       })
@@ -180,7 +180,7 @@ describe('Express extension', () => {
       const batchEvents = getLastBatchEvents()
       const event = batchEvents!.find((e: any) => e.event === 'handler_event')
       expect(event.distinct_id).toBe('user-456')
-      expect(event.properties.$session_id).toBe('explicit-session')
+      expect(event.properties.session_id).toBe('explicit-session')
     })
 
     it('should not swallow errors thrown by downstream middleware', () => {
@@ -230,16 +230,16 @@ describe('Express extension', () => {
       expect(batchEvents!.length).toBe(1)
 
       const event = batchEvents![0]
-      expect(event.event).toBe('$exception')
+      expect(event.event).toBe('edp_exception')
       expect(event.distinct_id).toBe('user-456')
-      expect(event.properties.$session_id).toBe('session-123')
-      expect(event.properties.$current_url).toBe('/api/error')
+      expect(event.properties.session_id).toBe('session-123')
+      expect(event.properties.current_url).toBe('/api/error')
       expect(event.properties.$request_method).toBe('POST')
       expect(event.properties.$request_path).toBe('/api/error')
       expect(event.properties.$user_agent).toBe('TestAgent/1.0')
       expect(event.properties.$response_status_code).toBe(503)
       expect(event.properties.$ip).toBe('192.168.1.1')
-      expect(event.properties.$exception_list).toBeDefined()
+      expect(event.properties.exception_list).toBeDefined()
     })
   })
 })

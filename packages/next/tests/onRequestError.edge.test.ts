@@ -36,8 +36,8 @@ describe('Next.js onRequestError edge runtime', () => {
         error.digest = 'edge-digest-123'
         const cookie = postHogCookie('phc_edge_test', {
             distinct_id: 'edge_user',
-            $device_id: 'edge_device',
-            $sesid: [1708700000000, 'edge_session', 1708700000000],
+            device_id: 'edge_device',
+            sesid: [1708700000000, 'edge_session', 1708700000000],
         })
 
         await onRequestError(
@@ -64,9 +64,9 @@ describe('Next.js onRequestError edge runtime', () => {
             'edge_user',
             expect.objectContaining({
                 $http_method: 'GET',
-                $pathname: '/edge-route#fragment',
-                $session_id: 'edge_session',
-                $device_id: 'edge_device',
+                pathname: '/edge-route#fragment',
+                session_id: 'edge_session',
+                device_id: 'edge_device',
                 nextjs_error_digest: 'edge-digest-123',
                 nextjs_router_kind: 'App Router',
                 nextjs_route_path: '/edge-route',

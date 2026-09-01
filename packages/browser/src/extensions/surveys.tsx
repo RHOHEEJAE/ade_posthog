@@ -1735,7 +1735,7 @@ export function Questions({
         setQuestionsResponses(newResponses)
 
         // Snapshot the question text as it appeared to the user right now, so that
-        // $survey_questions[].question in sent/dismissed events reflects the language
+        // survey_questions[].question in sent/dismissed events reflects the language
         // the user saw when they answered, not the language active at event-fire time.
         const currentQuestion = surveyQuestions[displayQuestionIndex]
         const newSnapshots = currentQuestion?.id

@@ -60,8 +60,8 @@ describe('Conversations API Methods', () => {
             }),
             persistence: createMockPersistence({
                 props: {
-                    $name: 'Test User',
-                    $email: 'test@example.com',
+                    name: 'Test User',
+                    email: 'test@example.com',
                 },
             }),
             requestRouter: {

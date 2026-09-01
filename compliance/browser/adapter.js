@@ -381,7 +381,7 @@ app.post('/capture', (req, res) => {
     }
 
     try {
-        // Set the current distinct_id without emitting a separate $identify event.
+        // Set the current distinct_id without emitting a separate edp_identify event.
         state.instance.register({ distinct_id })
 
         // Capture event

@@ -177,7 +177,7 @@ describe('conversation-id', () => {
     })
 
     it('mints instead of trusting a value the agent invented', () => {
-      // The reason this branch exists: the value becomes $session_id via a
+      // The reason this branch exists: the value becomes session_id via a
       // deterministic hash, so two unrelated callers both sending `conv-1` would
       // otherwise be merged into a single session — across users and pods.
       for (const invented of ['conv-1', '1', 'session', 'chat_abc', 'not-a-uuid']) {
@@ -196,7 +196,7 @@ describe('conversation-id', () => {
     })
 
     it('canonicalises an uppercased echo, so it hashes to the minting session', () => {
-      // The shape test is case-insensitive; the hash behind `$session_id` is not.
+      // The shape test is case-insensitive; the hash behind `session_id` is not.
       // A host that normalises uuids to uppercase must not be split off from the
       // call that minted the handle.
       const { conversationId } = resolve({ conversation_id: AGENT_ECHOED.toUpperCase() })
@@ -586,7 +586,7 @@ describe('conversation_id edge cases', () => {
     // Forward guard only. On one server instance over InMemoryTransport both
     // events fall back to the same in-memory session id anyway, so this cannot
     // tell "grouped by the handle" from "nothing rotated" until the handle
-    // drives $session_id. The distinguishing assertion is the next test.
+    // drives session_id. The distinguishing assertion is the next test.
     expect(missing?.sessionId).toBe(toolCall?.sessionId)
     await capture.stop()
   })

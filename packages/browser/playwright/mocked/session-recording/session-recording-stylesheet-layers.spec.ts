@@ -64,10 +64,10 @@ test.describe('Session recording captures CSS @layer rules', () => {
         await responsePromise
 
         const events = await page.capturedEvents()
-        const snapshot = events.find((e) => e.event === '$snapshot')
+        const snapshot = events.find((e) => e.event === 'edp_snapshot')
         expect(snapshot).toBeDefined()
 
-        const fullSnapshot = (snapshot!['properties']['$snapshot_data'] as any[]).find((s) => s.type === 2)
+        const fullSnapshot = (snapshot!['properties']['snapshot_data'] as any[]).find((s) => s.type === 2)
         expect(fullSnapshot).toBeDefined()
 
         const styleNode = findNodeById(fullSnapshot.data.node, 'panda-emulated')
@@ -102,8 +102,8 @@ test.describe('Session recording captures CSS @layer rules', () => {
         await responsePromise
 
         const events = await page.capturedEvents()
-        const snapshot = events.find((e) => e.event === '$snapshot')
-        const fullSnapshot = (snapshot!['properties']['$snapshot_data'] as any[]).find((s) => s.type === 2)
+        const snapshot = events.find((e) => e.event === 'edp_snapshot')
+        const fullSnapshot = (snapshot!['properties']['snapshot_data'] as any[]).find((s) => s.type === 2)
         const styleText = findStyleTextById(fullSnapshot.data.node, 'chakra-emulated')
 
         // sanity: rule is captured
@@ -138,8 +138,8 @@ test.describe('Session recording captures CSS @layer rules', () => {
         await responsePromise
 
         const events = await page.capturedEvents()
-        const snapshot = events.find((e) => e.event === '$snapshot')
-        const fullSnapshot = (snapshot!['properties']['$snapshot_data'] as any[]).find((s) => s.type === 2)
+        const snapshot = events.find((e) => e.event === 'edp_snapshot')
+        const fullSnapshot = (snapshot!['properties']['snapshot_data'] as any[]).find((s) => s.type === 2)
         const styleText = findStyleTextById(fullSnapshot.data.node, 'hybrid-emulated')
 
         // seeded rule survives

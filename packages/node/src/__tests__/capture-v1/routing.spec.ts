@@ -3,7 +3,7 @@ import type { PostHogEventProperties } from '@posthog/core'
 import { isLegacyOnlyEvent } from '@/capture-v1/routing'
 
 describe('isLegacyOnlyEvent', () => {
-  it.each(['$ai_generation', '$ai_span', '$ai_trace', '$ai_embedding', '$ai_metric', '$ai_feedback', '$ai_'])(
+  it.each(['$ai_generation', '$ai_span', '$ai_trace', '$ai_embedding', 'edp_ai_metric', 'edp_ai_feedback', '$ai_'])(
     'routes AI event %s to the legacy submitter',
     (event) => {
       expect(isLegacyOnlyEvent({ event })).toBe(true)
@@ -11,11 +11,11 @@ describe('isLegacyOnlyEvent', () => {
   )
 
   it.each([
-    '$pageview',
-    '$identify',
-    '$create_alias',
-    '$groupidentify',
-    '$exception',
+    'edp_pageview',
+    'edp_identify',
+    'edp_create_alias',
+    'edp_groupidentify',
+    'edp_exception',
     'custom_event',
     'my$ai_event',
     'prefixed_$ai_generation',

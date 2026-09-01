@@ -305,7 +305,7 @@ describe('LocalFeatureFlagEvaluator', () => {
     expect(result.featureFlagPayloads).toEqual({ 'with-payload': { feature: 'x' } })
   })
 
-  test('buckets on $device_id when bucketing_identifier is device_id', async () => {
+  test('buckets on device_id when bucketing_identifier is device_id', async () => {
     // Two distinct ids share the same device id → they must bucket to the same value. A third
     // device id known to land on the other side of the 50% line proves the hash actually keys
     // off device_id rather than the distinctId.
@@ -317,20 +317,20 @@ describe('LocalFeatureFlagEvaluator', () => {
         }),
       ])
     )
-    const a = await evaluator.getFeatureFlag('device-bucketed', 'distinct-a', {}, { $device_id: 'shared-device' })
-    const b = await evaluator.getFeatureFlag('device-bucketed', 'distinct-b', {}, { $device_id: 'shared-device' })
+    const a = await evaluator.getFeatureFlag('device-bucketed', 'distinct-a', {}, { device_id: 'shared-device' })
+    const b = await evaluator.getFeatureFlag('device-bucketed', 'distinct-b', {}, { device_id: 'shared-device' })
     expect(a).toBe(b)
     const variants = new Set<unknown>()
     for (const deviceId of ['dev-1', 'dev-2', 'dev-3', 'dev-4', 'dev-5', 'dev-6', 'dev-7', 'dev-8']) {
-      variants.add(await evaluator.getFeatureFlag('device-bucketed', 'distinct', {}, { $device_id: deviceId }))
+      variants.add(await evaluator.getFeatureFlag('device-bucketed', 'distinct', {}, { device_id: deviceId }))
     }
     // The 50% rollout combined with distinct device ids must produce both verdicts — otherwise
     // we're not actually keying on the device id.
     expect(variants).toEqual(new Set([true, false]))
   })
 
-  test('returns undefined when bucketing on device_id without a $device_id property', async () => {
-    // No $device_id → can't bucket → must bubble up as inconclusive rather than falling back to
+  test('returns undefined when bucketing on device_id without a device_id property', async () => {
+    // No device_id → can't bucket → must bubble up as inconclusive rather than falling back to
     // distinctId, otherwise we'd silently disagree with the server's verdict.
     const evaluator = new LocalFeatureFlagEvaluator(
       definitions([
@@ -341,8 +341,8 @@ describe('LocalFeatureFlagEvaluator', () => {
       ])
     )
     expect(await evaluator.getFeatureFlag('device-bucketed', 'user', {}, {})).toBeUndefined()
-    expect(await evaluator.getFeatureFlag('device-bucketed', 'user', {}, { $device_id: null })).toBeUndefined()
-    expect(await evaluator.getFeatureFlag('device-bucketed', 'user', {}, { $device_id: '' })).toBeUndefined()
+    expect(await evaluator.getFeatureFlag('device-bucketed', 'user', {}, { device_id: null })).toBeUndefined()
+    expect(await evaluator.getFeatureFlag('device-bucketed', 'user', {}, { device_id: '' })).toBeUndefined()
   })
 
   test('getFeatureFlagPayload returns undefined when eval is inconclusive', async () => {

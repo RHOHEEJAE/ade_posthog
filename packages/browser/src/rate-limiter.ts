@@ -96,11 +96,11 @@ export class RateLimiter {
     /**
      * The page the limiter tripped on, without the query string or hash - enough to spot a
      * self-reloading 404 without putting whatever a customer keeps in their query params into
-     * an ingestion warning. Because this value recombines `$current_url` and `$pathname`, omit it
+     * an ingestion warning. Because this value recombines `current_url` and `pathname`, omit it
      * if either standard property has been denylisted rather than reintroducing denied context.
      */
     private _triggeringPage(): string | undefined {
-        if (!this._isPropertyAllowed('$current_url') || !this._isPropertyAllowed('$pathname') || !location?.pathname) {
+        if (!this._isPropertyAllowed('current_url') || !this._isPropertyAllowed('pathname') || !location?.pathname) {
             return undefined
         }
         return `${location.origin ?? ''}${location.pathname}`
@@ -109,7 +109,7 @@ export class RateLimiter {
     private _captureWarning(droppedSinceLastWarning: number): boolean {
         const { captureEventsBurstLimit, captureEventsPerSecond } = this
         const page = this._triggeringPage()
-        const sessionId = this._isPropertyAllowed('$session_id') ? this.instance.get_session_id?.() : undefined
+        const sessionId = this._isPropertyAllowed('session_id') ? this.instance.get_session_id?.() : undefined
 
         // Ingestion currently retains only this message for client ingestion warnings. Keep the
         // diagnostics here instead of adding structured properties that the backend discards.

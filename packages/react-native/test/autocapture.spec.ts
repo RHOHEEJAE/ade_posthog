@@ -315,7 +315,7 @@ describe('PostHog React Native', () => {
       expect(mockPostHog.autocapture).toHaveBeenCalledTimes(1)
       const capturedElement = mockPostHog.autocapture.mock.calls[0][1][0]
       expect(capturedElement.attr__style).toBe('')
-      expect(capturedElement.$el_text).toBe('Test Button')
+      expect(capturedElement.el_text).toBe('Test Button')
     })
 
     it.each([

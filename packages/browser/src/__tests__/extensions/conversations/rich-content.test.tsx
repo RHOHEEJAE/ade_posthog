@@ -182,7 +182,7 @@ describe('RichContent', () => {
                 { url: '/path#section', description: 'path with anchor' },
             ]
 
-            it.each(relativeUrls)('should render link with $description: $url', ({ url }) => {
+            it.each(relativeUrls)('should render link with description: $url', ({ url }) => {
                 const doc: TipTapDoc = {
                     type: 'doc',
                     content: [

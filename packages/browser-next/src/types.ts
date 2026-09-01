@@ -62,7 +62,7 @@ export interface PostHogOptions {
     navigator?: BrowserNavigator | false
     /** Start with capture disabled until `optIn()` runs. */
     optOutByDefault?: boolean
-    /** Capture one initial `$pageview` after configured extensions install. Defaults to `true`. */
+    /** Capture one initial `edp_pageview` after configured extensions install. Defaults to `true`. */
     capturePageview?: boolean
     /** Initial person properties exposed to feature-evaluation extensions. */
     initialPersonProperties?: Record<string, unknown>

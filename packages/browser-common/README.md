@@ -30,7 +30,7 @@ export function webContext(): Extension {
         name: 'webContext',
         setup(client) {
             removeProperties = client.registerDynamicEventProperties(() => ({
-                $current_url: window.location.href,
+                current_url: window.location.href,
             }))
         },
         dispose() {

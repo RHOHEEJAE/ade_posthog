@@ -95,7 +95,7 @@ describe('Stateless session minting', () => {
 
     const initEvents = eventCapture.findCapturesByEvent('$mcp_initialize')
     expect(initEvents).toHaveLength(1)
-    expect(initEvents[0].properties.$session_id).toBe(decoded?.sessionId)
+    expect(initEvents[0].properties.session_id).toBe(decoded?.sessionId)
     expect(initEvents[0].properties.$mcp_client_name).toBe('Claude')
     expect(initEvents[0].properties.$mcp_client_version).toBe('1.2.3')
     // Negotiated spec version off the real SDK initialize response (echoes the
@@ -228,8 +228,8 @@ describe('Stateless session minting', () => {
     expect(toolCalls).toHaveLength(1)
 
     // Same session across pods, client identity recovered from the token alone.
-    expect(toolCalls[0].properties.$session_id).toBe(decoded?.sessionId)
-    expect(toolCalls[0].properties.$session_id).toBe(initEvents[0].properties.$session_id)
+    expect(toolCalls[0].properties.session_id).toBe(decoded?.sessionId)
+    expect(toolCalls[0].properties.session_id).toBe(initEvents[0].properties.session_id)
     expect(toolCalls[0].properties.$mcp_client_name).toBe('Claude')
     expect(toolCalls[0].properties.$mcp_client_version).toBe('1.2.3')
     // Spec version also rides the token, so pod B stamps it despite never seeing initialize.
@@ -290,7 +290,7 @@ describe('Stateless session minting', () => {
     const IDENTITY = { distinctId: 'user_mock', properties: { email: 'mock@example.com', plan: 'enterprise' } }
     const PLAN_CALL: MCPRequestLike = { method: 'tools/call', params: { name: 'get_plan', arguments: {} } }
 
-    it('publishes $identify once at initialize and never again for tool calls replaying the token', async () => {
+    it('publishes edp_identify once at initialize and never again for tool calls replaying the token', async () => {
       // Pod A handles initialize: mints the token and announces the identity.
       const podA = createPod('pod-identify-a', { identify: async () => IDENTITY })
       const transportA: { sessionId?: string } = {}
@@ -299,7 +299,7 @@ describe('Stateless session minting', () => {
 
       const token = transportA.sessionId
       expect(decodeSessionId(token)).not.toBeNull()
-      expect(eventCapture.findCapturesByEvent('$identify')).toHaveLength(1)
+      expect(eventCapture.findCapturesByEvent('edp_identify')).toHaveLength(1)
 
       // Fresh pods share nothing with pod A — their identity caches are empty,
       // but the replayed token says the session was announced at initialize.
@@ -310,24 +310,24 @@ describe('Stateless session minting', () => {
         })
       }
 
-      expect(eventCapture.findCapturesByEvent('$identify')).toHaveLength(1)
+      expect(eventCapture.findCapturesByEvent('edp_identify')).toHaveLength(1)
 
-      // Suppressing $identify must not lose attribution: every tool call still
+      // Suppressing edp_identify must not lose attribution: every tool call still
       // carries the identified user.
       const toolCalls = eventCapture.findCapturesByEvent('$mcp_tool_call')
       expect(toolCalls).toHaveLength(2)
       for (const toolCall of toolCalls) {
         expect(toolCall.distinct_id).toBe('user_mock')
-        expect(toolCall.properties.$set).toMatchObject({ email: 'mock@example.com', plan: 'enterprise' })
+        expect(toolCall.properties.edp_set).toMatchObject({ email: 'mock@example.com', plan: 'enterprise' })
       }
     })
 
-    it('still publishes $identify for a first-seen identity when no token is in play', async () => {
+    it('still publishes edp_identify for a first-seen identity when no token is in play', async () => {
       const pod = createPod('pod-identify-generated', { identify: async () => IDENTITY })
 
       await invokeHandler(pod.lowLevel, 'tools/call', PLAN_CALL, { requestInfo: { headers: {} } })
 
-      expect(eventCapture.findCapturesByEvent('$identify')).toHaveLength(1)
+      expect(eventCapture.findCapturesByEvent('edp_identify')).toHaveLength(1)
     })
   })
 })

@@ -76,9 +76,9 @@ describe('PostHogFeature component', () => {
         renderWith(posthog)
 
         fireEvent.click(screen.getByTestId('helloDiv'))
-        expect(posthog.capture).toHaveBeenCalledWith('$feature_interaction', {
+        expect(posthog.capture).toHaveBeenCalledWith('feature_interaction', {
             feature_flag: 'test',
-            $set: { '$feature_interaction/test': true },
+            edp_set: { 'feature_interaction/test': true },
         })
         expect(posthog.capture).toHaveBeenCalledTimes(1)
     })
@@ -87,9 +87,9 @@ describe('PostHogFeature component', () => {
         renderWith(posthog)
 
         fireEvent.click(screen.getByTestId('helloDiv'))
-        expect(posthog.capture).toHaveBeenCalledWith('$feature_interaction', {
+        expect(posthog.capture).toHaveBeenCalledWith('feature_interaction', {
             feature_flag: 'test',
-            $set: { '$feature_interaction/test': true },
+            edp_set: { 'feature_interaction/test': true },
         })
         expect(posthog.capture).toHaveBeenCalledTimes(1)
 
@@ -114,9 +114,9 @@ describe('PostHogFeature component', () => {
         fireEvent.click(screen.getByTestId('worldDiv'))
         fireEvent.click(screen.getByTestId('worldDiv'))
         fireEvent.click(screen.getByTestId('worldDiv'))
-        expect(posthog.capture).toHaveBeenCalledWith('$feature_interaction', {
+        expect(posthog.capture).toHaveBeenCalledWith('feature_interaction', {
             feature_flag: 'test',
-            $set: { '$feature_interaction/test': true },
+            edp_set: { 'feature_interaction/test': true },
         })
         expect(posthog.capture).toHaveBeenCalledTimes(1)
     })
@@ -172,9 +172,9 @@ describe('PostHogFeature component', () => {
         fireEvent.click(screen.getByTestId('clicker'))
         fireEvent.click(screen.getByTestId('helloDiv'))
         fireEvent.click(screen.getByTestId('helloDiv'))
-        expect(posthog.capture).toHaveBeenCalledWith('$feature_interaction', {
+        expect(posthog.capture).toHaveBeenCalledWith('feature_interaction', {
             feature_flag: 'test',
-            $set: { '$feature_interaction/test': true },
+            edp_set: { 'feature_interaction/test': true },
         })
         expect(posthog.capture).toHaveBeenCalledTimes(1)
     })
@@ -231,10 +231,10 @@ describe('PostHogFeature component', () => {
         expect(posthog.capture).not.toHaveBeenCalled()
 
         fireEvent.click(screen.getByTestId('helloDiv'))
-        expect(posthog.capture).toHaveBeenCalledWith('$feature_interaction', {
+        expect(posthog.capture).toHaveBeenCalledWith('feature_interaction', {
             feature_flag: 'multivariate_feature',
             feature_flag_variant: 'string-value',
-            $set: { '$feature_interaction/multivariate_feature': 'string-value' },
+            edp_set: { 'feature_interaction/multivariate_feature': 'string-value' },
         })
         expect(posthog.capture).toHaveBeenCalledTimes(1)
     })

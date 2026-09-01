@@ -37,7 +37,7 @@ export interface PostHogCaptureEvent {
 }
 
 export interface BuildPostHogCaptureEventsOptions {
-  /** Whether to emit a `$exception` sibling alongside errored events. Defaults to `true`. */
+  /** Whether to emit a `edp_exception` sibling alongside errored events. Defaults to `true`. */
   enableExceptionAutocapture?: boolean
 }
 
@@ -79,10 +79,10 @@ function buildCaptureEvent(event: Event): PostHogCaptureEvent {
 }
 
 /**
- * Stamps `$session_id` only when the event carries a session. The auto-capture
+ * Stamps `session_id` only when the event carries a session. The auto-capture
  * (`instrument`) path always resolves a session id, but the server-agnostic
  * `createMcpAnalytics` path leaves it unset when the caller has no session — and
- * a fabricated `$session_id` would wrongly bucket events into a non-existent
+ * a fabricated `session_id` would wrongly bucket events into a non-existent
  * Session Replay session.
  */
 function addSessionIdProperty(event: Event, properties: Record<string, unknown>): void {
@@ -99,7 +99,7 @@ function addConversationIdProperty(event: Event, properties: Record<string, unkn
 
 function addGroupsProperty(event: Event, properties: Record<string, unknown>): void {
   if (event.groups && Object.keys(event.groups).length > 0) {
-    properties.$groups = event.groups
+    properties.groups = event.groups
   }
 }
 
@@ -108,11 +108,11 @@ function addGroupsProperty(event: Event, properties: Record<string, unknown>): v
  * processing a person profile would mint one anonymous person per session and
  * inflate person counts. Opt out of person processing in that case (matching
  * `@posthog/ai` / posthog-node). When an identity is present we keep person
- * processing so `$set` lands on a real person.
+ * processing so `edp_set` lands on a real person.
  */
 function addPersonProcessingProperty(event: Event, properties: Record<string, unknown>): void {
   if (!event.identifyActorGivenId) {
-    properties.$process_person_profile = false
+    properties.process_person_profile = false
   }
 }
 
@@ -184,9 +184,9 @@ function addCommonEventProperties(event: Event, properties: Record<string, unkno
 
   if (event.isError) {
     // Surface the failure reason directly on the primary event so the dashboard
-    // can break errors down by cause without joining to the `$exception` sibling
+    // can break errors down by cause without joining to the `edp_exception` sibling
     // (which can be disabled, and isn't emitted when no error value is passed).
-    const firstException = event.error?.$exception_list?.[0]
+    const firstException = event.error?.exception_list?.[0]
     const errorType = event.errorType ?? firstException?.type
     if (errorType) {
       properties[PostHogMCPAnalyticsProperty.ErrorType] = errorType
@@ -205,8 +205,8 @@ function addCommonEventProperties(event: Event, properties: Record<string, unkno
   }
 
   if (event.identifyActorData && Object.keys(event.identifyActorData).length > 0) {
-    // Person properties from `identify().properties` go straight to `$set`.
-    properties.$set = { ...event.identifyActorData }
+    // Person properties from `identify().properties` go straight to `edp_set`.
+    properties.edp_set = { ...event.identifyActorData }
   }
 }
 
@@ -229,7 +229,7 @@ function buildExceptionEvent(event: Event): PostHogCaptureEvent {
   addGroupsProperty(event, properties)
 
   if (event.error) {
-    // Spread the core `$exception_list` / `$exception_level` properties so MCP
+    // Spread the core `exception_list` / `exception_level` properties so MCP
     // tool failures use the same error-tracking contract as every other SDK.
     Object.assign(properties, event.error)
   }

@@ -17,7 +17,7 @@ export type PostHogAutocaptureOptions = {
    * Enable autocapture of touch events.
    *
    * On React Native Web this also captures `click` events — mouse, trackpad, keyboard
-   * activation and programmatic clicks — emitted with `$event_type: 'click'`, since
+   * activation and programmatic clicks — emitted with `event_type: 'click'`, since
    * browsers fire `touchend` only for touch input.
    *
    * @default false
@@ -98,29 +98,29 @@ export type PostHogAutocaptureOptions = {
 
 export interface PostHogCustomAppProperties {
   /** Build number like "1.2.2" or "122" */
-  $app_build?: string | null
+  app_build?: string | null
   /** Name of the app as displayed below the icon like "PostHog" */
-  $app_name?: string | null
+  app_name?: string | null
   /** Namespace of the app usually like "com.posthog.app" */
-  $app_namespace?: string | null
+  app_namespace?: string | null
   /** Human friendly app version like what a user would see in the app store like "1.2.2" */
-  $app_version?: string | null
+  app_version?: string | null
   /** Manufacturer like "Apple", "Samsung" or "Android" */
-  $device_manufacturer?: string | null
+  device_manufacturer?: string | null
   /** Readable model name like "iPhone 12" or "Samsung Galaxy S24" */
-  $device_name?: string | null
+  device_name?: string | null
   /** Model identifier like "iPhone13,2" or "SM-S921B" */
-  $device_model?: string | null
+  device_model?: string | null
   /** Device type ("Mobile" | "Desktop") */
-  $device_type?: string | null
+  device_type?: string | null
   /** Operating system name like iOS or Android */
-  $os_name?: string | null
+  os_name?: string | null
   /** Operating system version "14.0" */
-  $os_version?: string | null
+  os_version?: string | null
   /** Locale (language) of the device like "en-US" */
   $locale?: string | null
   /** Timezone of the device like "Europe/Berlin" */
-  $timezone?: string | null
+  timezone?: string | null
   /** Whether the app is running on an emulator/simulator */
   $is_emulator?: boolean | null
 }

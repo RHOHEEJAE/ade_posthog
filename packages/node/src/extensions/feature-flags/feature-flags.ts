@@ -58,7 +58,7 @@ type FeatureFlagsPollerOptions = {
   onLoad?: (count: number) => void
   /**
    * Called whenever flag definitions are (re)loaded — from the API, the cache provider, or a
-   * quota reset — with the server gate for minimal `$feature_flag_called` events carried by
+   * quota reset — with the server gate for minimal `edp_feature_flag_called` events carried by
    * that payload. Lets the client keep a single last-writer-wins gate across the local-eval
    * and remote `/flags` signal sources.
    */
@@ -335,9 +335,9 @@ class FeatureFlagsPoller {
 
       if (
         flag.bucketing_identifier === 'device_id' &&
-        (personProperties?.$device_id === undefined ||
-          personProperties?.$device_id === null ||
-          personProperties?.$device_id === '')
+        (personProperties?.device_id === undefined ||
+          personProperties?.device_id === null ||
+          personProperties?.device_id === '')
       ) {
         this.logMsgIfDebug(() =>
           console.warn(`[FEATURE FLAGS] Ignoring bucketing_identifier for group flag: ${flag.key}`)
@@ -351,10 +351,10 @@ class FeatureFlagsPoller {
       if (bucketingValue === undefined) {
         this.logMsgIfDebug(() =>
           console.warn(
-            `[FEATURE FLAGS] Can't compute feature flag: ${flag.key} without $device_id, falling back to server evaluation`
+            `[FEATURE FLAGS] Can't compute feature flag: ${flag.key} without device_id, falling back to server evaluation`
           )
         )
-        throw new InconclusiveMatchError(`Can't compute feature flag: ${flag.key} without $device_id`)
+        throw new InconclusiveMatchError(`Can't compute feature flag: ${flag.key} without device_id`)
       }
       return await this.matchFeatureFlagProperties(flag, bucketingValue, personProperties, evaluationContext)
     }
@@ -368,12 +368,12 @@ class FeatureFlagsPoller {
     if (flag.filters?.aggregation_group_type_index != undefined) {
       // Group flags are bucketed by group key in computeFlagValueLocally.
       // If a group flag appears in dependency evaluation, ignore bucketing_identifier
-      // to preserve existing behavior and avoid requiring $device_id unexpectedly.
+      // to preserve existing behavior and avoid requiring device_id unexpectedly.
       return distinctId
     }
 
     if (flag.bucketing_identifier === 'device_id') {
-      const deviceId = properties?.$device_id
+      const deviceId = properties?.device_id
       if (deviceId === undefined || deviceId === null || deviceId === '') {
         return undefined
       }

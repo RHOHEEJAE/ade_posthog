@@ -241,7 +241,7 @@ const plugins = (es5, noExternal, preserveCrossBundleProperties) => [
                               'surveys',
                               'calculateEventProperties',
 
-                              // used by wrapper SDKs (e.g. posthog-flutter, posthog-react-native) to override $lib and $lib_version
+                              // used by wrapper SDKs (e.g. posthog-flutter, posthog-react-native) to override lib and lib_version
                               '_overrideSDKInfo',
 
                               // possibly used by naughty users - we should decide if we want make these part of the public API, but be cautious for now

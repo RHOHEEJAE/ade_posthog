@@ -14,9 +14,9 @@ import type { PostHogCaptureEvent } from '../extensions/posthog-events'
  *    truncated), one per `capture()` call. Convenient for asserting on the
  *    SDK's internal event shape.
  *  - `getCaptures()` — the fanned-out PostHog payloads (`$mcp_tool_call`,
- *    `$exception`, …) exactly as handed to `posthog.capture()`: event name,
+ *    `edp_exception`, …) exactly as handed to `posthog.capture()`: event name,
  *    `distinct_id`, and `properties`. Use this to assert on event names,
- *    `$set`, `$process_person_profile`, exception siblings, etc.
+ *    `edp_set`, `process_person_profile`, exception siblings, etc.
  *
  * Patches the prototype so every `McpEventSink` created by `instrument()` during
  * the test is intercepted.

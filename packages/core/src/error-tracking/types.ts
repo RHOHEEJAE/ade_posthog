@@ -28,8 +28,8 @@ export interface PreviouslyCapturedError {
 }
 
 export interface ErrorProperties {
-  $exception_list: Exception[]
-  $exception_level?: SeverityLevel
+  exception_list: Exception[]
+  exception_level?: SeverityLevel
 }
 
 export interface Exception {

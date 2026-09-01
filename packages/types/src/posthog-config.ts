@@ -216,8 +216,8 @@ export interface PerformanceCaptureConfig {
      * Use chrome's web vitals library to wrap fetch and capture web vitals
      *
      * When `cookieless_mode` is active, there is no client-side SessionIdManager; vitals are still
-     * captured. Nested `$web_vitals_*_event` payloads omit `$session_id` / `$window_id`; PostHog ingestion assigns
-     * `$session_id` server-side for cookieless traffic when project cookieless settings are enabled (same as other events).
+     * captured. Nested `edp_web_vitals_*_event` payloads omit `session_id` / `window_id`; PostHog ingestion assigns
+     * `session_id` server-side for cookieless traffic when project cookieless settings are enabled (same as other events).
      */
     web_vitals?: boolean
 
@@ -396,7 +396,7 @@ export type DeadClicksAutoCaptureConfig = {
      * a failed navigation, e.g. swiping to go back or to move a carousel with nothing
      * happening.
      *
-     * Dead swipes are captured as `$dead_swipe` events. This only applies to the dead-click
+     * Dead swipes are captured as `edp_dead_swipe` events. This only applies to the dead-click
      * autocapture path, not the heatmaps path.
      *
      * Swipes over surfaces whose response cannot be observed — canvas, video and other
@@ -452,7 +452,7 @@ export type DeadClicksAutoCaptureConfig = {
 
 export interface HeatmapConfig {
     /**
-     * How often to send batched data in `$heatmap_data` events
+     * How often to send batched data in `heatmap_data` events
      * If set to 0 or not set, sends using the default interval of 1 second
      *
      * @default 1000
@@ -480,7 +480,7 @@ export type ExternalIntegrationKind = 'intercom' | 'crispChat'
  * Shared configuration for the error tracking burst-protection rate limiter.
  *
  * Burst protection is scoped **per exception type** — the limiter is keyed by exception type, so
- * each distinct `$exception` type gets its own token bucket and there is no aggregate cap across
+ * each distinct `edp_exception` type gets its own token bucket and there is no aggregate cap across
  * all types. It applies only to autocaptured exceptions; manual `captureException` calls are
  * never rate limited. These options let customers with high-cardinality exception types tune the
  * per-type allowance, and are shared between the browser and Node SDKs.
@@ -691,7 +691,7 @@ export interface SessionRecordingOptions {
      * Captures sanitized Schema.org JSON-LD as session replay custom events.
      * JSON-LD inside a text mask or blocked element is never captured.
      * The recorder keeps `@id` values without changes.
-     * The event tag is `$json_ld`. The payload is a JSON-LD object or array.
+     * The event tag is `json_ld`. The payload is a JSON-LD object or array.
      * The recorder removes all script nodes from snapshots when this option is enabled.
      * The JSON-LD observer starts only when this option is true at recording start.
      * @see https://github.com/PostHog/posthog-js/blob/main/packages/browser/src/extensions/replay/external/json-ld.ts
@@ -892,9 +892,9 @@ export interface SessionRecordingOptions {
      * If no replay user interaction occurs for this many milliseconds, the recorder marks the recording idle,
      * emits a `sessionIdle` replay marker, flushes buffered replay events, and drops most subsequent replay
      * events until user activity resumes. If activity resumes before `session_idle_timeout_seconds`, recording
-     * continues under the same `$session_id`.
+     * continues under the same `session_id`.
      *
-     * This does not control `$session_id` rotation. Session rotation is controlled by `session_idle_timeout_seconds`,
+     * This does not control `session_id` rotation. Session rotation is controlled by `session_idle_timeout_seconds`,
      * so this value should be lower than `session_idle_timeout_seconds * 1000`.
      *
      * @default 1000 * 60 * 5 (5 minutes)
@@ -1133,7 +1133,7 @@ export interface MetricsConfig {
 type NextOptions = { revalidate: false | 0 | number; tags: string[] }
 
 /**
- * Selects which same-page URL changes automatically capture a `$pageview`.
+ * Selects which same-page URL changes automatically capture a `edp_pageview`.
  * Each option defaults to `false` when omitted.
  */
 export interface CapturePageviewOptions {
@@ -1295,12 +1295,12 @@ export interface PostHogConfig {
      * Disabled by default for backwards compatibility, and enabled automatically when `config.defaults` is
      * `'2026-06-25'` or later. Set to `true` to strip hashes from:
      *
-     * - `$current_url` on automatically captured browser events, including `$pageview`
-     * - `$initial_current_url`
-     * - `$session_entry_url`
-     * - `$elements[*].attr__href` and `$external_click_url` for autocapture and dead-click autocapture
-     * - Next.js Pages Router `$pageview` `$current_url`
-     * - web vitals `$current_url`
+     * - `current_url` on automatically captured browser events, including `edp_pageview`
+     * - `initial_current_url`
+     * - `session_entry_url`
+     * - `elements[*].attr__href` and `external_click_url` for autocapture and dead-click autocapture
+     * - Next.js Pages Router `edp_pageview` `current_url`
+     * - web vitals `current_url`
      * - logs `url.full`
      * - conversations `current_url` and `request_url`
      * - session replay rrweb meta/custom-event `href` URLs
@@ -1456,7 +1456,7 @@ export interface PostHogConfig {
     split_storage?: boolean
 
     /**
-     * Detect the Google Search App (GSA) as its own `$browser` value instead of
+     * Detect the Google Search App (GSA) as its own `browser` value instead of
      * the underlying webview it embeds — Mobile Safari on iOS, Chrome on Android.
      * Detection keys off the `GSA/` marker present in the UA on every platform.
      *
@@ -1654,7 +1654,7 @@ export interface PostHogConfig {
 
     /**
      * Determines if users should be opted out of user agent filtering such as googlebot or other bots.
-     * If this is set to `true`, PostHog will set `$browser_type` to either `bot` or `browser` for all events,
+     * If this is set to `true`, PostHog will set `browser_type` to either `bot` or `browser` for all events,
      * but will process all events as if they were from a browser.
      *
      * @default false
@@ -1805,11 +1805,11 @@ export interface PostHogConfig {
      * Determines the session idle timeout in seconds.
      *
      * If no events are captured for this many seconds, the next event starts a
-     * new session with a new `$session_id` (and `$window_id`). The SDK may also proactively reset the stored session
+     * new session with a new `session_id` (and `window_id`). The SDK may also proactively reset the stored session
      * after the timeout while the page is idle, so the next event creates a new session.
      *
      * Session recording has a separate idle threshold: `session_recording.session_idle_threshold_ms`. That setting
-     * only controls when the user is considered idle, it does not rotate `$session_id`.
+     * only controls when the user is considered idle, it does not rotate `session_id`.
      *
      * Must be between 60 seconds and 10 hours. Values outside this range are clamped.
      *
@@ -1976,7 +1976,7 @@ export interface PostHogConfig {
      * Sets the maximum age (in milliseconds) for cached feature flag values.
      * When the cache is older than this value:
      * - `getFeatureFlag()` will return `undefined` instead of stale cached values
-     * - `$feature/` properties will not be attached to events
+     * - `feature/` properties will not be attached to events
      * - A background refresh will be triggered automatically
      *
      * This prevents stale feature flag values from being used when the `/flags` request
@@ -1989,15 +1989,15 @@ export interface PostHogConfig {
     feature_flag_cache_ttl_ms?: number
 
     /**
-     * When enabled, `$feature_flag_called` event deduplication is scoped to the current session.
+     * When enabled, `edp_feature_flag_called` event deduplication is scoped to the current session.
      *
-     * By default, the SDK deduplicates `$feature_flag_called` events globally and only re-emits
+     * By default, the SDK deduplicates `edp_feature_flag_called` events globally and only re-emits
      * them when `identify` (with a new distinct ID) or `reset` is called. This can be problematic
      * for experiments: if a flag is checked before an experiment starts, the event is cached and
      * won't fire again for that user until identify/reset, meaning the experiment never sees the event.
      *
      * When this option is `true`, the deduplication cache is keyed on the session ID, so each new
-     * session will re-emit `$feature_flag_called` for every flag that is checked.
+     * session will re-emit `edp_feature_flag_called` for every flag that is checked.
      *
      * @default false
      */
@@ -2054,10 +2054,10 @@ export interface PostHogConfig {
      * web experiment URL conditions, and autocapture URL allow/ignore lists.
      *
      * These features match against `window.location.href` directly, which does not reflect
-     * any `$current_url` you rewrite in `before_send`. In environments where the browser URL
+     * any `current_url` you rewrite in `before_send`. In environments where the browser URL
      * is not meaningful for targeting — e.g. Electron/desktop apps served from a generated
      * host — return the logical URL you want these features to match against. This does not
-     * change the `$current_url` property captured on events (use `before_send` for that).
+     * change the `current_url` property captured on events (use `before_send` for that).
      *
      * @param defaultUrl - the URL PostHog would otherwise use (`window.location.href`)
      * @returns the URL to use for client-side URL matching
@@ -2167,7 +2167,7 @@ export interface PostHogConfig {
      * You can control whether events from PostHog-js have person processing enabled with the `person_profiles` config setting.
      * There are three options:
      * - `person_profiles: 'always'` - we will process persons data for all events
-     * - `person_profiles: 'never'` - we won't process persons for any event. This means that anonymous users will not be merged once they sign up or login, so you lose the ability to create funnels that track users from anonymous to identified. All events (including `$identify`) will be sent with `$process_person_profile: False`.
+     * - `person_profiles: 'never'` - we won't process persons for any event. This means that anonymous users will not be merged once they sign up or login, so you lose the ability to create funnels that track users from anonymous to identified. All events (including `edp_identify`) will be sent with `process_person_profile: False`.
      * - `person_profiles: 'identified_only'` _(default)_ - we will only process persons when you call `posthog.identify`, `posthog.alias`, `posthog.setPersonProperties`, `posthog.unsetPersonProperties`, `posthog.group`, `posthog.setPersonPropertiesForFlags` or `posthog.setGroupPropertiesForFlags` Anonymous users won't get person profiles.
      *
      * @default 'identified_only'
@@ -2230,7 +2230,7 @@ export interface PostHogConfig {
      * identity is handled by generating a privacy-preserving hash on PostHog's servers.
      *
      * Web Vitals (`capture_performance.web_vitals`) are supported: metrics are sent without client session IDs;
-     * ingestion assigns `$session_id` when cookieless mode is enabled for the project.
+     * ingestion assigns `session_id` when cookieless mode is enabled for the project.
      *
      * - 'always' - enable cookieless mode immediately on startup, use this if you do not intend to show a cookie banner
      * - 'on_reject' - enable cookieless mode only if the user rejects cookies, use this if you want to show a cookie banner. If the user accepts cookies, cookieless mode will not be used, and PostHog will use cookies and local storage as usual.
@@ -2242,7 +2242,7 @@ export interface PostHogConfig {
     /**
      * A hostname pattern to match test environments. When the current hostname matches,
      * `setInternalOrTestUser()` is called automatically on startup, enabling person processing
-     * and setting `$internal_or_test_user: true`.
+     * and setting `internal_or_test_user: true`.
      *
      * Can be a string (exact match) or RegExp (pattern match).
      * Set to `null` to explicitly disable (useful when using `defaults: '2026-01-30'`).
@@ -2305,7 +2305,7 @@ export interface PostHogConfig {
 
     /**
      * Prevents posthog-js from using the `navigator.sendBeacon` API to send events.
-     * Enabling this option may hurt the reliability of sending $pageleave events.
+     * Enabling this option may hurt the reliability of sending edp_pageleave events.
      */
     disable_beacon?: boolean
 
@@ -2329,7 +2329,7 @@ export interface PostHogConfig {
 
     /**
      * PREVIEW - MAY CHANGE WITHOUT WARNING - DO NOT USE IN PRODUCTION
-     * Enables collection of bot traffic as $bot_pageview events with detailed bot detection
+     * Enables collection of bot traffic as edp_bot_pageview events with detailed bot detection
      * properties instead of dropping them entirely. Use it alongside opt_out_useragent_filter
      */
     __preview_capture_bot_pageviews?: boolean

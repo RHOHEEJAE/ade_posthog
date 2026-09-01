@@ -420,7 +420,7 @@ describe('sanitizeEvent - exception values', () => {
     const event = makeEvent({
       isError: true,
       error: {
-        $exception_list: [
+        exception_list: [
           {
             type: 'Error',
             value: 'Project token phc_123456789012345678901234567890',
@@ -432,17 +432,17 @@ describe('sanitizeEvent - exception values', () => {
             mechanism: { type: 'generic', handled: true },
           },
         ],
-        $exception_level: 'error',
+        exception_level: 'error',
       },
     })
 
     const result = sanitizeEvent(event)
 
-    expect(result.error?.$exception_list.map((exception) => exception.value)).toEqual([
+    expect(result.error?.exception_list.map((exception) => exception.value)).toEqual([
       'Project token [redacted]',
       'Personal token [redacted]',
     ])
-    expect(event.error?.$exception_list[0].value).toContain('phc_')
+    expect(event.error?.exception_list[0].value).toContain('phc_')
   })
 })
 

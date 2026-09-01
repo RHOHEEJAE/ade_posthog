@@ -767,9 +767,9 @@
               "code": "\n\n// Basic identify with properties\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    name: 'John Doe',\n    email: 'john@example.com',\n    plan: 'premium'\n  }\n})\n\n\n"
             },
             {
-              "id": "using_$set_and_$set_once",
-              "name": "Using $set and $set_once",
-              "code": "\n\n// Using $set and $set_once\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    $set: { name: 'John Doe', email: 'john@example.com' },\n    $set_once: { first_login: new Date().toISOString() }\n  }\n})\n\n\n\n"
+              "id": "using_edp_set_and_edp_set_once",
+              "name": "Using edp_set and edp_set_once",
+              "code": "\n\n// Using edp_set and edp_set_once\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    edp_set: { name: 'John Doe', email: 'john@example.com' },\n    edp_set_once: { first_login: new Date().toISOString() }\n  }\n})\n\n\n\n"
             }
           ],
           "releaseTag": "public",

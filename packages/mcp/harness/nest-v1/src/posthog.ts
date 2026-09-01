@@ -24,7 +24,7 @@ function summarise(e: RecordedEvent): string {
   return [
     e.event,
     p.$mcp_tool_name ? `tool=${p.$mcp_tool_name}` : null,
-    p.$session_id ? `session=${String(p.$session_id).slice(0, 12)}…` : null,
+    p.session_id ? `session=${String(p.session_id).slice(0, 12)}…` : null,
     p.$mcp_client_name ? `client=${p.$mcp_client_name}` : null,
     p.$mcp_protocol_version ? `proto=${p.$mcp_protocol_version}` : null,
     p.$mcp_intent ? `intent=${JSON.stringify(p.$mcp_intent)}` : null,
@@ -41,9 +41,9 @@ function record(event: RecordedEvent): void {
 
 const client = {
   capture: (event: RecordedEvent) => record(event),
-  identify: (event: RecordedEvent) => record({ ...event, event: '$identify' }),
+  identify: (event: RecordedEvent) => record({ ...event, event: 'edp_identify' }),
   captureException: (error: unknown, distinctId?: string, properties?: Record<string, unknown>) =>
-    record({ event: '$exception', distinctId, properties: { ...properties, message: String(error) } }),
+    record({ event: 'edp_exception', distinctId, properties: { ...properties, message: String(error) } }),
   flush: async () => {},
   shutdown: async () => {},
 }

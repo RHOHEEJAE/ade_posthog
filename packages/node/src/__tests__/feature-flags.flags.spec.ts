@@ -40,15 +40,15 @@ describe('flags v2', () => {
       await waitForPromises()
       expect(capturedMessage).toMatchObject({
         distinct_id: 'some-distinct-id',
-        event: '$feature_flag_called',
+        event: 'edp_feature_flag_called',
         properties: {
-          '$feature/non-existent-flag': undefined,
-          $feature_flag: 'non-existent-flag',
-          $feature_flag_response: undefined,
-          $feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
-          $feature_flag_evaluated_at: expect.any(Number),
-          $lib: posthog.getLibraryId(),
-          $lib_version: posthog.getLibraryVersion(),
+          'feature/non-existent-flag': undefined,
+          feature_flag: 'non-existent-flag',
+          feature_flag_response: undefined,
+          feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
+          feature_flag_evaluated_at: expect.any(Number),
+          lib: posthog.getLibraryId(),
+          lib_version: posthog.getLibraryVersion(),
           locally_evaluated: false,
         },
       })
@@ -153,18 +153,18 @@ describe('flags v2', () => {
         await waitForPromises()
         expect(capturedMessage).toMatchObject({
           distinct_id: 'some-distinct-id',
-          event: '$feature_flag_called',
+          event: 'edp_feature_flag_called',
           properties: {
-            [`$feature/${key}`]: expectedResponse,
-            $feature_flag: key,
-            $feature_flag_response: expectedResponse,
-            $feature_flag_id: expectedId,
-            $feature_flag_version: expectedVersion,
-            $feature_flag_reason: expectedReason,
-            $feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
-            $feature_flag_evaluated_at: expect.any(Number),
-            $lib: posthog.getLibraryId(),
-            $lib_version: posthog.getLibraryVersion(),
+            [`feature/${key}`]: expectedResponse,
+            feature_flag: key,
+            feature_flag_response: expectedResponse,
+            feature_flag_id: expectedId,
+            feature_flag_version: expectedVersion,
+            feature_flag_reason: expectedReason,
+            feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
+            feature_flag_evaluated_at: expect.any(Number),
+            lib: posthog.getLibraryId(),
+            lib_version: posthog.getLibraryVersion(),
             locally_evaluated: false,
           },
         })
@@ -291,7 +291,7 @@ describe('flags v2', () => {
         })
       })
 
-      it('captures event with $feature_flag_error=unknown_error', async () => {
+      it('captures event with feature_flag_error=unknown_error', async () => {
         let capturedMessage: any
         posthog.on('capture', (message) => {
           capturedMessage = message
@@ -300,8 +300,8 @@ describe('flags v2', () => {
         await posthog.getFeatureFlag('error-flag', 'some-distinct-id')
         await waitForPromises()
         expect(capturedMessage).toBeDefined()
-        expect(capturedMessage.event).toBe('$feature_flag_called')
-        expect(capturedMessage.properties.$feature_flag_error).toBe('unknown_error')
+        expect(capturedMessage.event).toBe('edp_feature_flag_called')
+        expect(capturedMessage.properties.feature_flag_error).toBe('unknown_error')
       })
     })
   })
@@ -329,13 +329,13 @@ describe('flags v1', () => {
       await waitForPromises()
       expect(capturedMessage).toMatchObject({
         distinct_id: 'some-distinct-id',
-        event: '$feature_flag_called',
+        event: 'edp_feature_flag_called',
         properties: {
-          '$feature/non-existent-flag': undefined,
-          $feature_flag: 'non-existent-flag',
-          $feature_flag_response: undefined,
-          $lib: posthog.getLibraryId(),
-          $lib_version: posthog.getLibraryVersion(),
+          'feature/non-existent-flag': undefined,
+          feature_flag: 'non-existent-flag',
+          feature_flag_response: undefined,
+          lib: posthog.getLibraryId(),
+          lib_version: posthog.getLibraryVersion(),
           locally_evaluated: false,
         },
       })
@@ -376,7 +376,7 @@ describe('flags v1', () => {
 })
 
 describe('feature flag error tracking', () => {
-  it('sets $feature_flag_error to flag_missing when flag is not in response', async () => {
+  it('sets feature_flag_error to flag_missing when flag is not in response', async () => {
     const flagsResponse: PostHogV2FlagsResponse = {
       flags: {},
       errorsWhileComputingFlags: false,
@@ -399,10 +399,10 @@ describe('feature flag error tracking', () => {
     expect(result).toBe(undefined)
 
     await waitForPromises()
-    expect(capturedMessage.properties.$feature_flag_error).toBe(FeatureFlagError.FLAG_MISSING)
+    expect(capturedMessage.properties.feature_flag_error).toBe(FeatureFlagError.FLAG_MISSING)
   })
 
-  it('sets $feature_flag_error to errors_while_computing_flags when errorsWhileComputingFlags is true', async () => {
+  it('sets feature_flag_error to errors_while_computing_flags when errorsWhileComputingFlags is true', async () => {
     const flagsResponse: PostHogV2FlagsResponse = {
       flags: {
         'some-flag': {
@@ -442,10 +442,10 @@ describe('feature flag error tracking', () => {
     expect(result).toBe(true)
 
     await waitForPromises()
-    expect(capturedMessage.properties.$feature_flag_error).toBe(FeatureFlagError.ERRORS_WHILE_COMPUTING)
+    expect(capturedMessage.properties.feature_flag_error).toBe(FeatureFlagError.ERRORS_WHILE_COMPUTING)
   })
 
-  it('sets $feature_flag_error to quota_limited when quota limited', async () => {
+  it('sets feature_flag_error to quota_limited when quota limited', async () => {
     // When quota limited, the core library returns empty flags but preserves quotaLimited info
     const flagsResponse: PostHogV2FlagsResponse = {
       flags: {},
@@ -472,12 +472,12 @@ describe('feature flag error tracking', () => {
 
     await waitForPromises()
     // Both quota_limited and flag_missing are reported since the flag is not in the empty response
-    expect(capturedMessage.properties.$feature_flag_error).toBe(
+    expect(capturedMessage.properties.feature_flag_error).toBe(
       `${FeatureFlagError.QUOTA_LIMITED},${FeatureFlagError.FLAG_MISSING}`
     )
   })
 
-  it('sets $feature_flag_error to unknown_error when request fails completely', async () => {
+  it('sets feature_flag_error to unknown_error when request fails completely', async () => {
     mockedFetch.mockImplementation(() => Promise.reject(new Error('Network error')))
 
     const posthog = new PostHog('TEST_API_KEY', {
@@ -494,7 +494,7 @@ describe('feature flag error tracking', () => {
     expect(result).toBe(undefined)
 
     await waitForPromises()
-    expect(capturedMessage.properties.$feature_flag_error).toBe(FeatureFlagError.UNKNOWN_ERROR)
+    expect(capturedMessage.properties.feature_flag_error).toBe(FeatureFlagError.UNKNOWN_ERROR)
   })
 
   it('joins multiple errors with commas', async () => {
@@ -521,12 +521,12 @@ describe('feature flag error tracking', () => {
 
     await waitForPromises()
     // Should contain both errors joined with commas
-    expect(capturedMessage.properties.$feature_flag_error).toBe(
+    expect(capturedMessage.properties.feature_flag_error).toBe(
       `${FeatureFlagError.ERRORS_WHILE_COMPUTING},${FeatureFlagError.FLAG_MISSING}`
     )
   })
 
-  it('does not set $feature_flag_error when there are no errors', async () => {
+  it('does not set feature_flag_error when there are no errors', async () => {
     const flagsResponse: PostHogV2FlagsResponse = {
       flags: {
         'some-flag': {
@@ -566,7 +566,7 @@ describe('feature flag error tracking', () => {
     expect(result).toBe(true)
 
     await waitForPromises()
-    expect(capturedMessage.properties.$feature_flag_error).toBeUndefined()
+    expect(capturedMessage.properties.feature_flag_error).toBeUndefined()
   })
 
   it('does not capture events when sendFeatureFlagEvents is false', async () => {
@@ -804,7 +804,7 @@ describe('getFeatureFlagResult', () => {
     })
   })
 
-  it('captures $feature_flag_called event with result', async () => {
+  it('captures edp_feature_flag_called event with result', async () => {
     const flagsResponse: PostHogV2FlagsResponse = {
       flags: {
         'test-flag': {
@@ -844,15 +844,15 @@ describe('getFeatureFlagResult', () => {
     await waitForPromises()
     expect(capturedMessage).toMatchObject({
       distinct_id: 'some-distinct-id',
-      event: '$feature_flag_called',
+      event: 'edp_feature_flag_called',
       properties: {
-        '$feature/test-flag': 'control',
-        $feature_flag: 'test-flag',
-        $feature_flag_response: 'control',
-        $feature_flag_id: 10,
-        $feature_flag_version: 3,
-        $feature_flag_reason: 'Matched condition set 2',
-        $feature_flag_request_id: 'test-request-id',
+        'feature/test-flag': 'control',
+        feature_flag: 'test-flag',
+        feature_flag_response: 'control',
+        feature_flag_id: 10,
+        feature_flag_version: 3,
+        feature_flag_reason: 'Matched condition set 2',
+        feature_flag_request_id: 'test-request-id',
         locally_evaluated: false,
       },
     })
@@ -862,7 +862,7 @@ describe('getFeatureFlagResult', () => {
     ['sends true when the server reports has_experiment true', true],
     ['sends false when the server reports has_experiment false', false],
     ['omits the property when the server omits has_experiment', undefined],
-  ])('$feature_flag_has_experiment: %s', async (_, hasExperiment) => {
+  ])('feature_flag_has_experiment: %s', async (_, hasExperiment) => {
     const flagsResponse: PostHogV2FlagsResponse = {
       flags: {
         'test-flag': {
@@ -901,11 +901,11 @@ describe('getFeatureFlagResult', () => {
     await posthog.getFeatureFlagResult('test-flag', 'some-distinct-id')
 
     await waitForPromises()
-    expect(capturedMessage.event).toBe('$feature_flag_called')
+    expect(capturedMessage.event).toBe('edp_feature_flag_called')
     if (hasExperiment === undefined) {
-      expect(capturedMessage.properties).not.toHaveProperty('$feature_flag_has_experiment')
+      expect(capturedMessage.properties).not.toHaveProperty('feature_flag_has_experiment')
     } else {
-      expect(capturedMessage.properties.$feature_flag_has_experiment).toBe(hasExperiment)
+      expect(capturedMessage.properties.feature_flag_has_experiment).toBe(hasExperiment)
     }
   })
 
@@ -1128,7 +1128,7 @@ describe('getFeatureFlagResult', () => {
       await posthog.shutdown()
     })
 
-    it('captures $feature_flag_called event with locally_evaluated: true', async () => {
+    it('captures edp_feature_flag_called event with locally_evaluated: true', async () => {
       const localFlags = {
         flags: [
           {
@@ -1159,11 +1159,11 @@ describe('getFeatureFlagResult', () => {
 
       await waitForPromises()
       expect(capturedMessage).toMatchObject({
-        event: '$feature_flag_called',
+        event: 'edp_feature_flag_called',
         properties: {
-          $feature_flag: 'simple-flag',
-          $feature_flag_response: true,
-          $feature_flag_id: 55,
+          feature_flag: 'simple-flag',
+          feature_flag_response: true,
+          feature_flag_id: 55,
           locally_evaluated: true,
         },
       })
@@ -1175,7 +1175,7 @@ describe('getFeatureFlagResult', () => {
       ['sends true when the definition reports has_experiment true', true],
       ['sends false when the definition reports has_experiment false', false],
       ['omits the property when the definition omits has_experiment', undefined],
-    ])('$feature_flag_has_experiment on local evaluation: %s', async (_, hasExperiment) => {
+    ])('feature_flag_has_experiment on local evaluation: %s', async (_, hasExperiment) => {
       const localFlags = {
         flags: [
           {
@@ -1206,12 +1206,12 @@ describe('getFeatureFlagResult', () => {
       await posthog.getFeatureFlagResult('simple-flag', 'some-distinct-id')
 
       await waitForPromises()
-      expect(capturedMessage.event).toBe('$feature_flag_called')
+      expect(capturedMessage.event).toBe('edp_feature_flag_called')
       expect(capturedMessage.properties.locally_evaluated).toBe(true)
       if (hasExperiment === undefined) {
-        expect(capturedMessage.properties).not.toHaveProperty('$feature_flag_has_experiment')
+        expect(capturedMessage.properties).not.toHaveProperty('feature_flag_has_experiment')
       } else {
-        expect(capturedMessage.properties.$feature_flag_has_experiment).toBe(hasExperiment)
+        expect(capturedMessage.properties.feature_flag_has_experiment).toBe(hasExperiment)
       }
 
       await posthog.shutdown()
@@ -1219,7 +1219,7 @@ describe('getFeatureFlagResult', () => {
   })
 })
 
-describe('minimal $feature_flag_called events', () => {
+describe('minimal edp_feature_flag_called events', () => {
   const remoteFlagsResponse = (options: {
     minimalFlagCalledEvents?: boolean
     hasExperiment?: boolean
@@ -1262,7 +1262,7 @@ describe('minimal $feature_flag_called events', () => {
     return { posthog, captured }
   }
 
-  const findFlagCalledEvent = (captured: any[]): any => captured.find((m) => m.event === '$feature_flag_called')
+  const findFlagCalledEvent = (captured: any[]): any => captured.find((m) => m.event === 'edp_feature_flag_called')
 
   describe('remote evaluation', () => {
     it('sends exactly the allowlisted properties when gated and the flag has no experiment', async () => {
@@ -1280,32 +1280,32 @@ describe('minimal $feature_flag_called events', () => {
       expect(message).toBeDefined()
       expect(Object.keys(message.properties).sort()).toEqual(
         [
-          '$feature_flag',
-          '$feature_flag_response',
-          '$feature_flag_has_experiment',
-          '$feature_flag_id',
-          '$feature_flag_version',
-          '$feature_flag_reason',
-          '$feature_flag_request_id',
-          '$feature_flag_evaluated_at',
+          'feature_flag',
+          'feature_flag_response',
+          'feature_flag_has_experiment',
+          'feature_flag_id',
+          'feature_flag_version',
+          'feature_flag_reason',
+          'feature_flag_request_id',
+          'feature_flag_evaluated_at',
           'locally_evaluated',
-          '$groups',
-          '$lib',
-          '$lib_version',
-          '$is_server',
-          '$geoip_disable',
+          'groups',
+          'lib',
+          'lib_version',
+          'is_server',
+          'geoip_disable',
         ].sort()
       )
       expect(message.properties).toMatchObject({
-        $feature_flag: 'test-flag',
-        $feature_flag_response: true,
-        $feature_flag_has_experiment: false,
-        $feature_flag_id: 10,
-        $feature_flag_version: 3,
+        feature_flag: 'test-flag',
+        feature_flag_response: true,
+        feature_flag_has_experiment: false,
+        feature_flag_id: 10,
+        feature_flag_version: 3,
         locally_evaluated: false,
-        $groups: { organization: 'org-1' },
-        $is_server: true,
-        $geoip_disable: true,
+        groups: { organization: 'org-1' },
+        is_server: true,
+        geoip_disable: true,
       })
 
       await posthog.shutdown()
@@ -1321,8 +1321,8 @@ describe('minimal $feature_flag_called events', () => {
       )
       await posthog.register({
         ...campaignProperties,
-        $referring_domain: 'referring.example',
-        $referrer: 'https://referring.example/path?private=value',
+        referring_domain: 'referring.example',
+        referrer: 'https://referring.example/path?private=value',
         unrelated_superproperty: 'must-be-stripped',
       })
 
@@ -1333,9 +1333,9 @@ describe('minimal $feature_flag_called events', () => {
       expect(message).toBeDefined()
       expect(message.properties).toMatchObject({
         ...campaignProperties,
-        $referring_domain: 'referring.example',
+        referring_domain: 'referring.example',
       })
-      expect(message.properties).not.toHaveProperty('$referrer')
+      expect(message.properties).not.toHaveProperty('referrer')
       expect(message.properties).not.toHaveProperty('unrelated_superproperty')
 
       await posthog.shutdown()
@@ -1353,9 +1353,9 @@ describe('minimal $feature_flag_called events', () => {
 
       const message = findFlagCalledEvent(captured)
       expect(message.properties).toMatchObject({
-        $feature_flag_has_experiment: true,
+        feature_flag_has_experiment: true,
         super_prop: 'super_value',
-        '$feature/test-flag': true,
+        'feature/test-flag': true,
       })
 
       await posthog.shutdown()
@@ -1380,7 +1380,7 @@ describe('minimal $feature_flag_called events', () => {
       const message = findFlagCalledEvent(captured)
       expect(message.properties).toMatchObject({
         super_prop: 'super_value',
-        '$feature/test-flag': true,
+        'feature/test-flag': true,
       })
 
       await posthog.shutdown()
@@ -1394,15 +1394,15 @@ describe('minimal $feature_flag_called events', () => {
 
       await posthog.getFeatureFlagResult('test-flag', 'user-1')
       await waitForPromises()
-      expect(findFlagCalledEvent(captured).properties).not.toHaveProperty('$feature/test-flag')
+      expect(findFlagCalledEvent(captured).properties).not.toHaveProperty('feature/test-flag')
 
       mockedFetch.mockImplementation(apiImplementationV4(remoteFlagsResponse({ hasExperiment: false })))
       // Different distinct id so the flag-called dedup cache doesn't swallow the event
       await posthog.getFeatureFlagResult('test-flag', 'user-2')
       await waitForPromises()
 
-      const fullMessage = captured.filter((m) => m.event === '$feature_flag_called')[1]
-      expect(fullMessage.properties).toMatchObject({ '$feature/test-flag': true })
+      const fullMessage = captured.filter((m) => m.event === 'edp_feature_flag_called')[1]
+      expect(fullMessage.properties).toMatchObject({ 'feature/test-flag': true })
 
       await posthog.shutdown()
     })
@@ -1414,7 +1414,7 @@ describe('minimal $feature_flag_called events', () => {
       let beforeSendProperties: Record<string, any> | undefined
       const { posthog, captured } = createClient({
         before_send: (event) => {
-          if (event.event === '$feature_flag_called') {
+          if (event.event === 'edp_feature_flag_called') {
             beforeSendProperties = event.properties
             return { ...event, properties: { ...event.properties, super_prop: 're-added' } }
           }
@@ -1470,29 +1470,29 @@ describe('minimal $feature_flag_called events', () => {
       expect(message).toBeDefined()
       expect(Object.keys(message.properties).sort()).toEqual(
         [
-          '$feature_flag',
-          '$feature_flag_response',
-          '$feature_flag_has_experiment',
-          '$feature_flag_id',
-          '$feature_flag_reason',
-          '$feature_flag_evaluated_at',
+          'feature_flag',
+          'feature_flag_response',
+          'feature_flag_has_experiment',
+          'feature_flag_id',
+          'feature_flag_reason',
+          'feature_flag_evaluated_at',
           'locally_evaluated',
-          '$lib',
-          '$lib_version',
-          '$is_server',
-          '$geoip_disable',
+          'lib',
+          'lib_version',
+          'is_server',
+          'geoip_disable',
         ].sort()
       )
       expect(message.properties).toMatchObject({
-        $feature_flag: 'simple-flag',
-        $feature_flag_response: true,
-        $feature_flag_has_experiment: false,
-        $feature_flag_id: 55,
+        feature_flag: 'simple-flag',
+        feature_flag_response: true,
+        feature_flag_has_experiment: false,
+        feature_flag_id: 55,
         locally_evaluated: true,
-        $is_server: true,
+        is_server: true,
       })
       // Not part of the contract allowlist, so the locally-evaluated debug scalar is stripped
-      expect(message.properties).not.toHaveProperty('$feature_flag_definitions_loaded_at')
+      expect(message.properties).not.toHaveProperty('feature_flag_definitions_loaded_at')
 
       await posthog.shutdown()
     })
@@ -1508,8 +1508,8 @@ describe('minimal $feature_flag_called events', () => {
       const message = findFlagCalledEvent(captured)
       expect(message.properties).toMatchObject({
         super_prop: 'super_value',
-        '$feature/simple-flag': true,
-        $feature_flag_definitions_loaded_at: expect.any(Number),
+        'feature/simple-flag': true,
+        feature_flag_definitions_loaded_at: expect.any(Number),
       })
 
       await posthog.shutdown()
@@ -1547,9 +1547,9 @@ describe('minimal $feature_flag_called events', () => {
       await waitForPromises()
 
       const message = findFlagCalledEvent(captured)
-      expect(message.properties.$feature_flag_has_experiment).toBe(false)
+      expect(message.properties.feature_flag_has_experiment).toBe(false)
       expect(message.properties).not.toHaveProperty('super_prop')
-      expect(message.properties).not.toHaveProperty('$feature/simple-flag')
+      expect(message.properties).not.toHaveProperty('feature/simple-flag')
 
       await posthog.shutdown()
     })
@@ -1562,7 +1562,7 @@ describe('minimal $feature_flag_called events', () => {
 
       await posthog.getFeatureFlagResult('simple-flag', 'user-1')
       await waitForPromises()
-      expect(findFlagCalledEvent(captured).properties).not.toHaveProperty('$feature/simple-flag')
+      expect(findFlagCalledEvent(captured).properties).not.toHaveProperty('feature/simple-flag')
 
       mockedFetch.mockImplementation(apiImplementation({ localFlags: localFlagsPayload({ hasExperiment: false }) }))
       await posthog.reloadFeatureFlags()
@@ -1570,8 +1570,8 @@ describe('minimal $feature_flag_called events', () => {
       await posthog.getFeatureFlagResult('simple-flag', 'user-2')
       await waitForPromises()
 
-      const fullMessage = captured.filter((m) => m.event === '$feature_flag_called')[1]
-      expect(fullMessage.properties).toMatchObject({ '$feature/simple-flag': true })
+      const fullMessage = captured.filter((m) => m.event === 'edp_feature_flag_called')[1]
+      expect(fullMessage.properties).toMatchObject({ 'feature/simple-flag': true })
 
       await posthog.shutdown()
     })

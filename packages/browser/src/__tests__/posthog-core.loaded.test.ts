@@ -185,7 +185,7 @@ describe('loaded() with flags', () => {
                 expectedCall: true,
                 expectedArgs: { quotaLimited: ['recordings'], featureFlags: { 'test-flag': true } },
             },
-        ])('$name', async ({ response, expectedCall, expectedArgs }) => {
+        ])('name', async ({ response, expectedCall, expectedArgs }) => {
             instance._send_request = jest.fn(({ callback }) =>
                 callback?.({
                     statusCode: 200,

@@ -119,7 +119,7 @@ export interface PostHogOptions extends PostHogCoreOptions {
   sessionReplayConfig?: PostHogSessionReplayConfig
 
   /**
-   * If enabled, the session id ($session_id) will be persisted across app restarts.
+   * If enabled, the session id (session_id) will be persisted across app restarts.
    * This is an option for back compatibility, so your current data isn't skewed with the new version of the SDK.
    * If this is false, the session id will be always reset on app restart.
    *
@@ -136,14 +136,14 @@ export interface PostHogOptions extends PostHogCoreOptions {
    * Automatically include common device and app properties in feature flag evaluation.
    *
    * When enabled, the following properties are sent with every /flags request:
-   * - $app_version: App version
-   * - $app_build: App build number
-   * - $app_namespace: App bundle identifier / namespace
-   * - $os_name: Operating system name
-   * - $os_version: Operating system version
-   * - $device_type: Device type (Mobile, Desktop)
-   * - $lib: Name of the SDK library
-   * - $lib_version: Version of the SDK library
+   * - app_version: App version
+   * - app_build: App build number
+   * - app_namespace: App bundle identifier / namespace
+   * - os_name: Operating system name
+   * - os_version: Operating system version
+   * - device_type: Device type (Mobile, Desktop)
+   * - lib: Name of the SDK library
+   * - lib_version: Version of the SDK library
    *
    * This ensures feature flags that rely on these properties work correctly
    * without waiting for server-side processing of identify() calls.
@@ -393,7 +393,7 @@ export class PostHog extends PostHogCore {
         return {
           distinctId: this.getDistinctId() || undefined,
           sessionId: this.getSessionId() || undefined,
-          screenName: (this.sessionProps?.$screen_name as string | undefined) || undefined,
+          screenName: (this.sessionProps?.screen_name as string | undefined) || undefined,
           appState: this._currentAppState,
           activeFeatureFlags: flagKeys && flagKeys.length > 0 ? flagKeys : undefined,
         }
@@ -652,8 +652,8 @@ export class PostHog extends PostHogCore {
     return {
       ...super.getCommonEventProperties(),
       ...this._appProperties,
-      $screen_height: Dimensions.get('screen').height,
-      $screen_width: Dimensions.get('screen').width,
+      screen_height: Dimensions.get('screen').height,
+      screen_width: Dimensions.get('screen').width,
     }
   }
 
@@ -820,12 +820,12 @@ export class PostHog extends PostHogCore {
   private _setDefaultPersonPropertiesForFlags(reloadFeatureFlags = true): void {
     const defaultProps: Record<string, JsonType> = {}
     const relevantKeys = [
-      '$app_version',
-      '$app_build',
-      '$app_namespace',
-      '$os_name',
-      '$os_version',
-      '$device_type',
+      'app_version',
+      'app_build',
+      'app_namespace',
+      'os_name',
+      'os_version',
+      'device_type',
     ] as const
 
     relevantKeys.forEach((key) => {
@@ -836,11 +836,11 @@ export class PostHog extends PostHogCore {
     })
 
     const commonProps = this.getCommonEventProperties()
-    if (commonProps.$lib) {
-      defaultProps.$lib = commonProps.$lib
+    if (commonProps.lib) {
+      defaultProps.lib = commonProps.lib
     }
-    if (commonProps.$lib_version) {
-      defaultProps.$lib_version = commonProps.$lib_version
+    if (commonProps.lib_version) {
+      defaultProps.lib_version = commonProps.lib_version
     }
 
     if (Object.keys(defaultProps).length > 0) {
@@ -1475,14 +1475,14 @@ export class PostHog extends PostHogCore {
     await this._initPromise
     // Screen name is good to know for all other subsequent events
     this.registerForSession({
-      $screen_name: name,
+      screen_name: name,
     })
 
     return this.capture(
-      '$screen',
+      'screen',
       {
         ...properties,
-        $screen_name: name,
+        screen_name: name,
       },
       options
     )
@@ -1735,13 +1735,13 @@ export class PostHog extends PostHogCore {
    *
    * @example
    * ```js
-   * // Using $set and $set_once
+   * // Using edp_set and edp_set_once
    * posthog.identify('distinctID', {
-   *   $set: {
+   *   edp_set: {
    *     email: 'user@posthog.com',
    *     name: 'My Name'
    *   },
-   *   $set_once: {
+   *   edp_set_once: {
    *     date_of_first_log_in: '2024-03-01'
    *   }
    * })
@@ -1756,9 +1756,9 @@ export class PostHog extends PostHogCore {
   identify(distinctId?: string, properties?: PostHogEventProperties, options?: PostHogCaptureOptions): void {
     const previousDistinctId = this.getDistinctId()
 
-    // Extract $set_once before super.identify() because core deletes it from the properties object
-    const userProps = properties?.$set || properties
-    const userPropsOnce = properties?.$set_once
+    // Extract edp_set_once before super.identify() because core deletes it from the properties object
+    const userProps = properties?.edp_set || properties
+    const userPropsOnce = properties?.edp_set_once
 
     super.identify(distinctId, properties, options)
 
@@ -1789,8 +1789,8 @@ export class PostHog extends PostHogCore {
       // So we only need to set the properties here without triggering another reload.
       this.setPersonPropertiesForFlags(
         {
-          $set: propsToCache,
-          ...(Object.keys(propsOnceToCache).length > 0 ? { $set_once: propsOnceToCache } : {}),
+          edp_set: propsToCache,
+          ...(Object.keys(propsOnceToCache).length > 0 ? { edp_set_once: propsOnceToCache } : {}),
         },
         false
       )
@@ -1863,7 +1863,7 @@ export class PostHog extends PostHogCore {
     super.captureException(error, additionalProperties, resolvedHint)
 
     // On a fatal crash, persist the exception + recent logs before the app may die.
-    if (additionalProperties?.$exception_level === 'fatal') {
+    if (additionalProperties?.exception_level === 'fatal') {
       void this._eventsStorage.waitForPersist()
       void this._logsStorage.waitForPersist()
     }
@@ -1871,10 +1871,10 @@ export class PostHog extends PostHogCore {
 
   /**
    * Records a breadcrumb-style exception step. Steps accumulate in a rolling, byte-bounded buffer
-   * and are attached to every captured `$exception` as `$exception_steps`, giving the error tracking
+   * and are attached to every captured `edp_exception` as `exception_steps`, giving the error tracking
    * UI a timeline of recent activity before each error.
    *
-   * The `$timestamp` is captured at call time. The reserved keys `$message` and `$timestamp` are
+   * The `timestamp` is captured at call time. The reserved keys `message` and `timestamp` are
    * stripped from `properties` — the SDK sets the canonical values. This method never throws.
    *
    * @example
@@ -1957,10 +1957,10 @@ export class PostHog extends PostHogCore {
    *
    * @example
    * ```js
-   * // set properties with $set_once
+   * // set properties with edp_set_once
    * posthog.setPersonProperties(
-   *     { name: 'Max Hedgehog' },  // $set properties
-   *     { initial_url: '/blog' }   // $set_once properties
+   *     { name: 'Max Hedgehog' },  // edp_set properties
+   *     { initial_url: '/blog' }   // edp_set_once properties
    * )
    * ```
    *
@@ -2795,7 +2795,7 @@ export class PostHog extends PostHogCore {
   }
 
   /**
-   * Capture chokepoint for session-replay event triggers. Every captured event (capture, $screen,
+   * Capture chokepoint for session-replay event triggers. Every captured event (capture, screen,
    * autocapture, lifecycle) passes through here. Chains to super first so `before_send` still runs;
    * when a surviving event's name matches an armed trigger and the session hasn't activated yet, it
    * activates replay for the session and kicks a re-evaluation that starts native recording. The
@@ -2852,8 +2852,8 @@ export class PostHog extends PostHogCore {
   }
 
   private async captureAppLifecycleEvents(): Promise<void> {
-    const appBuild = this._appProperties.$app_build
-    const appVersion = this._appProperties.$app_version
+    const appBuild = this._appProperties.app_build
+    const appVersion = this._appProperties.app_version
 
     const isMemoryPersistence = this._persistence === 'memory'
 
@@ -2869,7 +2869,7 @@ export class PostHog extends PostHogCore {
         this._logger.warn(
           'PostHog could not track installation/update/open, as the build and version were not set. ' +
             'This can happen if some dependencies are not installed correctly, or if you have provided' +
-            'customAppProperties but not included $app_build or $app_version.'
+            'customAppProperties but not included app_build or app_version.'
         )
       }
       if (appBuild) {
@@ -2877,7 +2877,7 @@ export class PostHog extends PostHogCore {
           // new app install
           this.capture('Application Installed', properties)
         } else if (prevAppBuild !== appBuild) {
-          // $app_version and $app_build are already added in the common event properties
+          // app_version and app_build are already added in the common event properties
           // app updated
           this.capture('Application Updated', {
             ...maybeAdd('previous_version', prevAppVersion),
@@ -2909,8 +2909,8 @@ export class PostHog extends PostHogCore {
   }
 
   private async persistAppVersion(): Promise<void> {
-    const appBuild = this._appProperties.$app_build
-    const appVersion = this._appProperties.$app_version
+    const appBuild = this._appProperties.app_build
+    const appVersion = this._appProperties.app_version
     this.setPersistedProperty(PostHogPersistedProperty.InstalledAppBuild, appBuild)
     this.setPersistedProperty(PostHogPersistedProperty.InstalledAppVersion, appVersion)
   }

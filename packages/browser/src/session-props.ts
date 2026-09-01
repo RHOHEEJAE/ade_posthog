@@ -92,8 +92,8 @@ export class SessionPropsManager {
             return getPersonPropsFromInfo(p, this._instance.config.disable_capture_url_hashes)
         } else {
             return {
-                $referring_domain: p.referringDomain,
-                $pathname: p.initialPathName,
+                referring_domain: p.referringDomain,
+                pathname: p.initialPathName,
                 utm_source: p.utm_source,
                 utm_campaign: p.utm_campaign,
                 utm_medium: p.utm_medium,
@@ -107,8 +107,8 @@ export class SessionPropsManager {
         // it's the same props, but don't include null for unset properties, and add a prefix
         const p: Record<string, any> = {}
         each(stripEmptyProperties(this.getSetOnceProps()), (v, k) => {
-            if (k === '$current_url') {
-                // $session_entry_current_url would be a weird name, call it $session_entry_url instead
+            if (k === 'current_url') {
+                // session_entry_current_url would be a weird name, call it session_entry_url instead
                 k = 'url'
             }
             p[`$session_entry_${stripLeadingDollar(k)}`] = v

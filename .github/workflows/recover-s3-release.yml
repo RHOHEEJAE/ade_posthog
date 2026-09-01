@@ -141,8 +141,8 @@ jobs:
                           echo '::error::Publishing to npm requires a version-bump commit.'
                           exit 1
                       fi
-                      if [ "$TARGET_VERSION" != "$current_version" ]; then
-                          echo "::error::Only the current posthog-js version on main ($current_version) may be published to npm."
+                      if [ "$TARGET_VERSION" != "current_version" ]; then
+                          echo "::error::Only the current posthog-js version on main (current_version) may be published to npm."
                           exit 1
                       fi
                       if [ -n "$tag_sha" ]; then

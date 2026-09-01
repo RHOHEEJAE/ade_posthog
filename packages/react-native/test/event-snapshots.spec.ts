@@ -35,8 +35,8 @@ const normalizeEvent = (event: WireEvent): WireEvent => {
   expect(event.uuid).not.toBe('')
   expect(typeof event.timestamp).toBe('string')
   expect(event.timestamp).toBe(fixedTime.toISOString())
-  expect(typeof event.properties.$session_id).toBe('string')
-  expect(event.properties.$session_id).not.toBe('')
+  expect(typeof event.properties.session_id).toBe('string')
+  expect(event.properties.session_id).not.toBe('')
 
   return {
     ...event,
@@ -44,8 +44,8 @@ const normalizeEvent = (event: WireEvent): WireEvent => {
     timestamp: '<event-timestamp>',
     properties: {
       ...event.properties,
-      $lib_version: normalizeSdkVersion(event.properties.$lib_version),
-      $session_id: '<session-id>',
+      lib_version: normalizeSdkVersion(event.properties.lib_version),
+      session_id: '<session-id>',
     },
   }
 }
@@ -72,18 +72,18 @@ const createClient = (options: ConstructorParameters<typeof PostHog>[1] = {}): P
     capturePushNotificationSubscriptions: false,
     capturePushNotificationOpened: false,
     customAppProperties: {
-      $app_build: '42',
-      $app_name: 'Snapshot App',
-      $app_namespace: 'com.posthog.snapshot',
-      $app_version: '1.2.3',
-      $device_manufacturer: 'PostHog',
-      $device_name: 'Snapshot Phone',
-      $device_type: 'Mobile',
+      app_build: '42',
+      app_name: 'Snapshot App',
+      app_namespace: 'com.posthog.snapshot',
+      app_version: '1.2.3',
+      device_manufacturer: 'PostHog',
+      device_name: 'Snapshot Phone',
+      device_type: 'Mobile',
       $is_emulator: false,
       $locale: 'en-US',
-      $os_name: 'iOS',
-      $os_version: '17.0',
-      $timezone: 'UTC',
+      os_name: 'iOS',
+      os_version: '17.0',
+      timezone: 'UTC',
     },
     ...options,
   })
@@ -139,7 +139,7 @@ describe('PostHog React Native event and request snapshots', () => {
     })
     posthog.identify('identified-snapshot-id', {
       email: 'snapshot@example.com',
-      $set_once: { first_seen_source: 'mobile' },
+      edp_set_once: { first_seen_source: 'mobile' },
     })
     posthog.group('company', 'posthog', { name: 'PostHog', plan: 'enterprise' })
     expect(posthog.getFeatureFlag('checkout-flow')).toBe('treatment')
@@ -154,7 +154,7 @@ describe('PostHog React Native event and request snapshots', () => {
     expect(request.body.sent_at).toBe(fixedTime.toISOString())
     expect(request.body.batch).toHaveLength(5)
     expect(request.body.batch[0].properties).not.toHaveProperty('undefined_fixture')
-    expect(new Set(request.body.batch.map((event: WireEvent) => event.properties.$session_id))).toHaveProperty(
+    expect(new Set(request.body.batch.map((event: WireEvent) => event.properties.session_id))).toHaveProperty(
       'size',
       1
     )
@@ -197,17 +197,17 @@ describe('PostHog React Native event and request snapshots', () => {
     })
     await posthog.ready()
 
-    posthog.register({ $groups: { company: 'posthog' } })
+    posthog.register({ groups: { company: 'posthog' } })
     posthog.setPersonPropertiesForFlags({ email: 'flags@example.com', plan: 'pro' }, false)
     posthog.setGroupPropertiesForFlags({ company: { name: 'PostHog', employees: 1000 } }, false)
     await posthog.reloadFeatureFlagsAsync()
 
     const request = parsedCall(fetchMock, '/flags/')
-    expect(typeof request.body.$anon_distinct_id).toBe('string')
-    expect(request.body.$anon_distinct_id).not.toBe('')
-    expect(request.body.$anon_distinct_id).not.toBe(request.body.distinct_id)
-    request.body.$anon_distinct_id = '<anonymous-id>'
-    request.body.person_properties.$lib_version = normalizeSdkVersion(request.body.person_properties.$lib_version)
+    expect(typeof request.body.anon_distinct_id).toBe('string')
+    expect(request.body.anon_distinct_id).not.toBe('')
+    expect(request.body.anon_distinct_id).not.toBe(request.body.distinct_id)
+    request.body.anon_distinct_id = '<anonymous-id>'
+    request.body.person_properties.lib_version = normalizeSdkVersion(request.body.person_properties.lib_version)
 
     const headers = { ...request.options.headers }
     expect(headers['User-Agent']).toMatch(/^posthog-react-native\/.+/)

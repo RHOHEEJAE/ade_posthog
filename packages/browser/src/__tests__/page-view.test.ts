@@ -64,17 +64,17 @@ describe('PageView ID manager', () => {
             instance.scrollManager['_updateScrollData']()
 
             const secondPageView = pageViewIdManager.doPageView(secondTimestamp, pageviewId2)
-            expect(secondPageView.$prev_pageview_last_scroll).toEqual(2000)
-            expect(secondPageView.$prev_pageview_last_scroll_percentage).toBeCloseTo(2 / 3)
-            expect(secondPageView.$prev_pageview_max_scroll).toEqual(2000)
-            expect(secondPageView.$prev_pageview_max_scroll_percentage).toBeCloseTo(2 / 3)
-            expect(secondPageView.$prev_pageview_last_content).toEqual(3000)
-            expect(secondPageView.$prev_pageview_last_content_percentage).toBeCloseTo(3 / 4)
-            expect(secondPageView.$prev_pageview_max_content).toEqual(3000)
-            expect(secondPageView.$prev_pageview_max_content_percentage).toBeCloseTo(3 / 4)
-            expect(secondPageView.$prev_pageview_duration).toEqual(duration)
-            expect(secondPageView.$prev_pageview_id).toEqual(pageviewId1)
-            expect(secondPageView.$pageview_id).toEqual(pageviewId2)
+            expect(secondPageView.prev_pageview_last_scroll).toEqual(2000)
+            expect(secondPageView.prev_pageview_last_scroll_percentage).toBeCloseTo(2 / 3)
+            expect(secondPageView.prev_pageview_max_scroll).toEqual(2000)
+            expect(secondPageView.prev_pageview_max_scroll_percentage).toBeCloseTo(2 / 3)
+            expect(secondPageView.prev_pageview_last_content).toEqual(3000)
+            expect(secondPageView.prev_pageview_last_content_percentage).toBeCloseTo(3 / 4)
+            expect(secondPageView.prev_pageview_max_content).toEqual(3000)
+            expect(secondPageView.prev_pageview_max_content_percentage).toBeCloseTo(3 / 4)
+            expect(secondPageView.prev_pageview_duration).toEqual(duration)
+            expect(secondPageView.prev_pageview_id).toEqual(pageviewId1)
+            expect(secondPageView.pageview_id).toEqual(pageviewId2)
         })
 
         it('includes scroll position properties for a short page', () => {
@@ -97,34 +97,34 @@ describe('PageView ID manager', () => {
             instance.scrollManager['_updateScrollData']()
 
             const secondPageView = pageViewIdManager.doPageView(secondTimestamp, pageviewId2)
-            expect(secondPageView.$prev_pageview_last_scroll).toEqual(0)
-            expect(secondPageView.$prev_pageview_last_scroll_percentage).toEqual(1)
-            expect(secondPageView.$prev_pageview_max_scroll).toEqual(0)
-            expect(secondPageView.$prev_pageview_max_scroll_percentage).toEqual(1)
-            expect(secondPageView.$prev_pageview_last_content).toEqual(1000)
-            expect(secondPageView.$prev_pageview_last_content_percentage).toEqual(1)
-            expect(secondPageView.$prev_pageview_max_content).toEqual(1000)
-            expect(secondPageView.$prev_pageview_max_content_percentage).toEqual(1)
-            expect(secondPageView.$prev_pageview_duration).toEqual(duration)
-            expect(secondPageView.$prev_pageview_id).toEqual(pageviewId1)
-            expect(secondPageView.$pageview_id).toEqual(pageviewId2)
+            expect(secondPageView.prev_pageview_last_scroll).toEqual(0)
+            expect(secondPageView.prev_pageview_last_scroll_percentage).toEqual(1)
+            expect(secondPageView.prev_pageview_max_scroll).toEqual(0)
+            expect(secondPageView.prev_pageview_max_scroll_percentage).toEqual(1)
+            expect(secondPageView.prev_pageview_last_content).toEqual(1000)
+            expect(secondPageView.prev_pageview_last_content_percentage).toEqual(1)
+            expect(secondPageView.prev_pageview_max_content).toEqual(1000)
+            expect(secondPageView.prev_pageview_max_content_percentage).toEqual(1)
+            expect(secondPageView.prev_pageview_duration).toEqual(duration)
+            expect(secondPageView.prev_pageview_id).toEqual(pageviewId1)
+            expect(secondPageView.pageview_id).toEqual(pageviewId2)
         })
 
         it('can handle scroll updates before doPageView is called', () => {
             instance.scrollManager['_updateScrollData']()
             const firstPageView = pageViewIdManager.doPageView(firstTimestamp, pageviewId1)
-            expect(firstPageView.$prev_pageview_last_scroll).toBeUndefined()
+            expect(firstPageView.prev_pageview_last_scroll).toBeUndefined()
 
             const secondPageView = pageViewIdManager.doPageView(secondTimestamp, pageviewId2)
-            expect(secondPageView.$prev_pageview_last_scroll).toBeDefined()
+            expect(secondPageView.prev_pageview_last_scroll).toBeDefined()
         })
 
         it('should include the pathname', () => {
             instance.scrollManager['_updateScrollData']()
             const firstPageView = pageViewIdManager.doPageView(firstTimestamp, pageviewId1)
-            expect(firstPageView.$prev_pageview_pathname).toBeUndefined()
+            expect(firstPageView.prev_pageview_pathname).toBeUndefined()
             const secondPageView = pageViewIdManager.doPageView(secondTimestamp, pageviewId2)
-            expect(secondPageView.$prev_pageview_pathname).toEqual('/pathname')
+            expect(secondPageView.prev_pageview_pathname).toEqual('/pathname')
         })
     })
 
@@ -220,7 +220,7 @@ describe('PageView ID manager', () => {
             expect(pageViewManager._currentPageview).toBeDefined()
         })
 
-        it('should not include $prev_pageview_duration after session rotation', () => {
+        it('should not include prev_pageview_duration after session rotation', () => {
             // Setup: Create pageview in session 1
             const session1Time = new Date('2024-01-01T10:00:00')
             pageViewManager.doPageView(session1Time, 'pv-1')
@@ -239,10 +239,10 @@ describe('PageView ID manager', () => {
             })
             const properties = pageViewManager.doPageView(session2Time, 'pv-2')
 
-            // Assert: Should NOT have $prev_pageview_duration (would be 35 min cross-session)
-            expect(properties.$prev_pageview_duration).toBeUndefined()
-            expect(properties.$prev_pageview_pathname).toBeUndefined()
-            expect(properties.$pageview_id).toBe('pv-2')
+            // Assert: Should NOT have prev_pageview_duration (would be 35 min cross-session)
+            expect(properties.prev_pageview_duration).toBeUndefined()
+            expect(properties.prev_pageview_pathname).toBeUndefined()
+            expect(properties.pageview_id).toBe('pv-2')
         })
 
         it('should clear state when this tab adopts a sibling tab session rotation', () => {
@@ -290,7 +290,7 @@ describe('PageView ID manager', () => {
 
             // PageViewManager should still work for pageviews
             const props = pageViewManager.doPageView(new Date(), 'pv-1')
-            expect(props.$pageview_id).toBe('pv-1')
+            expect(props.pageview_id).toBe('pv-1')
 
             // destroy should not throw either
             expect(() => {

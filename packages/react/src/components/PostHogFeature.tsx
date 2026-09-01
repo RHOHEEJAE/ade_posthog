@@ -59,12 +59,12 @@ type CaptureFeatureOptions = {
 }
 
 function captureFeatureEvent(
-    event: '$feature_interaction' | '$feature_view',
+    event: 'feature_interaction' | 'feature_view',
     { flag, posthog, flagVariant }: CaptureFeatureOptions
 ) {
     const properties: Record<string, any> = {
         feature_flag: flag,
-        $set: { [`${event}/${flag}`]: flagVariant ?? true },
+        edp_set: { [`${event}/${flag}`]: flagVariant ?? true },
     }
     if (typeof flagVariant === 'string') {
         properties.feature_flag_variant = flagVariant
@@ -73,9 +73,9 @@ function captureFeatureEvent(
 }
 
 export function captureFeatureInteraction(options: CaptureFeatureOptions) {
-    captureFeatureEvent('$feature_interaction', options)
+    captureFeatureEvent('feature_interaction', options)
 }
 
 export function captureFeatureView(options: CaptureFeatureOptions) {
-    captureFeatureEvent('$feature_view', options)
+    captureFeatureEvent('feature_view', options)
 }

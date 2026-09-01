@@ -7,7 +7,7 @@ export default defineSchema({
    * The cron action upserts a single row; clients read it for local evaluation.
    *
    * `data` is a JSON-stringified `FlagDefinitions` object to bypass Convex's restriction on
-   * field names beginning with `$` (flag conditions reference properties like `$device_id`).
+   * field names beginning with `$` (flag conditions reference properties like `device_id`).
    */
   flagDefinitions: defineTable({
     data: v.string(),

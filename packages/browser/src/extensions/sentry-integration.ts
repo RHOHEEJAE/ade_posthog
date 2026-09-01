@@ -1,5 +1,5 @@
 /**
- * Integrate Sentry with PostHog. This will add a direct link to the person in Sentry, and an $exception event in PostHog
+ * Integrate Sentry with PostHog. This will add a direct link to the person in Sentry, and an edp_exception event in PostHog
  *
  * ### Usage
  *
@@ -51,12 +51,12 @@ interface _SentryIntegrationClass {
 }
 
 interface SentryExceptionProperties {
-    $sentry_event_id: any
-    $sentry_exception: any
-    $sentry_exception_message: any
-    $sentry_exception_type: any
-    $sentry_tags: any
-    $sentry_url?: string
+    sentry_event_id: any
+    sentry_exception: any
+    sentry_exception_message: any
+    sentry_exception_type: any
+    sentry_tags: any
+    sentry_url?: string
 }
 
 export type SentryIntegrationOptions = {
@@ -113,26 +113,26 @@ export function createEventProcessor(
         const data: SentryExceptionProperties & {
             // two properties added to match any exception auto-capture
             // added manually to avoid any dependency on the lazily loaded content
-            $exception_message: any
-            $exception_type: any
-            $exception_list: any
-            $exception_level: SeverityLevel
+            exception_message: any
+            exception_type: any
+            exception_list: any
+            exception_level: SeverityLevel
         } = {
             // PostHog Exception Properties,
-            $exception_message: exceptions[0]?.value || event.message,
-            $exception_type: exceptions[0]?.type,
-            $exception_level: event.level,
-            $exception_list: exceptionList,
+            exception_message: exceptions[0]?.value || event.message,
+            exception_type: exceptions[0]?.type,
+            exception_level: event.level,
+            exception_list: exceptionList,
             // Sentry Exception Properties
-            $sentry_event_id: event.event_id,
-            $sentry_exception: event.exception,
-            $sentry_exception_message: exceptions[0]?.value || event.message,
-            $sentry_exception_type: exceptions[0]?.type,
-            $sentry_tags: event.tags,
+            sentry_event_id: event.event_id,
+            sentry_exception: event.exception,
+            sentry_exception_message: exceptions[0]?.value || event.message,
+            sentry_exception_type: exceptions[0]?.type,
+            sentry_tags: event.tags,
         }
 
         if (organization && projectId) {
-            data['$sentry_url'] =
+            data['sentry_url'] =
                 (prefix || 'https://sentry.io/organizations/') +
                 organization +
                 '/issues/?project=' +

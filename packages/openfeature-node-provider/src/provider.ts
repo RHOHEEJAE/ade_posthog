@@ -33,7 +33,7 @@ export interface PostHogServerProviderOptions {
    */
   defaultDistinctId?: string
   /**
-   * Forwarded to `getFeatureFlagResult` to control `$feature_flag_called`
+   * Forwarded to `getFeatureFlagResult` to control `edp_feature_flag_called`
    * capture. Defaults to `true` so PostHog flag analytics (and experiments)
    * keep working.
    */

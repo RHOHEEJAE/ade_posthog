@@ -44,16 +44,16 @@ const OPTION_SENTINELS: ReadonlyArray<{
   optionKey: keyof V1EventOptions
   coerce: (value: JsonType) => boolean | string | undefined
 }> = [
-  { property: '$cookieless_mode', optionKey: 'cookieless_mode', coerce: coerceBool },
+  { property: 'cookieless_mode', optionKey: 'cookieless_mode', coerce: coerceBool },
   { property: '$ignore_sent_at', optionKey: 'disable_skew_correction', coerce: coerceBool },
-  { property: '$process_person_profile', optionKey: 'process_person_profile', coerce: coerceBool },
-  { property: '$product_tour_id', optionKey: 'product_tour_id', coerce: coerceString },
+  { property: 'process_person_profile', optionKey: 'process_person_profile', coerce: coerceBool },
+  { property: 'product_tour_id', optionKey: 'product_tour_id', coerce: coerceString },
 ]
 
 /** Sentinel property -> top-level string field (string-only, non-string dropped). */
 const TOPLEVEL_SENTINELS: ReadonlyArray<{ property: string; field: 'session_id' | 'window_id' }> = [
-  { property: '$session_id', field: 'session_id' },
-  { property: '$window_id', field: 'window_id' },
+  { property: 'session_id', field: 'session_id' },
+  { property: 'window_id', field: 'window_id' },
 ]
 
 function isRecord(value: JsonType | undefined): value is PostHogEventProperties {
@@ -87,7 +87,7 @@ function toRfc3339(timestamp: unknown): string {
 }
 
 /**
- * Relocate a top-level `$set`/`$set_once` value into `properties`. v1 has no
+ * Relocate a top-level `edp_set`/`edp_set_once` value into `properties`. v1 has no
  * top-level form; the server reads them from inside `properties`. An existing
  * `properties` value wins on collision.
  */
@@ -103,9 +103,9 @@ function relocateInto(properties: PostHogEventProperties, key: string, value: Js
  * The input message is never mutated (events may be retried or handed to
  * callbacks): a fresh `properties` map is built. Sentinel properties are lifted
  * out of `properties` (deleting the copy) into the typed `options` object and
- * the top-level `session_id`/`window_id` fields; `$lib`/`$lib_version` are
+ * the top-level `session_id`/`window_id` fields; `lib`/`lib_version` are
  * stripped (the server injects them from `PostHog-Sdk-Info`); top-level
- * `$set`/`$set_once` are relocated into `properties`.
+ * `edp_set`/`edp_set_once` are relocated into `properties`.
  */
 export function buildV1Event(message: PostHogEventProperties): V1Event {
   const sourceProperties = isRecord(message.properties) ? message.properties : {}
@@ -134,11 +134,11 @@ export function buildV1Event(message: PostHogEventProperties): V1Event {
     }
   }
 
-  delete properties.$lib
-  delete properties.$lib_version
+  delete properties.lib
+  delete properties.lib_version
 
-  relocateInto(properties, '$set', message.$set)
-  relocateInto(properties, '$set_once', message.$set_once)
+  relocateInto(properties, 'edp_set', message.edp_set)
+  relocateInto(properties, 'edp_set_once', message.edp_set_once)
 
   return {
     event: String(message.event ?? ''),

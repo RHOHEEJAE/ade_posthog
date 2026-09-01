@@ -32,7 +32,7 @@ function normalizeSnapshot(value: unknown, key?: string): unknown {
     if (normalizedKey && ['api_key', 'token'].includes(normalizedKey)) {
       return '<redacted>'
     }
-    if (normalizedKey === '$lib_version') {
+    if (normalizedKey === 'lib_version') {
       return '<sdk-version>'
     }
     if (normalizedKey && ['posthog-sdk-info', 'user-agent'].includes(normalizedKey)) {
@@ -100,17 +100,17 @@ describe('server wire snapshots', () => {
         distinct_id: 'person-1',
         uuid: FIXED_EVENT_UUID,
         timestamp: '2025-02-03T05:05:06.123456+01:00',
-        $set: { plan: 'pro' },
-        $set_once: { first_seen: '2025-02-03' },
+        edp_set: { plan: 'pro' },
+        edp_set_once: { first_seen: '2025-02-03' },
         properties: {
-          $cookieless_mode: '1',
+          cookieless_mode: '1',
           $ignore_sent_at: 'false',
-          $lib: 'posthog-node',
-          $lib_version: '1.2.3',
-          $process_person_profile: 0,
-          $product_tour_id: 'tour-7',
-          $session_id: 'session-7',
-          $window_id: 'window-7',
+          lib: 'posthog-node',
+          lib_version: '1.2.3',
+          process_person_profile: 0,
+          product_tour_id: 'tour-7',
+          session_id: 'session-7',
+          window_id: 'window-7',
           nested: { z: 1, a: ['second', 'first'] },
         },
       },
@@ -120,12 +120,12 @@ describe('server wire snapshots', () => {
         uuid: '0194cc39-1f25-7000-8000-000000000003',
         timestamp: '2025-02-03T04:05:07.000Z',
         properties: {
-          $cookieless_mode: 'maybe',
+          cookieless_mode: 'maybe',
           $ignore_sent_at: null,
-          $process_person_profile: [],
-          $product_tour_id: 7,
-          $session_id: 123,
-          $window_id: false,
+          process_person_profile: [],
+          product_tour_id: 7,
+          session_id: 123,
+          window_id: false,
           ordinary: true,
         },
       },
@@ -201,7 +201,7 @@ describe('server wire snapshots', () => {
     await posthog.getAllFlagsAndPayloads('person-flags', {
       groups: { company: 'company-7', project: 'project-9' },
       personProperties: {
-        $device_id: 'device-3',
+        device_id: 'device-3',
         email: 'person@example.test',
         plan: 'enterprise',
       },

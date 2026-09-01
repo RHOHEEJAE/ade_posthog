@@ -513,7 +513,7 @@ describe('PostHogAzureOpenAI - Embeddings test suite', () => {
     expect(mockPostHogClient.capture).toHaveBeenCalledTimes(0)
   })
 
-  test('anonymous user - $process_person_profile set to false', async () => {
+  test('anonymous user - process_person_profile set to false', async () => {
     const mockAzureChatResponse = {
       id: 'test-response-id',
       model: 'gpt-4',
@@ -552,10 +552,10 @@ describe('PostHogAzureOpenAI - Embeddings test suite', () => {
     const { distinctId, properties } = captureArgs[0]
 
     expect(distinctId).toBe('trace-123')
-    expect(properties['$process_person_profile']).toBe(false)
+    expect(properties['process_person_profile']).toBe(false)
   })
 
-  test('identified user - $process_person_profile not set', async () => {
+  test('identified user - process_person_profile not set', async () => {
     const mockAzureChatResponse = {
       id: 'test-response-id',
       model: 'gpt-4',
@@ -595,7 +595,7 @@ describe('PostHogAzureOpenAI - Embeddings test suite', () => {
     const { distinctId, properties } = captureArgs[0]
 
     expect(distinctId).toBe('user-456')
-    expect(properties['$process_person_profile']).toBeUndefined()
+    expect(properties['process_person_profile']).toBeUndefined()
   })
 
   test('system prompt handling', async () => {
@@ -791,8 +791,8 @@ describe('PostHogAzureOpenAI - Embeddings test suite', () => {
       const { properties } = captureArgs[0]
 
       // Should have a generated trace ID
-      expect(typeof properties['$ai_trace_id']).toBe('string')
-      expect(properties['$ai_trace_id']).toHaveLength(36) // UUID v4 length
+      expect(typeof properties['ai_trace_id']).toBe('string')
+      expect(properties['ai_trace_id']).toHaveLength(36) // UUID v4 length
     })
 
     test('embeddings with custom trace ID', async () => {
@@ -809,7 +809,7 @@ describe('PostHogAzureOpenAI - Embeddings test suite', () => {
       const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
       const { properties } = captureArgs[0]
 
-      expect(properties['$ai_trace_id']).toBe(customTraceId)
+      expect(properties['ai_trace_id']).toBe(customTraceId)
     })
 
     test('embeddings with groups', async () => {
@@ -962,7 +962,7 @@ describe('PostHogAzureOpenAI - streaming error safety', () => {
     },
   ]
 
-  test.each(streamErrorCases)('$name stream error is not rethrown unhandled', async (streamErrorCase) => {
+  test.each(streamErrorCases)('name stream error is not rethrown unhandled', async (streamErrorCase) => {
     const streamError = new Error('provider error injected into SSE stream')
     const createErroringIterator = (): { [Symbol.asyncIterator](): AsyncIterator<unknown> } => ({
       async *[Symbol.asyncIterator]() {

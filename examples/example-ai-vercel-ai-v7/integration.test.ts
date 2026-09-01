@@ -87,7 +87,7 @@ test('AI SDK v7 exports enriched spans through the public PostHog processor', as
                     environment: 'test',
                     'posthog.distinct_id': 'spoofed-user',
                     $ai_session_id: 'spoofed-session',
-                    $groups: 'spoofed-groups',
+                    groups: 'spoofed-groups',
                 },
             },
             telemetry: {
@@ -117,7 +117,7 @@ test('AI SDK v7 exports enriched spans through the public PostHog processor', as
             'test-user',
             '$ai_session_id',
             'test-session',
-            '$groups',
+            'groups',
             'test-company',
             '$ai_trace_name',
             'test-trace',

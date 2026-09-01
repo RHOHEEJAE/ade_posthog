@@ -29,15 +29,15 @@ describe('Capture Analytics V1', () => {
                 token: 'ph_test',
                 distinct_id: 'person-1',
                 plan: 'pro',
-                $device_id: 'device-1',
-                $groups: { company: 'posthog' },
-                $unset: ['old_property'],
-                $set: { email: 'person@example.com' },
-                $set_once: { source: 'docs' },
-                $session_id: 'session-1',
-                $window_id: 'window-1',
-                $lib: 'web',
-                $lib_version: '1.2.3',
+                device_id: 'device-1',
+                groups: { company: 'posthog' },
+                unset: ['old_property'],
+                edp_set: { email: 'person@example.com' },
+                edp_set_once: { source: 'docs' },
+                session_id: 'session-1',
+                window_id: 'window-1',
+                lib: 'web',
+                lib_version: '1.2.3',
             },
         })
         const snapshot = structuredClone(input)
@@ -52,22 +52,22 @@ describe('Capture Analytics V1', () => {
             options: {},
             properties: {
                 plan: 'pro',
-                $device_id: 'device-1',
-                $groups: { company: 'posthog' },
-                $unset: ['old_property'],
-                $set: { email: 'person@example.com' },
-                $set_once: { source: 'docs' },
+                device_id: 'device-1',
+                groups: { company: 'posthog' },
+                unset: ['old_property'],
+                edp_set: { email: 'person@example.com' },
+                edp_set_once: { source: 'docs' },
             },
         })
         expect(input).toEqual(snapshot)
     })
 
     it.each([
-        ['$cookieless_mode', true, 'cookieless_mode', true],
-        ['$cookieless_mode', ' 0 ', 'cookieless_mode', false],
+        ['cookieless_mode', true, 'cookieless_mode', true],
+        ['cookieless_mode', ' 0 ', 'cookieless_mode', false],
         ['$ignore_sent_at', 1, 'disable_skew_correction', true],
-        ['$process_person_profile', 'FALSE', 'process_person_profile', false],
-        ['$product_tour_id', 'tour-1', 'product_tour_id', 'tour-1'],
+        ['process_person_profile', 'FALSE', 'process_person_profile', false],
+        ['product_tour_id', 'tour-1', 'product_tour_id', 'tour-1'],
     ] as const)('promotes %s into typed options', (property, value, option, expected) => {
         const event = buildCaptureV1Event(message({ properties: { [property]: value, keep: true } }))
 
@@ -78,7 +78,7 @@ describe('Capture Analytics V1', () => {
     it('strips malformed controls without rejecting the event', () => {
         expect(
             buildCaptureV1Event(
-                message({ properties: { $cookieless_mode: 'maybe', $product_tour_id: 42, keep: true } })
+                message({ properties: { cookieless_mode: 'maybe', product_tour_id: 42, keep: true } })
             )
         ).toMatchObject({ options: {}, properties: { keep: true } })
     })

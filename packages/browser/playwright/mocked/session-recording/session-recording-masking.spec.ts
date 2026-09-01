@@ -35,18 +35,18 @@ async function interactWithThePage(page: Page) {
     await page.waitForTimeout(2500)
     // no new events
     const events = await page.capturedEvents()
-    const snapshotEvents = events.filter((e) => e.event === '$snapshot')
+    const snapshotEvents = events.filter((e) => e.event === 'edp_snapshot')
     expect(snapshotEvents.length).toBeGreaterThan(0)
     return snapshotEvents
 }
 
 function assertTheConfigIsAsExpected(snapshotEvents: CaptureResult[], expectedMasking: Record<string, any>) {
     // first we can check that remote config is received and used as expected
-    const allRRWebSnapshots = snapshotEvents.flatMap((e) => e.properties['$snapshot_data'])
+    const allRRWebSnapshots = snapshotEvents.flatMap((e) => e.properties['snapshot_data'])
     const customSnapshots = allRRWebSnapshots.filter((s) => s.type === 5)
 
-    const remoteConfigReceived = customSnapshots.filter((s) => s.data.tag === '$remote_config_received')[0].data.payload
-    const sessionOptions = customSnapshots.filter((s) => s.data.tag === '$session_options')[0].data.payload
+    const remoteConfigReceived = customSnapshots.filter((s) => s.data.tag === 'edp_remote_config_received')[0].data.payload
+    const sessionOptions = customSnapshots.filter((s) => s.data.tag === 'session_options')[0].data.payload
 
     expect(remoteConfigReceived.masking.maskAllInputs).toBe(expectedMasking.maskAllInputs)
     expect(remoteConfigReceived.masking.maskTextSelector).toBe(expectedMasking.maskTextSelector)
@@ -160,8 +160,8 @@ test.describe('Session recording - masking', () => {
         const getEventBytes = async () =>
             JSON.stringify(
                 (await page.capturedEvents())
-                    .filter((event) => event.event === '$snapshot')
-                    .flatMap((event) => event.properties['$snapshot_data'])
+                    .filter((event) => event.event === 'edp_snapshot')
+                    .flatMap((event) => event.properties['snapshot_data'])
             )
         await expect.poll(getEventBytes).toContain('ALLOWED_DYNAMIC_PRODUCT')
         const eventBytes = await getEventBytes()
@@ -207,7 +207,7 @@ test.describe('Session recording - masking', () => {
             maskTextSelector: remoteMaskingTextSelector,
         })
 
-        const snapshotData = snapshotEvents.map((e) => JSON.stringify(e.properties?.['$snapshot_data']))
+        const snapshotData = snapshotEvents.map((e) => JSON.stringify(e.properties?.['snapshot_data']))
 
         const snapshotsThatIncludeMaskedContent = snapshotData.filter((data) => {
             const includesMaskedInput = !!data?.includes('hello posthog!')
@@ -237,7 +237,7 @@ test.describe('Session recording - masking', () => {
             maskTextSelector: remoteMaskingTextSelector,
         })
 
-        const snapshotData = snapshotEvents.map((e) => JSON.stringify(e.properties?.['$snapshot_data']))
+        const snapshotData = snapshotEvents.map((e) => JSON.stringify(e.properties?.['snapshot_data']))
 
         const snapshotsThatIncludeMaskedContent = snapshotData.filter((data) => {
             const includesMaskedInput = !!data?.includes('hello posthog!')

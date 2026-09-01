@@ -11,9 +11,9 @@ import type { McpEvent } from '../types'
  * actually handed to posthog-node. These tests spy on a fake client instead.
  *
  * Regression guard for https://github.com/PostHog/posthog-js/issues/3888:
- * posthog-node's `prepareEventMessage` overwrites the outgoing `$groups`
+ * posthog-node's `prepareEventMessage` overwrites the outgoing `groups`
  * property with the top-level `groups` field, so the group must be forwarded as
- * a first-class `groups` field — not only inside `properties.$groups`.
+ * a first-class `groups` field — not only inside `properties.groups`.
  */
 describe('McpEventSink groups forwarding', () => {
   function spyClient(): { posthog: PostHog; calls: EventMessage[] } {
@@ -44,7 +44,7 @@ describe('McpEventSink groups forwarding', () => {
     expect(calls[0].event).toBe('$mcp_tool_call')
     expect(calls[0].groups).toEqual({ account: 'acct-123' })
     // Still present in properties (where the pipeline writes it) for parity.
-    expect((calls[0].properties as Record<string, unknown>).$groups).toEqual({ account: 'acct-123' })
+    expect((calls[0].properties as Record<string, unknown>).groups).toEqual({ account: 'acct-123' })
   })
 
   it('omits `groups` when the event carries none', async () => {

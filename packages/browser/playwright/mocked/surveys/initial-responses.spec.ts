@@ -60,9 +60,9 @@ test.describe('surveys - initialResponses prefill gate', () => {
 
         await pollUntilEventCaptured(page, 'survey sent')
         const [sent] = await sentEvents(page)
-        expect(sent.properties.$survey_completed).toBe(true)
-        expect(sent.properties.$survey_response_q0).toBe('yes')
-        expect(sent.properties.$survey_response_q1).toBe('no')
+        expect(sent.properties.survey_completed).toBe(true)
+        expect(sent.properties.survey_response_q0).toBe('yes')
+        expect(sent.properties.survey_response_q1).toBe('no')
     })
 
     test('stores the response when the prefill answers every question', async ({ page, context }) => {
@@ -79,6 +79,6 @@ test.describe('surveys - initialResponses prefill gate', () => {
 
         await pollUntilEventCaptured(page, 'survey sent')
         const [sent] = await sentEvents(page)
-        expect(sent.properties.$survey_completed).toBe(true)
+        expect(sent.properties.survey_completed).toBe(true)
     })
 })

@@ -457,17 +457,17 @@
             // Update SDK description
             const descriptions = {
                 web: 'Testing PostHog Web SDK (posthog-js) with real CDN versions + GitHub API release dates and mock edge cases.',
-                python: 'Testing PostHog Python SDK with simulated version events. Python events use the $lib: "posthog-python" property.',
-                node: 'Testing PostHog Node.js SDK with simulated version events. Node.js events use the $lib: "posthog-node" property.',
-                'react-native': 'Testing PostHog React Native SDK with real CHANGELOG.md versions + GitHub API release dates. React Native events use the $lib: "posthog-react-native" property.',
-                flutter: 'Testing PostHog Flutter SDK with real CHANGELOG.md versions + GitHub API release dates. Flutter events use the $lib: "posthog-flutter" property.',
-                ios: 'Testing PostHog iOS SDK with real CHANGELOG.md versions + GitHub API release dates. iOS events use the $lib: "posthog-ios" property.',
-                android: 'Testing PostHog Android SDK with real CHANGELOG.md versions + GitHub API release dates. Android events use the $lib: "posthog-android" property.',
-                go: 'Testing PostHog Go SDK with real CHANGELOG.md versions + GitHub API release dates. Go events use the $lib: "posthog-go" property.',
-                php: 'Testing PostHog PHP SDK with simplified logic (no time-based detection). PHP events use the $lib: "posthog-php" property.',
-                ruby: 'Testing PostHog Ruby SDK with real CHANGELOG.md versions + GitHub API release dates. Ruby events use the $lib: "posthog-ruby" property and include framework: "Rails".',
-                elixir: 'Testing PostHog Elixir SDK with simplified logic (no time-based detection). Elixir events use the $lib: "posthog-elixir" property and include framework: "Phoenix".',
-                dotnet: 'Testing PostHog .NET SDK with simplified logic (no time-based detection). .NET events use the $lib: "posthog-dotnet" property.'
+                python: 'Testing PostHog Python SDK with simulated version events. Python events use the lib: "posthog-python" property.',
+                node: 'Testing PostHog Node.js SDK with simulated version events. Node.js events use the lib: "posthog-node" property.',
+                'react-native': 'Testing PostHog React Native SDK with real CHANGELOG.md versions + GitHub API release dates. React Native events use the lib: "posthog-react-native" property.',
+                flutter: 'Testing PostHog Flutter SDK with real CHANGELOG.md versions + GitHub API release dates. Flutter events use the lib: "posthog-flutter" property.',
+                ios: 'Testing PostHog iOS SDK with real CHANGELOG.md versions + GitHub API release dates. iOS events use the lib: "posthog-ios" property.',
+                android: 'Testing PostHog Android SDK with real CHANGELOG.md versions + GitHub API release dates. Android events use the lib: "posthog-android" property.',
+                go: 'Testing PostHog Go SDK with real CHANGELOG.md versions + GitHub API release dates. Go events use the lib: "posthog-go" property.',
+                php: 'Testing PostHog PHP SDK with simplified logic (no time-based detection). PHP events use the lib: "posthog-php" property.',
+                ruby: 'Testing PostHog Ruby SDK with real CHANGELOG.md versions + GitHub API release dates. Ruby events use the lib: "posthog-ruby" property and include framework: "Rails".',
+                elixir: 'Testing PostHog Elixir SDK with simplified logic (no time-based detection). Elixir events use the lib: "posthog-elixir" property and include framework: "Phoenix".',
+                dotnet: 'Testing PostHog .NET SDK with simplified logic (no time-based detection). .NET events use the lib: "posthog-dotnet" property.'
             };
 
             document.getElementById('sdkDescription').innerHTML = `<p><em>${descriptions[newSdk]}</em></p>`;
@@ -645,14 +645,14 @@
                 const releaseAge = versionDates[version] ? Math.round((Date.now() - versionDates[version].getTime()) / (1000 * 60 * 60)) : 'unknown';
 
                 posthog.capture('test_time_based_detection', {
-                    $lib: 'web',
-                    $lib_version: version,
+                    lib: 'web',
+                    lib_version: version,
                     test_scenario: scenario,
                     test_event_index: eventIndex,
                     version_release_age_hours: releaseAge,
-                    $current_url: window.location.href,
-                    $session_id: `test-session-${scenario}`,
-                    $device_type: 'Desktop'
+                    current_url: window.location.href,
+                    session_id: `test-session-${scenario}`,
+                    device_type: 'Desktop'
                 });
 
                 log(`📤 Sent: v${version} (${releaseAge}h old) - ${scenario}`, 'info');
@@ -701,15 +701,15 @@
                     Math.round((Date.now() - pythonVersionData.versionDates[version].getTime()) / (1000 * 60 * 60)) : 'unknown';
 
                 posthog.capture('test_python_time_based_detection', {
-                    $lib: 'posthog-python',
-                    $lib_version: version,
+                    lib: 'posthog-python',
+                    lib_version: version,
                     test_scenario: scenario,
                     test_event_index: eventIndex,
                     version_release_age_hours: releaseAge,
                     test_sdk_type: 'python',
-                    $current_url: window.location.href,
-                    $session_id: `python-test-session-${scenario}`,
-                    $device_type: 'Server'
+                    current_url: window.location.href,
+                    session_id: `python-test-session-${scenario}`,
+                    device_type: 'Server'
                 });
 
                 log(`📤 Sent: Python v${version} (${releaseAge}h old) - ${scenario}`, 'info');
@@ -940,16 +940,16 @@
             for (let i = 0; i < 16; i++) {
                 try {
                     posthog.capture('test_python_mock_extreme_edge_case', {
-                        $lib: 'posthog-python',
-                        $lib_version: extremeVersion,
+                        lib: 'posthog-python',
+                        lib_version: extremeVersion,
                         test_scenario: 'python_mock_extreme_edge_case',
                         test_event_index: i,
                         test_type: 'python_mock_version',
                         version_release_age_hours: 48, // Exactly 48 hours
                         mock_version_details: 'Python: 2 releases behind, exactly 48h old',
-                        $current_url: window.location.href,
-                        $session_id: `python-mock-extreme-session`,
-                        $device_type: 'Server'
+                        current_url: window.location.href,
+                        session_id: `python-mock-extreme-session`,
+                        device_type: 'Server'
                     });
 
                     log(`📤 Sent: PYTHON MOCK v${extremeVersion} (exactly 48h old) - extreme edge case`, 'info');
@@ -1017,14 +1017,14 @@
             const extremeVersion = '6.999.0';
             for (let i = 0; i < 16; i++) {
                 posthog.capture('test_python_mock_extreme_internal', {
-                    $lib: 'posthog-python',
-                    $lib_version: extremeVersion,
+                    lib: 'posthog-python',
+                    lib_version: extremeVersion,
                     test_scenario: 'python_mock_extreme_internal',
                     test_event_index: i,
                     test_type: 'python_mock_version',
                     version_release_age_hours: 48,
-                    $session_id: `python-mock-extreme-internal`,
-                    $device_type: 'Server'
+                    session_id: `python-mock-extreme-internal`,
+                    device_type: 'Server'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -1051,8 +1051,8 @@
             for (let i = 0; i < 16; i++) {
                 try {
                     posthog.capture('test_python_real_time_based_detection', {
-                        $lib: 'posthog-python',
-                        $lib_version: realTestVersion,
+                        lib: 'posthog-python',
+                        lib_version: realTestVersion,
                         test_scenario: 'python_real_time_based_detection',
                         test_event_index: i,
                         test_type: 'real_version_time_test',
@@ -1060,9 +1060,9 @@
                         releases_behind: 3,
                         days_since_release: 13,
                         testing_threshold_logic: true,
-                        $current_url: window.location.href,
-                        $session_id: `python-real-time-test-session`,
-                        $device_type: 'Server'
+                        current_url: window.location.href,
+                        session_id: `python-real-time-test-session`,
+                        device_type: 'Server'
                     });
                     await new Promise(resolve => setTimeout(resolve, 100));
                 } catch (error) {
@@ -1189,18 +1189,18 @@
                     Math.round((Date.now() - reactNativeVersionData.versionDates[version].getTime()) / (1000 * 60 * 60)) : 'unknown';
 
                 const eventData = {
-                    $lib: 'posthog-react-native',
-                    $lib_version: version,
+                    lib: 'posthog-react-native',
+                    lib_version: version,
                     test_scenario: scenario,
                     test_event_index: eventIndex,
                     version_release_age_hours: releaseAge,
                     test_sdk_type: 'react-native',
-                    $current_url: window.location.href,
-                    $session_id: `react-native-test-session-${scenario}`,
-                    $device_type: 'Mobile'
+                    current_url: window.location.href,
+                    session_id: `react-native-test-session-${scenario}`,
+                    device_type: 'Mobile'
                 };
 
-                console.log(`[React Native Test] Event ${eventIndex}: $lib_version = "${version}"`, eventData);
+                console.log(`[React Native Test] Event ${eventIndex}: lib_version = "${version}"`, eventData);
                 posthog.capture('test_react_native_time_based_detection', eventData);
 
                 log(`📤 Sent: React Native v${version} (${releaseAge}h old) - ${scenario}`, 'info');
@@ -1339,8 +1339,8 @@
             for (let i = 0; i < 16; i++) {
                 try {
                     posthog.capture('test_react_native_real_time_based_detection', {
-                        $lib: 'posthog-react-native',
-                        $lib_version: realTestVersion,
+                        lib: 'posthog-react-native',
+                        lib_version: realTestVersion,
                         test_scenario: 'react_native_real_time_based_detection',
                         test_event_index: i,
                         test_type: 'real_version_time_test',
@@ -1348,9 +1348,9 @@
                         releases_behind: 1,
                         days_since_release: 20,
                         testing_threshold_logic: true,
-                        $current_url: window.location.href,
-                        $session_id: `react-native-real-time-test-session`,
-                        $device_type: 'Mobile'
+                        current_url: window.location.href,
+                        session_id: `react-native-real-time-test-session`,
+                        device_type: 'Mobile'
                     });
                     await new Promise(resolve => setTimeout(resolve, 100));
                 } catch (error) {
@@ -1457,8 +1457,8 @@
                     Math.round((Date.now() - flutterVersionData.versionDates[version].getTime()) / (1000 * 60 * 60)) : 'unknown';
 
                 posthog.capture('flutter_test_event', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: version,
+                    lib: 'posthog-flutter',
+                    lib_version: version,
                     test_scenario: scenario,
                     event_index: eventIndex,
                     event_id: `flutter_${scenario}_${eventIndex}_${Date.now()}`,
@@ -1645,8 +1645,8 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('flutter_mock_dual_recent', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: mockVersion,
+                    lib: 'posthog-flutter',
+                    lib_version: mockVersion,
                     test_scenario: 'flutter_mock_dual_check_recent',
                     event_index: i,
                     release_age_hours: 2,
@@ -1674,8 +1674,8 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('flutter_mock_dual_old', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: mockVersion,
+                    lib: 'posthog-flutter',
+                    lib_version: mockVersion,
                     test_scenario: 'flutter_mock_dual_check_old',
                     event_index: i,
                     release_age_hours: 96, // 4 days
@@ -1703,8 +1703,8 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('flutter_mock_extreme', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: mockVersion,
+                    lib: 'posthog-flutter',
+                    lib_version: mockVersion,
                     test_scenario: 'flutter_mock_extreme_edge_case',
                     event_index: i,
                     release_age_hours: 720, // 30 days
@@ -1732,8 +1732,8 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('flutter_real_time_based', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: testVersion,
+                    lib: 'posthog-flutter',
+                    lib_version: testVersion,
                     test_scenario: 'flutter_real_time_based_detection',
                     event_index: i,
                     release_age_hours: 480, // 20 days
@@ -1763,8 +1763,8 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('flutter_real_edge_case_542', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: testVersion,
+                    lib: 'posthog-flutter',
+                    lib_version: testVersion,
                     test_scenario: 'flutter_real_edge_case_542',
                     event_index: i,
                     event_id: `flutter_real_edge_${i}_${Date.now()}`,
@@ -1808,8 +1808,8 @@
             const mockVersion = '5.3.0';
             for (let i = 0; i < 16; i++) {
                 posthog.capture('flutter_mock_dual_recent_internal', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: mockVersion,
+                    lib: 'posthog-flutter',
+                    lib_version: mockVersion,
                     test_scenario: 'flutter_mock_dual_recent_internal',
                     event_index: i,
                     release_age_hours: 2
@@ -1825,8 +1825,8 @@
             const mockVersion = '5.3.0';
             for (let i = 0; i < 16; i++) {
                 posthog.capture('flutter_mock_dual_old_internal', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: mockVersion,
+                    lib: 'posthog-flutter',
+                    lib_version: mockVersion,
                     test_scenario: 'flutter_mock_dual_old_internal',
                     event_index: i,
                     release_age_hours: 96
@@ -1842,8 +1842,8 @@
             const mockVersion = '4.0.0';
             for (let i = 0; i < 16; i++) {
                 posthog.capture('flutter_mock_extreme_internal', {
-                    $lib: 'posthog-flutter',
-                    $lib_version: mockVersion,
+                    lib: 'posthog-flutter',
+                    lib_version: mockVersion,
                     test_scenario: 'flutter_mock_extreme_internal',
                     event_index: i,
                     release_age_hours: 720
@@ -1916,12 +1916,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('ios_current_version_test', {
-                    $lib: 'posthog-ios',
-                    $lib_version: iosVersionData.latest,
+                    lib: 'posthog-ios',
+                    lib_version: iosVersionData.latest,
                     test_scenario: 'ios_current',
                     event_index: i,
-                    $session_id: `ios-current-${Date.now()}`,
-                    $device_type: 'iPhone'
+                    session_id: `ios-current-${Date.now()}`,
+                    device_type: 'iPhone'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -1941,12 +1941,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('ios_close_enough_test', {
-                    $lib: 'posthog-ios',
-                    $lib_version: iosVersionData.closeEnough,
+                    lib: 'posthog-ios',
+                    lib_version: iosVersionData.closeEnough,
                     test_scenario: 'ios_close_enough',
                     event_index: i,
-                    $session_id: `ios-close-${Date.now()}`,
-                    $device_type: 'iPhone'
+                    session_id: `ios-close-${Date.now()}`,
+                    device_type: 'iPhone'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -1966,12 +1966,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('ios_outdated_test', {
-                    $lib: 'posthog-ios',
-                    $lib_version: iosVersionData.outdated,
+                    lib: 'posthog-ios',
+                    lib_version: iosVersionData.outdated,
                     test_scenario: 'ios_outdated',
                     event_index: i,
-                    $session_id: `ios-outdated-${Date.now()}`,
-                    $device_type: 'iPhone'
+                    session_id: `ios-outdated-${Date.now()}`,
+                    device_type: 'iPhone'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -1995,12 +1995,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('ios_edge_case_test', {
-                    $lib: 'posthog-ios',
-                    $lib_version: edgeVersion,
+                    lib: 'posthog-ios',
+                    lib_version: edgeVersion,
                     test_scenario: 'ios_edge_case',
                     event_index: i,
-                    $session_id: `ios-edge-${Date.now()}`,
-                    $device_type: 'iPhone'
+                    session_id: `ios-edge-${Date.now()}`,
+                    device_type: 'iPhone'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2035,12 +2035,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('ios_current_internal', {
-                    $lib: 'posthog-ios',
-                    $lib_version: iosVersionData.latest,
+                    lib: 'posthog-ios',
+                    lib_version: iosVersionData.latest,
                     test_scenario: 'ios_current_internal',
                     event_index: i,
-                    $session_id: `ios-current-internal-${Date.now()}`,
-                    $device_type: 'iPhone'
+                    session_id: `ios-current-internal-${Date.now()}`,
+                    device_type: 'iPhone'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2053,12 +2053,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('ios_close_enough_internal', {
-                    $lib: 'posthog-ios',
-                    $lib_version: iosVersionData.closeEnough,
+                    lib: 'posthog-ios',
+                    lib_version: iosVersionData.closeEnough,
                     test_scenario: 'ios_close_enough_internal',
                     event_index: i,
-                    $session_id: `ios-close-internal-${Date.now()}`,
-                    $device_type: 'iPhone'
+                    session_id: `ios-close-internal-${Date.now()}`,
+                    device_type: 'iPhone'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2071,12 +2071,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('ios_outdated_internal', {
-                    $lib: 'posthog-ios',
-                    $lib_version: iosVersionData.outdated,
+                    lib: 'posthog-ios',
+                    lib_version: iosVersionData.outdated,
                     test_scenario: 'ios_outdated_internal',
                     event_index: i,
-                    $session_id: `ios-outdated-internal-${Date.now()}`,
-                    $device_type: 'iPhone'
+                    session_id: `ios-outdated-internal-${Date.now()}`,
+                    device_type: 'iPhone'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2153,12 +2153,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('android_current_version_test', {
-                    $lib: 'posthog-android',
-                    $lib_version: androidVersionData.latest,
+                    lib: 'posthog-android',
+                    lib_version: androidVersionData.latest,
                     test_scenario: 'android_current',
                     event_index: i,
-                    $session_id: `android-current-${Date.now()}`,
-                    $device_type: 'Android'
+                    session_id: `android-current-${Date.now()}`,
+                    device_type: 'Android'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2178,12 +2178,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('android_close_enough_test', {
-                    $lib: 'posthog-android',
-                    $lib_version: androidVersionData.closeEnough,
+                    lib: 'posthog-android',
+                    lib_version: androidVersionData.closeEnough,
                     test_scenario: 'android_close_enough',
                     event_index: i,
-                    $session_id: `android-close-${Date.now()}`,
-                    $device_type: 'Android'
+                    session_id: `android-close-${Date.now()}`,
+                    device_type: 'Android'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2203,12 +2203,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('android_outdated_test', {
-                    $lib: 'posthog-android',
-                    $lib_version: androidVersionData.outdated,
+                    lib: 'posthog-android',
+                    lib_version: androidVersionData.outdated,
                     test_scenario: 'android_outdated',
                     event_index: i,
-                    $session_id: `android-outdated-${Date.now()}`,
-                    $device_type: 'Android'
+                    session_id: `android-outdated-${Date.now()}`,
+                    device_type: 'Android'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2232,12 +2232,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('android_edge_case_test', {
-                    $lib: 'posthog-android',
-                    $lib_version: edgeVersion,
+                    lib: 'posthog-android',
+                    lib_version: edgeVersion,
                     test_scenario: 'android_edge_case',
                     event_index: i,
-                    $session_id: `android-edge-${Date.now()}`,
-                    $device_type: 'Android'
+                    session_id: `android-edge-${Date.now()}`,
+                    device_type: 'Android'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2272,12 +2272,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('android_current_internal', {
-                    $lib: 'posthog-android',
-                    $lib_version: androidVersionData.latest,
+                    lib: 'posthog-android',
+                    lib_version: androidVersionData.latest,
                     test_scenario: 'android_current_internal',
                     event_index: i,
-                    $session_id: `android-current-internal-${Date.now()}`,
-                    $device_type: 'Android'
+                    session_id: `android-current-internal-${Date.now()}`,
+                    device_type: 'Android'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2290,12 +2290,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('android_close_enough_internal', {
-                    $lib: 'posthog-android',
-                    $lib_version: androidVersionData.closeEnough,
+                    lib: 'posthog-android',
+                    lib_version: androidVersionData.closeEnough,
                     test_scenario: 'android_close_enough_internal',
                     event_index: i,
-                    $session_id: `android-close-internal-${Date.now()}`,
-                    $device_type: 'Android'
+                    session_id: `android-close-internal-${Date.now()}`,
+                    device_type: 'Android'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2308,12 +2308,12 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('android_outdated_internal', {
-                    $lib: 'posthog-android',
-                    $lib_version: androidVersionData.outdated,
+                    lib: 'posthog-android',
+                    lib_version: androidVersionData.outdated,
                     test_scenario: 'android_outdated_internal',
                     event_index: i,
-                    $session_id: `android-outdated-internal-${Date.now()}`,
-                    $device_type: 'Android'
+                    session_id: `android-outdated-internal-${Date.now()}`,
+                    device_type: 'Android'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2440,18 +2440,18 @@
                     Math.round((Date.now() - nodeVersionData.versionDates[version].getTime()) / (1000 * 60 * 60)) : 'unknown';
 
                 const eventData = {
-                    $lib: 'posthog-node',
-                    $lib_version: version,
+                    lib: 'posthog-node',
+                    lib_version: version,
                     test_scenario: scenario,
                     test_event_index: eventIndex,
                     version_release_age_hours: releaseAge,
                     test_sdk_type: 'node',
-                    $current_url: window.location.href,
-                    $session_id: `node-test-session-${scenario}`,
-                    $device_type: 'Server'
+                    current_url: window.location.href,
+                    session_id: `node-test-session-${scenario}`,
+                    device_type: 'Server'
                 };
 
-                console.log(`[Node.js Test] Event ${eventIndex}: $lib_version = "${version}"`, eventData);
+                console.log(`[Node.js Test] Event ${eventIndex}: lib_version = "${version}"`, eventData);
                 posthog.capture('test_node_time_based_detection', eventData);
 
                 log(`📤 Sent: Node.js v${version} (${releaseAge}h old) - ${scenario}`, 'info');
@@ -2675,17 +2675,17 @@
             for (let i = 0; i < 16; i++) {
                 try {
                     posthog.capture('test_node_mock_extreme_edge_case', {
-                        $lib: 'posthog-node',
-                        $lib_version: extremeVersion,
+                        lib: 'posthog-node',
+                        lib_version: extremeVersion,
                         test_scenario: 'node_mock_extreme_edge_case',
                         test_event_index: i,
                         test_type: 'node_mock_version',
                         version_release_age_hours: 48, // Exactly 48 hours
                         mock_version_details: 'Node.js: 2 releases behind, exactly 48h old',
                         test_boundary_condition: true,
-                        $current_url: window.location.href,
-                        $session_id: `node-mock-extreme-session`,
-                        $device_type: 'Server'
+                        current_url: window.location.href,
+                        session_id: `node-mock-extreme-session`,
+                        device_type: 'Server'
                     });
 
                     log(`📤 Sent: NODE.JS MOCK v${extremeVersion} (exactly 48h old) - extreme edge case`, 'info');
@@ -2722,8 +2722,8 @@
             for (let i = 0; i < 16; i++) {
                 try {
                     posthog.capture('test_node_mock_multiple_releases_one_day', {
-                        $lib: 'posthog-node',
-                        $lib_version: testVersion,
+                        lib: 'posthog-node',
+                        lib_version: testVersion,
                         test_scenario: 'node_mock_multiple_releases_one_day',
                         test_event_index: i,
                         test_type: 'node_mock_version',
@@ -2733,9 +2733,9 @@
                         releases_behind: 4,
                         expected_badge: 'Close enough',
                         fast_release_cycle: true,
-                        $current_url: window.location.href,
-                        $session_id: `node-mock-fast-release-session`,
-                        $device_type: 'Server'
+                        current_url: window.location.href,
+                        session_id: `node-mock-fast-release-session`,
+                        device_type: 'Server'
                     });
                     await new Promise(resolve => setTimeout(resolve, 100));
                 } catch (error) {
@@ -2769,8 +2769,8 @@
             for (let i = 0; i < 16; i++) {
                 try {
                     posthog.capture('test_node_real_time_based_detection', {
-                        $lib: 'posthog-node',
-                        $lib_version: realTestVersion,
+                        lib: 'posthog-node',
+                        lib_version: realTestVersion,
                         test_scenario: 'node_real_time_based_detection',
                         test_event_index: i,
                         test_type: 'real_version_time_test',
@@ -2778,9 +2778,9 @@
                         releases_behind: 3,
                         days_since_release: 20,
                         testing_threshold_logic: true,
-                        $current_url: window.location.href,
-                        $session_id: `node-real-time-test-session`,
-                        $device_type: 'Server'
+                        current_url: window.location.href,
+                        session_id: `node-real-time-test-session`,
+                        device_type: 'Server'
                     });
                     await new Promise(resolve => setTimeout(resolve, 100));
                 } catch (error) {
@@ -2849,17 +2849,17 @@
             const extremeVersion = '5.3.0';
             for (let i = 0; i < 16; i++) {
                 posthog.capture('test_node_mock_extreme_internal', {
-                    $lib: 'posthog-node',
-                    $lib_version: extremeVersion,
+                    lib: 'posthog-node',
+                    lib_version: extremeVersion,
                     test_scenario: 'node_mock_extreme_internal',
                     test_event_index: i,
                     test_type: 'node_mock_version',
                     version_release_age_hours: 48,
                     mock_version_details: 'Node.js: 2 releases behind, exactly 48h old',
                     test_boundary_condition: true,
-                    $current_url: window.location.href,
-                    $session_id: `node-mock-extreme-internal`,
-                    $device_type: 'Server'
+                    current_url: window.location.href,
+                    session_id: `node-mock-extreme-internal`,
+                    device_type: 'Server'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2874,8 +2874,8 @@
 
             for (let i = 0; i < 16; i++) {
                 posthog.capture('test_node_mock_multiple_releases_internal', {
-                    $lib: 'posthog-node',
-                    $lib_version: testVersion,
+                    lib: 'posthog-node',
+                    lib_version: testVersion,
                     test_scenario: 'node_mock_multiple_releases_internal',
                     test_event_index: i,
                     test_type: 'node_mock_version',
@@ -2884,9 +2884,9 @@
                     releases_behind: 4,
                     expected_badge: 'Close enough',
                     fast_release_cycle: true,
-                    $current_url: window.location.href,
-                    $session_id: `node-mock-fast-release-internal`,
-                    $device_type: 'Server'
+                    current_url: window.location.href,
+                    session_id: `node-mock-fast-release-internal`,
+                    device_type: 'Server'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -2955,7 +2955,7 @@
                         const originalCapture = window.posthog.capture;
                         window.posthog.capture = function (...args) {
                             if (args[1] && typeof args[1] === 'object') {
-                                args[1].$lib_version = version;
+                                args[1].lib_version = version;
                             }
                             return originalCapture.apply(this, args);
                         };
@@ -2976,14 +2976,14 @@
             for (let i = 0; i < count; i++) {
                 setTimeout(() => {
                     posthog.capture('test_real_time_based_detection', {
-                        $lib: 'web',
-                        $lib_version: version,  // Override the version to test specific versions
+                        lib: 'web',
+                        lib_version: version,  // Override the version to test specific versions
                         test_version: version,
                         test_scenario: testName,
                         test_event_index: i,
                         test_type: 'real_version',
-                        $session_id: `real-test-session-${testName}`,
-                        $device_type: 'Desktop'
+                        session_id: `real-test-session-${testName}`,
+                        device_type: 'Desktop'
                     });
 
                     if (i === count - 1) {
@@ -3222,16 +3222,16 @@
             for (let i = 0; i < 16; i++) {
                 try {
                     posthog.capture('test_mock_extreme_edge_case', {
-                        $lib: 'web',
-                        $lib_version: extremeVersion,
+                        lib: 'web',
+                        lib_version: extremeVersion,
                         test_scenario: 'mock_extreme_edge_case',
                         test_event_index: i,
                         test_type: 'mock_version',
                         version_release_age_hours: 48, // Exactly 48 hours
                         mock_version_details: '2 releases behind, exactly 48h old',
-                        $current_url: window.location.href,
-                        $session_id: `mock-extreme-session`,
-                        $device_type: 'Desktop'
+                        current_url: window.location.href,
+                        session_id: `mock-extreme-session`,
+                        device_type: 'Desktop'
                     });
 
                     log(`📤 Sent: MOCK v${extremeVersion} (exactly 48h old) - extreme edge case`, 'info');
@@ -3299,14 +3299,14 @@
             const extremeVersion = '1.999.0';
             for (let i = 0; i < 16; i++) {
                 posthog.capture('test_mock_extreme_internal', {
-                    $lib: 'web',
-                    $lib_version: extremeVersion,
+                    lib: 'web',
+                    lib_version: extremeVersion,
                     test_scenario: 'mock_extreme_internal',
                     test_event_index: i,
                     test_type: 'mock_version',
                     version_release_age_hours: 48,
-                    $session_id: `mock-extreme-internal`,
-                    $device_type: 'Desktop'
+                    session_id: `mock-extreme-internal`,
+                    device_type: 'Desktop'
                 });
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -3417,14 +3417,14 @@
         async function sendGoTestEvent(version, scenario, eventIndex) {
             try {
                 posthog.capture('test_go_time_based_detection', {
-                    $lib: 'posthog-go',
-                    $lib_version: version,
+                    lib: 'posthog-go',
+                    lib_version: version,
                     test_scenario: scenario,
                     event_index: eventIndex,
                     test_timestamp: new Date().toISOString(),
-                    $current_url: window.location.href,
-                    $session_id: `go-test-${Date.now()}`,
-                    $device_type: 'Desktop'
+                    current_url: window.location.href,
+                    session_id: `go-test-${Date.now()}`,
+                    device_type: 'Desktop'
                 });
                 log(`📤 Sent: Go v${version} - ${scenario}`, 'info');
             } catch (error) {
@@ -3651,11 +3651,11 @@
 
         async function sendPhpTestEvent(version, scenario, eventIndex) {
             posthog.capture('php_test_event', {
-                $lib: 'posthog-php',
-                $lib_version: version,
+                lib: 'posthog-php',
+                lib_version: version,
                 test_scenario: scenario,
                 event_index: eventIndex,
-                $session_id: `php-${scenario}-${Date.now()}`,
+                session_id: `php-${scenario}-${Date.now()}`,
                 timestamp: new Date().toISOString()
             });
         }
@@ -3888,11 +3888,11 @@
         async function sendRubyTestEvent(version, scenario, eventIndex) {
             try {
                 posthog.capture('test_ruby_time_based_detection', {
-                    $lib: 'posthog-ruby',
-                    $lib_version: version,
+                    lib: 'posthog-ruby',
+                    lib_version: version,
                     test_scenario: scenario,
                     event_index: eventIndex,
-                    $session_id: `ruby-${scenario}-${Date.now()}`,
+                    session_id: `ruby-${scenario}-${Date.now()}`,
                     framework: 'Rails'
                 });
             } catch (error) {
@@ -4071,11 +4071,11 @@
 
         async function sendElixirTestEvent(version, scenario, eventIndex) {
             posthog.capture('elixir_test_event', {
-                $lib: 'posthog-elixir',
-                $lib_version: version,
+                lib: 'posthog-elixir',
+                lib_version: version,
                 test_scenario: scenario,
                 event_index: eventIndex,
-                $session_id: `elixir-${scenario}-${Date.now()}`,
+                session_id: `elixir-${scenario}-${Date.now()}`,
                 timestamp: new Date().toISOString()
             });
         }
@@ -4269,8 +4269,8 @@
 
         async function sendDotnetTestEvent(version, scenario, eventIndex) {
             posthog.capture('dotnet_test_event', {
-                $lib: 'posthog-dotnet',
-                $lib_version: version,
+                lib: 'posthog-dotnet',
+                lib_version: version,
                 test_scenario: scenario,
                 test_event_index: eventIndex,
                 timestamp: new Date().toISOString(),

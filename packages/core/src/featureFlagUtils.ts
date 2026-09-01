@@ -177,14 +177,14 @@ export const flagDetailsToResults = (flagDetails: Record<string, FeatureFlagDeta
 }
 
 /**
- * Strict allowlist of event properties kept on a minimal `$feature_flag_called` event.
+ * Strict allowlist of event properties kept on a minimal `edp_feature_flag_called` event.
  *
  * When the server gates a project into minimal flag-called events
  * (`minimalFlagCalledEvents` on the v2 `/flags` response, `minimal_flag_called_events`
  * on the local-evaluation definitions) and the evaluated flag is not linked to an
  * experiment (`has_experiment === false`), the event is rebuilt from this list.
- * Everything else — super properties, `$set`/`$set_once`, the `$feature/<key>`
- * enumeration, `$active_feature_flags`, and the context envelope — is dropped.
+ * Everything else — super properties, `edp_set`/`edp_set_once`, the `feature/<key>`
+ * enumeration, `active_feature_flags`, and the context envelope — is dropped.
  *
  * The list is the union across client and server SDKs; entries are inert where an
  * SDK never sets them.
@@ -218,43 +218,43 @@ export const MINIMAL_FLAG_CALLED_EVENT_CAMPAIGN_PROPERTIES = [
 
 export const MINIMAL_FLAG_CALLED_EVENT_PROPERTIES: readonly string[] = [
   // Flag identity
-  '$feature_flag',
-  '$feature_flag_response',
-  '$feature_flag_has_experiment',
+  'feature_flag',
+  'feature_flag_response',
+  'feature_flag_has_experiment',
   // Evaluation debug
-  '$feature_flag_id',
-  '$feature_flag_version',
-  '$feature_flag_reason',
-  '$feature_flag_request_id',
-  '$feature_flag_evaluated_at',
-  '$feature_flag_error',
+  'feature_flag_id',
+  'feature_flag_version',
+  'feature_flag_reason',
+  'feature_flag_request_id',
+  'feature_flag_evaluated_at',
+  'feature_flag_error',
   'locally_evaluated',
   // Correctness-required processing controls
-  '$groups',
-  '$process_person_profile',
-  '$geoip_disable',
+  'groups',
+  'process_person_profile',
+  'geoip_disable',
   // Debug location
-  '$current_url',
-  '$pathname',
+  'current_url',
+  'pathname',
   // Session-level attribution. The server session table derives session-initial UTM
   // and channel type from whichever event lands first in a session, so these keys must
-  // survive minimization. The full `$referrer` URL is intentionally excluded.
-  '$referring_domain',
+  // survive minimization. The full `referrer` URL is intentionally excluded.
+  'referring_domain',
   // Campaign params are stored as super properties under their bare names (no `$`
   // prefix). This list is kept in sync with the browser SDK's canonical `CAMPAIGN_PARAMS`
   // by an exhaustive browser regression test. Entries are inert on SDKs that never set them.
   ...MINIMAL_FLAG_CALLED_EVENT_CAMPAIGN_PROPERTIES,
   // Linkage / SDK identity
-  '$session_id',
-  '$window_id',
-  '$lib',
-  '$lib_version',
-  '$device_id',
-  '$is_server',
+  'session_id',
+  'window_id',
+  'lib',
+  'lib_version',
+  'device_id',
+  'is_server',
 ]
 
 /**
- * Builds the minimal `$feature_flag_called` property set from fully assembled event
+ * Builds the minimal `edp_feature_flag_called` property set from fully assembled event
  * properties. Constructs a new object from {@link MINIMAL_FLAG_CALLED_EVENT_PROPERTIES}
  * rather than deleting keys, so anything not explicitly allowlisted is structurally
  * excluded. Transport-level keys an SDK carries inside `properties` (e.g. the browser

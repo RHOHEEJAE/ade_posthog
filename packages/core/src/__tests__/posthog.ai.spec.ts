@@ -29,10 +29,10 @@ describe('PostHog Core', () => {
       expect(body).toMatchObject({
         batch: [
           {
-            event: '$ai_feedback',
+            event: 'edp_ai_feedback',
             properties: {
-              $ai_feedback_text: 'feedback',
-              $ai_trace_id: 'trace-id',
+              ai_feedback_text: 'feedback',
+              ai_trace_id: 'trace-id',
             },
           },
         ],
@@ -51,10 +51,10 @@ describe('PostHog Core', () => {
       expect(body).toMatchObject({
         batch: [
           {
-            event: '$ai_feedback',
+            event: 'edp_ai_feedback',
             properties: {
-              $ai_feedback_text: 'feedback',
-              $ai_trace_id: '10',
+              ai_feedback_text: 'feedback',
+              ai_trace_id: '10',
             },
           },
         ],
@@ -73,11 +73,11 @@ describe('PostHog Core', () => {
       expect(body).toMatchObject({
         batch: [
           {
-            event: '$ai_metric',
+            event: 'edp_ai_metric',
             properties: {
-              $ai_metric_name: 'metric-name',
-              $ai_metric_value: 'good',
-              $ai_trace_id: 'trace-id',
+              ai_metric_name: 'metric-name',
+              ai_metric_value: 'good',
+              ai_trace_id: 'trace-id',
             },
           },
         ],
@@ -96,11 +96,11 @@ describe('PostHog Core', () => {
       expect(body).toMatchObject({
         batch: [
           {
-            event: '$ai_metric',
+            event: 'edp_ai_metric',
             properties: {
-              $ai_metric_name: 'metric-name',
-              $ai_metric_value: '1',
-              $ai_trace_id: '10',
+              ai_metric_name: 'metric-name',
+              ai_metric_value: '1',
+              ai_trace_id: '10',
             },
           },
         ],

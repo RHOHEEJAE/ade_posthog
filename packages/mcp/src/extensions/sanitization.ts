@@ -48,16 +48,16 @@ export function sanitizeEvent<T extends Event | McpEvent>(event: T): T {
 
 /**
  * Sanitizes exception messages before they fan out to both the primary MCP
- * event's error-message property and the `$exception` sibling.
+ * event's error-message property and the `edp_exception` sibling.
  */
 function sanitizeExceptionValues(error: ErrorProperties): ErrorProperties {
-  if (!Array.isArray(error.$exception_list)) {
+  if (!Array.isArray(error.exception_list)) {
     return error
   }
 
   return {
     ...error,
-    $exception_list: error.$exception_list.map((exception) => ({
+    exception_list: error.exception_list.map((exception) => ({
       ...exception,
       value: sanitizeCapturedValue(exception.value) as string,
     })),

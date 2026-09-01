@@ -16,7 +16,7 @@ export const MCP_SESSION_HEADER = 'mcp-session-id'
 
 /** What a session token carries. */
 export interface SessionTokenPayload {
-  /** PostHog session id (`ses_…`) → `$session_id`. */
+  /** PostHog session id (`ses_…`) → `session_id`. */
   sessionId: string
   /** MCP client name → `$mcp_client_name`. */
   clientName?: string

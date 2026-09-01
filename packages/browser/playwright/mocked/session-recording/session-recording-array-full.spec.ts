@@ -51,11 +51,11 @@ test.describe('session recording in array.full.js', () => {
             ph?.capture('test_registered_property')
         })
 
-        await page.expectCapturedEventsToBe(['$pageview', '$snapshot', 'test_registered_property'])
+        await page.expectCapturedEventsToBe(['edp_pageview', 'edp_snapshot', 'test_registered_property'])
         const capturedEvents = await page.capturedEvents()
 
         // don't care about network payloads here
-        const snapshotData = capturedEvents[1]['properties']['$snapshot_data'].filter((s: any) => s.type !== 6)
+        const snapshotData = capturedEvents[1]['properties']['snapshot_data'].filter((s: any) => s.type !== 6)
 
         // a meta and then a full snapshot
         expect(snapshotData[0].type).toEqual(4) // meta
@@ -68,6 +68,6 @@ test.describe('session recording in array.full.js', () => {
         const incrementalSnapshots = snapshotData.slice(6)
         expect(Array.from(new Set(incrementalSnapshots.map((s: any) => s.type)))).toStrictEqual([3])
 
-        expect(capturedEvents[2]['properties']['$session_recording_start_reason']).toEqual('recording_initialized')
+        expect(capturedEvents[2]['properties']['session_recording_start_reason']).toEqual('recording_initialized')
     })
 })

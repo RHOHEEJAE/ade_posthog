@@ -257,7 +257,7 @@ function syntheticProperties(additional: Record<string, unknown> = {}): Record<s
         test_run_id: runId,
         source: 'browser-next-sandbox',
         synthetic: true,
-        $process_person_profile: false,
+        process_person_profile: false,
     }
 }
 

@@ -70,7 +70,7 @@ export default function Home() {
                     >
                         Capture promise rejection automatically
                     </button>
-                    <button onClick={() => posthog.capture('$exception')}>Capture exception via capture()</button>
+                    <button onClick={() => posthog.capture('edp_exception')}>Capture exception via capture()</button>
                     <button
                         onClick={() => {
                             posthog.addExceptionStep('Submitted checkout to server')
@@ -83,7 +83,7 @@ export default function Home() {
                         onClick={() => {
                             addCheckoutExceptionSteps()
                             posthog.captureException(new Error('custom fingerprint'), {
-                                $exception_fingerprint: randomID(),
+                                edp_exception_fingerprint: randomID(),
                             })
                         }}
                     >

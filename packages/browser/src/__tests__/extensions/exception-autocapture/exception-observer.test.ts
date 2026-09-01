@@ -106,9 +106,9 @@ describe('Exception Observer', () => {
             expect(captureCalls.length).toBe(1)
             const singleCall = captureCalls[0]
             expect(singleCall[0]).toMatchObject({
-                event: '$exception',
+                event: 'edp_exception',
                 properties: {
-                    $exception_list: [
+                    exception_list: [
                         {
                             type: 'Error',
                             value: 'test error',
@@ -136,9 +136,9 @@ describe('Exception Observer', () => {
             expect(captureCalls.length).toBe(1)
             const singleCall = captureCalls[0]
             expect(singleCall[0]).toMatchObject({
-                event: '$exception',
+                event: 'edp_exception',
                 properties: {
-                    $exception_list: [
+                    exception_list: [
                         {
                             type: 'PromiseRejectionEvent',
                             value: 'PromiseRejectionEvent captured as exception with keys: isTrusted, promise, reason',
@@ -157,9 +157,9 @@ describe('Exception Observer', () => {
             const request = sendRequestSpy.mock.calls[0][0]
             expect(request.url).toBe('http://localhost/e/')
             expect(request.data).toMatchObject({
-                event: '$exception',
+                event: 'edp_exception',
                 properties: {
-                    $exception_list: [
+                    exception_list: [
                         {
                             type: 'Error',
                             value: 'test error',
@@ -195,13 +195,13 @@ describe('Exception Observer', () => {
             window!.console.error('console error test')
 
             const captureCall = beforeSendMock.mock.calls.find(
-                (call: any) => call[0]?.properties?.$exception_list?.[0]?.value === 'console error test'
+                (call: any) => call[0]?.properties?.exception_list?.[0]?.value === 'console error test'
             )
             expect(captureCall).toBeDefined()
             expect(captureCall[0]).toMatchObject({
-                event: '$exception',
+                event: 'edp_exception',
                 properties: {
-                    $exception_list: [
+                    exception_list: [
                         { type: 'Error', value: 'console error test', stacktrace: { frames: expect.any(Array) } },
                     ],
                 },

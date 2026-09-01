@@ -18,12 +18,12 @@ describe('reset()', () => {
     })
 
     it('clears persistence', () => {
-        instance.persistence!.register({ $enabled_feature_flags: { flag: 'variant', other: true } })
-        expect(instance.persistence!.props['$enabled_feature_flags']).toEqual({ flag: 'variant', other: true })
+        instance.persistence!.register({ enabled_feature_flags: { flag: 'variant', other: true } })
+        expect(instance.persistence!.props['enabled_feature_flags']).toEqual({ flag: 'variant', other: true })
 
         instance.reset()
 
-        expect(instance.persistence!.props['$enabled_feature_flags']).toEqual(undefined)
+        expect(instance.persistence!.props['enabled_feature_flags']).toEqual(undefined)
     })
 
     it('resets the session_id and window_id', () => {
@@ -73,11 +73,11 @@ describe('reset()', () => {
     })
 
     it('does not reset the device id', () => {
-        const initialDeviceId = instance.get_property('$device_id')
+        const initialDeviceId = instance.get_property('device_id')
 
         instance.reset()
 
-        const nextDeviceId = instance.get_property('$device_id')
+        const nextDeviceId = instance.get_property('device_id')
         expect(initialDeviceId).toEqual(nextDeviceId)
     })
 
@@ -87,7 +87,7 @@ describe('reset()', () => {
             expect.objectContaining({
                 event: 'probe 1',
                 properties: expect.not.objectContaining({
-                    $last_posthog_reset: expect.any(String),
+                    last_posthog_reset: expect.any(String),
                 }),
             })
         )
@@ -99,7 +99,7 @@ describe('reset()', () => {
             expect.objectContaining({
                 event: 'probe 2',
                 properties: expect.objectContaining({
-                    $last_posthog_reset: expect.any(String),
+                    last_posthog_reset: expect.any(String),
                 }),
             })
         )
@@ -146,54 +146,54 @@ describe('reset()', () => {
 
     describe('when calling reset(true)', () => {
         it('does reset the device id', () => {
-            const initialDeviceId = instance.get_property('$device_id')
+            const initialDeviceId = instance.get_property('device_id')
 
             instance.reset(true)
 
-            const nextDeviceId = instance.get_property('$device_id')
+            const nextDeviceId = instance.get_property('device_id')
             expect(initialDeviceId).not.toEqual(nextDeviceId)
         })
     })
 
     describe('when calling reset with options', () => {
         it('resets the device id when resetDeviceID is true', () => {
-            const initialDeviceId = instance.get_property('$device_id')
+            const initialDeviceId = instance.get_property('device_id')
 
             instance.reset({ resetDeviceID: true })
 
-            expect(instance.get_property('$device_id')).not.toEqual(initialDeviceId)
+            expect(instance.get_property('device_id')).not.toEqual(initialDeviceId)
         })
 
         it('preserves the device id when resetDeviceID is false', () => {
-            const initialDeviceId = instance.get_property('$device_id')
+            const initialDeviceId = instance.get_property('device_id')
 
             instance.reset({ resetDeviceID: false })
 
-            expect(instance.get_property('$device_id')).toEqual(initialDeviceId)
+            expect(instance.get_property('device_id')).toEqual(initialDeviceId)
         })
 
         it('applies a custom anonymous distinct ID and preserves the device ID', () => {
-            const initialDeviceId = instance.get_property('$device_id')
+            const initialDeviceId = instance.get_property('device_id')
 
             instance.reset({ bootstrap: { distinctID: 'custom-anon-id', isIdentifiedID: false } })
 
             expect(instance.get_distinct_id()).toEqual('custom-anon-id')
-            expect(instance.get_property('$device_id')).toEqual(initialDeviceId)
+            expect(instance.get_property('device_id')).toEqual(initialDeviceId)
             expect(instance.persistence!.get_property(USER_STATE)).toEqual('anonymous')
         })
 
         it('applies a custom identified distinct ID and preserves the device ID', () => {
-            const initialDeviceId = instance.get_property('$device_id')
+            const initialDeviceId = instance.get_property('device_id')
 
             instance.reset({ bootstrap: { distinctID: 'user@example.com', isIdentifiedID: true } })
 
             expect(instance.get_distinct_id()).toEqual('user@example.com')
-            expect(instance.get_property('$device_id')).toEqual(initialDeviceId)
+            expect(instance.get_property('device_id')).toEqual(initialDeviceId)
             expect(instance.persistence!.get_property(USER_STATE)).toEqual('identified')
         })
 
         it('resets the device ID when combined with bootstrap options', () => {
-            const initialDeviceId = instance.get_property('$device_id')
+            const initialDeviceId = instance.get_property('device_id')
 
             instance.reset({
                 resetDeviceID: true,
@@ -201,8 +201,8 @@ describe('reset()', () => {
             })
 
             expect(instance.get_distinct_id()).toEqual('custom-anon-id')
-            expect(instance.get_property('$device_id')).not.toEqual(initialDeviceId)
-            expect(instance.get_property('$device_id')).not.toEqual('custom-anon-id')
+            expect(instance.get_property('device_id')).not.toEqual(initialDeviceId)
+            expect(instance.get_property('device_id')).not.toEqual('custom-anon-id')
         })
 
         it('applies bootstrapped feature flags and payloads', () => {

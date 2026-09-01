@@ -408,11 +408,11 @@ describe('LazyLoadedDeadClicksAutocapture', () => {
             // it is still captured (via the absolute timeout), but the visibility branch never marks
             // a click dead and it carries no misleading visibility delay
             expect(fakeInstance.capture).toHaveBeenCalledWith(
-                '$dead_click',
+                'edp_dead_click',
                 expect.objectContaining({
-                    $dead_click_absolute_timeout: true,
-                    $dead_click_visibility_changed_timeout: false,
-                    $dead_click_visibility_changed_delay_ms: undefined,
+                    edp_dead_click_absolute_timeout: true,
+                    edp_dead_click_visibility_changed_timeout: false,
+                    edp_dead_click_visibility_changed_delay_ms: undefined,
                 }),
                 { timestamp: new Date(-3000) }
             )
@@ -509,32 +509,32 @@ describe('LazyLoadedDeadClicksAutocapture', () => {
 
             expect(lazyLoadedDeadClicksAutocapture['_clicks']).toHaveLength(0)
             expect(fakeInstance.capture).toHaveBeenCalledWith(
-                '$dead_click',
+                'edp_dead_click',
                 {
-                    $ce_version: 1,
-                    $dead_click_absolute_delay_ms: -900,
-                    $dead_click_absolute_timeout: false,
-                    $dead_click_event_timestamp: 900,
-                    $dead_click_last_mutation_timestamp: undefined,
-                    $dead_click_mutation_delay_ms: undefined,
-                    $dead_click_mutation_timeout: false,
-                    $dead_click_scroll_delay_ms: undefined,
-                    $dead_click_scroll_timeout: false,
-                    $dead_click_selection_changed_delay_ms: 100,
-                    $dead_click_selection_changed_timeout: true,
-                    $dead_click_visibility_changed_delay_ms: undefined,
-                    $dead_click_visibility_changed_timeout: false,
-                    $el_text: 'text',
-                    $elements: [
+                    ce_version: 1,
+                    edp_dead_click_absolute_delay_ms: -900,
+                    edp_dead_click_absolute_timeout: false,
+                    edp_dead_click_event_timestamp: 900,
+                    edp_dead_click_last_mutation_timestamp: undefined,
+                    edp_dead_click_mutation_delay_ms: undefined,
+                    edp_dead_click_mutation_timeout: false,
+                    edp_dead_click_scroll_delay_ms: undefined,
+                    edp_dead_click_scroll_timeout: false,
+                    edp_dead_click_selection_changed_delay_ms: 100,
+                    edp_dead_click_selection_changed_timeout: true,
+                    edp_dead_click_visibility_changed_delay_ms: undefined,
+                    edp_dead_click_visibility_changed_timeout: false,
+                    el_text: 'text',
+                    elements: [
                         {
-                            $el_text: 'text',
+                            el_text: 'text',
                             nth_child: 2,
                             nth_of_type: 1,
                             tag_name: 'body',
                         },
                     ],
-                    $elements_chain: 'body:nth-child="2"nth-of-type="1"text="text"',
-                    $event_type: 'click',
+                    elements_chain: 'body:nth-child="2"nth-of-type="1"text="text"',
+                    event_type: 'click',
                 },
                 { timestamp: new Date(900) }
             )
@@ -552,32 +552,32 @@ describe('LazyLoadedDeadClicksAutocapture', () => {
 
             expect(lazyLoadedDeadClicksAutocapture['_clicks']).toHaveLength(0)
             expect(fakeInstance.capture).toHaveBeenCalledWith(
-                '$dead_click',
+                'edp_dead_click',
                 {
-                    $ce_version: 1,
-                    $dead_click_absolute_delay_ms: -900,
-                    $dead_click_absolute_timeout: false,
-                    $dead_click_event_timestamp: 900,
-                    $dead_click_last_mutation_timestamp: 3401,
-                    $dead_click_mutation_delay_ms: 2501,
-                    $dead_click_mutation_timeout: true,
-                    $dead_click_scroll_delay_ms: undefined,
-                    $dead_click_scroll_timeout: false,
-                    $dead_click_selection_changed_delay_ms: undefined,
-                    $dead_click_selection_changed_timeout: false,
-                    $dead_click_visibility_changed_delay_ms: undefined,
-                    $dead_click_visibility_changed_timeout: false,
-                    $el_text: 'text',
-                    $elements: [
+                    ce_version: 1,
+                    edp_dead_click_absolute_delay_ms: -900,
+                    edp_dead_click_absolute_timeout: false,
+                    edp_dead_click_event_timestamp: 900,
+                    edp_dead_click_last_mutation_timestamp: 3401,
+                    edp_dead_click_mutation_delay_ms: 2501,
+                    edp_dead_click_mutation_timeout: true,
+                    edp_dead_click_scroll_delay_ms: undefined,
+                    edp_dead_click_scroll_timeout: false,
+                    edp_dead_click_selection_changed_delay_ms: undefined,
+                    edp_dead_click_selection_changed_timeout: false,
+                    edp_dead_click_visibility_changed_delay_ms: undefined,
+                    edp_dead_click_visibility_changed_timeout: false,
+                    el_text: 'text',
+                    elements: [
                         {
-                            $el_text: 'text',
+                            el_text: 'text',
                             nth_child: 2,
                             nth_of_type: 1,
                             tag_name: 'body',
                         },
                     ],
-                    $elements_chain: 'body:nth-child="2"nth-of-type="1"text="text"',
-                    $event_type: 'click',
+                    elements_chain: 'body:nth-child="2"nth-of-type="1"text="text"',
+                    event_type: 'click',
                 },
                 { timestamp: new Date(900) }
             )
@@ -596,33 +596,33 @@ describe('LazyLoadedDeadClicksAutocapture', () => {
 
             expect(lazyLoadedDeadClicksAutocapture['_clicks']).toHaveLength(0)
             expect(fakeInstance.capture).toHaveBeenCalledWith(
-                '$dead_click',
+                'edp_dead_click',
                 {
                     // faked system timestamp isn't moving so this is negative
-                    $ce_version: 1,
-                    $dead_click_absolute_delay_ms: -900,
-                    $dead_click_absolute_timeout: false,
-                    $dead_click_event_timestamp: 900,
-                    $dead_click_last_mutation_timestamp: undefined,
-                    $dead_click_mutation_delay_ms: undefined,
-                    $dead_click_mutation_timeout: false,
-                    $dead_click_scroll_delay_ms: 2501,
-                    $dead_click_scroll_timeout: true,
-                    $dead_click_selection_changed_delay_ms: undefined,
-                    $dead_click_selection_changed_timeout: false,
-                    $dead_click_visibility_changed_delay_ms: undefined,
-                    $dead_click_visibility_changed_timeout: false,
-                    $el_text: 'text',
-                    $elements: [
+                    ce_version: 1,
+                    edp_dead_click_absolute_delay_ms: -900,
+                    edp_dead_click_absolute_timeout: false,
+                    edp_dead_click_event_timestamp: 900,
+                    edp_dead_click_last_mutation_timestamp: undefined,
+                    edp_dead_click_mutation_delay_ms: undefined,
+                    edp_dead_click_mutation_timeout: false,
+                    edp_dead_click_scroll_delay_ms: 2501,
+                    edp_dead_click_scroll_timeout: true,
+                    edp_dead_click_selection_changed_delay_ms: undefined,
+                    edp_dead_click_selection_changed_timeout: false,
+                    edp_dead_click_visibility_changed_delay_ms: undefined,
+                    edp_dead_click_visibility_changed_timeout: false,
+                    el_text: 'text',
+                    elements: [
                         {
-                            $el_text: 'text',
+                            el_text: 'text',
                             nth_child: 2,
                             nth_of_type: 1,
                             tag_name: 'body',
                         },
                     ],
-                    $elements_chain: 'body:nth-child="2"nth-of-type="1"text="text"',
-                    $event_type: 'click',
+                    elements_chain: 'body:nth-child="2"nth-of-type="1"text="text"',
+                    event_type: 'click',
                 },
                 { timestamp: new Date(900) }
             )
@@ -641,32 +641,32 @@ describe('LazyLoadedDeadClicksAutocapture', () => {
 
             expect(lazyLoadedDeadClicksAutocapture['_clicks']).toHaveLength(0)
             expect(fakeInstance.capture).toHaveBeenCalledWith(
-                '$dead_click',
+                'edp_dead_click',
                 {
-                    $ce_version: 1,
-                    $dead_click_absolute_delay_ms: 3001,
-                    $dead_click_absolute_timeout: true,
-                    $dead_click_event_timestamp: 900,
-                    $dead_click_last_mutation_timestamp: undefined,
-                    $dead_click_mutation_delay_ms: undefined,
-                    $dead_click_mutation_timeout: false,
-                    $dead_click_scroll_delay_ms: undefined,
-                    $dead_click_scroll_timeout: false,
-                    $dead_click_selection_changed_delay_ms: undefined,
-                    $dead_click_selection_changed_timeout: false,
-                    $dead_click_visibility_changed_delay_ms: undefined,
-                    $dead_click_visibility_changed_timeout: false,
-                    $el_text: 'text',
-                    $elements: [
+                    ce_version: 1,
+                    edp_dead_click_absolute_delay_ms: 3001,
+                    edp_dead_click_absolute_timeout: true,
+                    edp_dead_click_event_timestamp: 900,
+                    edp_dead_click_last_mutation_timestamp: undefined,
+                    edp_dead_click_mutation_delay_ms: undefined,
+                    edp_dead_click_mutation_timeout: false,
+                    edp_dead_click_scroll_delay_ms: undefined,
+                    edp_dead_click_scroll_timeout: false,
+                    edp_dead_click_selection_changed_delay_ms: undefined,
+                    edp_dead_click_selection_changed_timeout: false,
+                    edp_dead_click_visibility_changed_delay_ms: undefined,
+                    edp_dead_click_visibility_changed_timeout: false,
+                    el_text: 'text',
+                    elements: [
                         {
-                            $el_text: 'text',
+                            el_text: 'text',
                             nth_child: 2,
                             nth_of_type: 1,
                             tag_name: 'body',
                         },
                     ],
-                    $elements_chain: 'body:nth-child="2"nth-of-type="1"text="text"',
-                    $event_type: 'click',
+                    elements_chain: 'body:nth-child="2"nth-of-type="1"text="text"',
+                    event_type: 'click',
                 },
                 { timestamp: new Date(900) }
             )

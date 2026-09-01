@@ -137,7 +137,7 @@ export const captureAiGeneration = async (client: PostHog, options: CaptureAiGen
       let exceptionId: string | undefined
       if (client.options?.enableExceptionAutocapture) {
         exceptionId = uuidv7()
-        client.captureException(options.error, undefined, { $ai_trace_id: traceId }, exceptionId)
+        client.captureException(options.error, undefined, { ai_trace_id: traceId }, exceptionId)
         if (typeof options.error === 'object') {
           ;(options.error as CoreErrorTracking.PreviouslyCapturedError).__posthog_previously_captured_error = true
         }
@@ -146,7 +146,7 @@ export const captureAiGeneration = async (client: PostHog, options: CaptureAiGen
       errorData = {
         $ai_is_error: true,
         $ai_error: stringifyError(options.error),
-        $exception_event_id: exceptionId,
+        edp_exception_event_id: exceptionId,
       }
     }
     httpStatus = httpStatus ?? 200
@@ -200,11 +200,11 @@ export const captureAiGeneration = async (client: PostHog, options: CaptureAiGen
       ...additionalTokenValues,
       ...(options.latency !== undefined ? { $ai_latency: options.latency } : {}),
       ...(options.timeToFirstToken !== undefined ? { $ai_time_to_first_token: options.timeToFirstToken } : {}),
-      $ai_trace_id: traceId,
+      ai_trace_id: traceId,
       $ai_base_url: options.baseURL ?? '',
       ...options.properties,
       $ai_tokens_source: getTokensSource(options.properties),
-      ...(options.distinctId ? {} : { $process_person_profile: false }),
+      ...(options.distinctId ? {} : { process_person_profile: false }),
       ...(options.stopReason ? { $ai_stop_reason: options.stopReason } : {}),
       ...(options.tools ? { $ai_tools: options.tools } : {}),
       ...(options.completionId ? { $ai_completion_id: options.completionId } : {}),

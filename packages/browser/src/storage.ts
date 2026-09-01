@@ -464,9 +464,9 @@ export const createLocalPlusCookieStore = (
                                 safeCookieProperties[USER_STATE] === USER_STATE_IDENTIFIED &&
                                 DISTINCT_ID in safeCookieProperties
                             ) {
-                                localStorageData.$user_id = safeCookieProperties[DISTINCT_ID]
+                                localStorageData.user_id = safeCookieProperties[DISTINCT_ID]
                             } else {
-                                delete localStorageData.$user_id
+                                delete localStorageData.user_id
                             }
                             if (safeCookieProperties[USER_STATE] !== USER_STATE_IDENTIFIED) {
                                 delete localStorageData[GROUPS]

@@ -446,7 +446,7 @@ export const sendSurveyEvent = ({
         sessionRecordingUrl: posthog.get_session_replay_url?.(),
         ...buildSurveyResponseProperties(responses, survey, questionSnapshots),
         ...properties,
-        $set: {
+        edp_set: {
             [getSurveyInteractionProperty(survey, 'responded')]: true,
         },
     })
@@ -503,7 +503,7 @@ export const dismissedSurveyEvent = (
     posthog.capture(SurveyEventName.DISMISSED, {
         ..._buildSurveyEventProperties(survey, inProgressSurvey, posthog),
         ...(effectiveLanguage && { [SurveyEventProperties.SURVEY_LANGUAGE]: effectiveLanguage }),
-        $set: {
+        edp_set: {
             [getSurveyInteractionProperty(survey, 'dismissed')]: true,
         },
     })
@@ -763,7 +763,7 @@ interface InProgressSurveyState {
     responses: SurveyResponses
     surveyLanguage?: string | null
     // Maps question id → the question text displayed when the user answered it. Used so that
-    // $survey_questions[].question in sent/dismissed events reflects the language the user saw,
+    // survey_questions[].question in sent/dismissed events reflects the language the user saw,
     // not the language active at event-fire time after a mid-session switch.
     questionSnapshots?: Record<string, string>
 }

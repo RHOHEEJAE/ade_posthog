@@ -27,7 +27,7 @@ export const generate = action({
             event: '$ai_generation',
             properties: {
                 // Trace ID groups multiple generations into a single trace
-                $ai_trace_id: traceId,
+                ai_trace_id: traceId,
 
                 // Core identification
                 $ai_provider: 'openai',

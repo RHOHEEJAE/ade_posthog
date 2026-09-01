@@ -67,7 +67,7 @@ function instrument(server: unknown, posthog: PostHog, options: MCPAnalyticsOpti
     }
 
     if (posthog) {
-      // Report `$lib: 'posthog-node-mcp'` on this client's events instead of the
+      // Report `lib: 'posthog-node-mcp'` on this client's events instead of the
       // inherited `posthog-node`. Relabels every event the client sends.
       applyMcpLibIdentity(posthog)
     }

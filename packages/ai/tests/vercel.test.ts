@@ -767,7 +767,7 @@ describe('Vercel AI SDK - Dual Version Support', () => {
 
       expect(captureCall[0].properties).toEqual(
         expect.objectContaining({
-          $ai_trace_id: 'test-error',
+          ai_trace_id: 'test-error',
           $ai_error: expect.any(String),
           $ai_is_error: true,
           $ai_model: 'gpt-4',
@@ -1070,7 +1070,7 @@ describe('Vercel AI SDK - Dual Version Support', () => {
 
       const calls = (mockPostHogClient.capture as jest.Mock).mock.calls
       calls.forEach((call) => {
-        expect(call[0].properties.$ai_trace_id).toBe('test-sequential')
+        expect(call[0].properties.ai_trace_id).toBe('test-sequential')
         expect(call[0].properties['$ai_lib']).toBe('posthog-ai')
       })
     })
@@ -1602,7 +1602,7 @@ describe('Vercel AI SDK - Dual Version Support', () => {
         expectedOutputTokens: 50,
       },
     ])(
-      'adjusts V3 cache tokens for $name',
+      'adjusts V3 cache tokens for name',
       async ({
         provider,
         modelId,

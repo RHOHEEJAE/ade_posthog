@@ -434,7 +434,7 @@ export class LangChainCallbackHandler extends BaseCallbackHandler {
     const eventProperties: Record<string, any> = {
       $ai_lib: 'posthog-ai',
       $ai_lib_version: version,
-      $ai_trace_id: traceId,
+      ai_trace_id: traceId,
       $ai_input_state: withPrivacyMode(this.client, this.privacyMode, sanitizeLangChain(run.input, this.client)),
       $ai_latency: latency,
       $ai_span_name: run.name,
@@ -447,7 +447,7 @@ export class LangChainCallbackHandler extends BaseCallbackHandler {
 
     Object.assign(eventProperties, this.properties)
     if (!this.distinctId) {
-      eventProperties['$process_person_profile'] = false
+      eventProperties['process_person_profile'] = false
     }
     if (outputs instanceof Error) {
       if (isLangGraphControlFlow(outputs)) {
@@ -509,7 +509,7 @@ export class LangChainCallbackHandler extends BaseCallbackHandler {
     const eventProperties: Record<string, any> = {
       $ai_lib: 'posthog-ai',
       $ai_lib_version: version,
-      $ai_trace_id: traceId,
+      ai_trace_id: traceId,
       $ai_span_id: runId,
       $ai_span_name: run.name,
       $ai_provider: run.provider,
@@ -595,7 +595,7 @@ export class LangChainCallbackHandler extends BaseCallbackHandler {
 
     Object.assign(eventProperties, this.properties)
     if (!this.distinctId) {
-      eventProperties['$process_person_profile'] = false
+      eventProperties['process_person_profile'] = false
     }
 
     this._safeCapture({

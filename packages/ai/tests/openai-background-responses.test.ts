@@ -293,7 +293,7 @@ describe.each(providerCases)('$provider background Responses', ({ provider, crea
       $ai_latency: 4,
       $ai_completion_id: responseID,
       $ai_stop_reason: 'completed',
-      $ai_trace_id: 'background-trace',
+      ai_trace_id: 'background-trace',
       $ai_model_parameters: { temperature: 0.25 },
       $ai_provider_metadata: { request_id: 'req_background_terminal' },
       workflow: 'nightly',
@@ -439,7 +439,7 @@ describe.each(providerCases)('$provider background Responses', ({ provider, crea
         $ai_output_tokens: 0,
         $ai_completion_id: responseID,
         $ai_stop_reason: 'cancelled',
-        $ai_trace_id: 'background-trace',
+        ai_trace_id: 'background-trace',
         $ai_provider_metadata: { request_id: 'req_background_cancelled' },
         workflow: 'nightly',
       },
@@ -487,7 +487,7 @@ describe.each(providerCases)('$provider background Responses', ({ provider, crea
       distinctId: 'background-user',
       properties: {
         $ai_provider: provider,
-        $ai_trace_id: 'background-trace',
+        ai_trace_id: 'background-trace',
         workflow: 'nightly',
       },
     })
@@ -521,7 +521,7 @@ describe.each(providerCases)('$provider background Responses', ({ provider, crea
       $ai_input_tokens: 12,
       $ai_output_tokens: 7,
       $ai_completion_id: responseID,
-      $ai_trace_id: 'background-trace',
+      ai_trace_id: 'background-trace',
       workflow: 'nightly',
     })
 

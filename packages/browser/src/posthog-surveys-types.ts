@@ -57,7 +57,7 @@ export type SurveyCallback = (surveys: Survey[], context?: { isLoaded: boolean; 
 
 export interface SurveyElement {
     text?: string
-    $el_text?: string
+    el_text?: string
     tag_name?: string
     href?: string
     attr_id?: string

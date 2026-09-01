@@ -32,7 +32,7 @@ export const TOOLS = [
   },
   {
     name: 'fail_always',
-    description: 'Always throws. Exercises error capture and $exception.',
+    description: 'Always throws. Exercises error capture and edp_exception.',
     inputShape: {},
     jsonSchema: { type: 'object', properties: {} },
     handler: async () => {

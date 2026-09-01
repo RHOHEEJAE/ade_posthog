@@ -15,7 +15,7 @@ export function SessionInteractions() {
     useEffect(() => {
         const refresh = () => {
             const persistence = (posthog as any)?.persistence
-            const sesid = persistence?.props?.$sesid // [activityTs, sessionId, startTs]
+            const sesid = persistence?.props?.sesid // [activityTs, sessionId, startTs]
             const activityTs = sesid?.[0]
             const sessionId = sesid?.[1]
             const startTs = sesid?.[2]
@@ -45,12 +45,12 @@ export function SessionInteractions() {
                     onClick={() => {
                         const persistence = (posthog as any).persistence
                         const twentyFiveHoursAgo = Date.now() - 25 * 60 * 60 * 1000
-                        const currentSesid = persistence?.props?.$sesid
+                        const currentSesid = persistence?.props?.sesid
 
                         if (persistence && currentSesid) {
                             const sessionId = currentSesid[1]
                             persistence.register({
-                                $sesid: [Date.now(), sessionId, twentyFiveHoursAgo],
+                                sesid: [Date.now(), sessionId, twentyFiveHoursAgo],
                             })
                         }
                     }}
@@ -61,13 +61,13 @@ export function SessionInteractions() {
                     onClick={() => {
                         const persistence = (posthog as any).persistence
                         const thirtyFiveMinutesAgo = Date.now() - 35 * 60 * 1000
-                        const currentSesid = persistence?.props?.$sesid
+                        const currentSesid = persistence?.props?.sesid
 
                         if (persistence && currentSesid) {
                             const sessionId = currentSesid[1]
                             const startTs = currentSesid[2]
                             persistence.register({
-                                $sesid: [thirtyFiveMinutesAgo, sessionId, startTs],
+                                sesid: [thirtyFiveMinutesAgo, sessionId, startTs],
                             })
                         }
                     }}

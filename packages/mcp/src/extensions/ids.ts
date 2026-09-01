@@ -14,7 +14,7 @@ export function newPrefixedId(prefix: MCPAnalyticsIDPrefix): string {
 /**
  * Deterministic id derived from an arbitrary string. Used to map MCP protocol
  * session ids to SDK session ids so the same MCP session reuses the same
- * `$session_id` across server restarts.
+ * `session_id` across server restarts.
  *
  * Uses the FNV-1a 64-bit hash (mixed twice to fill 32 hex chars), which works
  * everywhere — no `node:crypto`, no Web Crypto async API. Not cryptographic; we

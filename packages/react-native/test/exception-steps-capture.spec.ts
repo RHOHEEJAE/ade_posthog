@@ -21,8 +21,8 @@ const newPostHog = (errorTracking?: Record<string, unknown>): PostHog => {
 const captureSpy = (posthog: PostHog): jest.SpyInstance => jest.spyOn(posthog as any, 'capture')
 
 const exceptionSteps = (spy: jest.SpyInstance): any => {
-  const call = spy.mock.calls.find(([event]) => event === '$exception')
-  return call?.[1]?.$exception_steps
+  const call = spy.mock.calls.find(([event]) => event === 'edp_exception')
+  return call?.[1]?.exception_steps
 }
 
 describe('PostHog React Native exception steps capture', () => {
@@ -47,7 +47,7 @@ describe('PostHog React Native exception steps capture', () => {
     posthog.captureException(new Error('boom'))
 
     const steps = exceptionSteps(spy)
-    expect(steps.map((s: any) => s.$message)).toEqual(['A', 'B'])
+    expect(steps.map((s: any) => s.message)).toEqual(['A', 'B'])
     expect(steps[1].screen).toBe('cart')
   })
 
@@ -60,20 +60,20 @@ describe('PostHog React Native exception steps capture', () => {
     posthog.addExceptionStep('B')
     posthog.captureException(new Error('second'))
 
-    const exceptionCalls = spy.mock.calls.filter(([event]) => event === '$exception')
-    expect(exceptionCalls[0][1].$exception_steps.map((s: any) => s.$message)).toEqual(['A'])
-    expect(exceptionCalls[1][1].$exception_steps.map((s: any) => s.$message)).toEqual(['A', 'B'])
+    const exceptionCalls = spy.mock.calls.filter(([event]) => event === 'edp_exception')
+    expect(exceptionCalls[0][1].exception_steps.map((s: any) => s.message)).toEqual(['A'])
+    expect(exceptionCalls[1][1].exception_steps.map((s: any) => s.message)).toEqual(['A', 'B'])
   })
 
-  it('does not overwrite caller-provided $exception_steps', () => {
+  it('does not overwrite caller-provided exception_steps', () => {
     const posthog = newPostHog()
     const spy = captureSpy(posthog)
 
     posthog.addExceptionStep('buffered')
-    posthog.captureException(new Error('boom'), { $exception_steps: [{ $message: 'caller' }] } as any)
+    posthog.captureException(new Error('boom'), { exception_steps: [{ message: 'caller' }] } as any)
 
     const steps = exceptionSteps(spy)
-    expect(steps.map((s: any) => s.$message)).toEqual(['caller'])
+    expect(steps.map((s: any) => s.message)).toEqual(['caller'])
   })
 
   it('attaches nothing when disabled', () => {

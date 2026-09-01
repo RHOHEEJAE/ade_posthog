@@ -41,7 +41,7 @@ describe('PostHogMCP', () => {
     expect(typeof posthog.shutdown).toBe('function')
   })
 
-  // `$lib` / `$lib_version` identity is covered for both emit paths in lib-identity.test.ts.
+  // `lib` / `lib_version` identity is covered for both emit paths in lib-identity.test.ts.
 
   describe('captureToolCall', () => {
     it('emits $mcp_tool_call with canonical properties, identity, and groups', async () => {
@@ -67,11 +67,11 @@ describe('PostHogMCP', () => {
       expect(p[PostHogMCPAnalyticsProperty.IsError]).toBe(false)
       expect(p[PostHogMCPAnalyticsProperty.SessionId]).toBe('session-abc')
       expect(p[PostHogMCPAnalyticsProperty.Source]).toBe('posthog_mcp_analytics')
-      expect(p.$groups).toEqual({ organization: 'org-1', project: 'proj-1' })
+      expect(p.groups).toEqual({ organization: 'org-1', project: 'proj-1' })
       expect(p.$mcp_client_name).toBe('claude-code')
       expect(p.custom_flag).toBe(true)
       // A resolved identity keeps person processing on.
-      expect(p.$process_person_profile).toBeUndefined()
+      expect(p.process_person_profile).toBeUndefined()
     })
 
     it('maps category to $mcp_tool_category', async () => {
@@ -110,7 +110,7 @@ describe('PostHogMCP', () => {
       expect(p[PostHogMCPAnalyticsProperty.Response]).toEqual({ rows: 1 })
     })
 
-    it('fans out an $exception sibling on error, carrying the error message', async () => {
+    it('fans out an edp_exception sibling on error, carrying the error message', async () => {
       posthog.captureToolCall({
         toolName: 'execute-sql',
         distinctId: 'user-123',
@@ -124,7 +124,7 @@ describe('PostHogMCP', () => {
 
       const exception = onlyCapture(PostHogMCPAnalyticsEvent.Exception)
       expect(exception.distinct_id).toBe('user-123')
-      expect(JSON.stringify(exception.properties.$exception_list)).toContain('query failed')
+      expect(JSON.stringify(exception.properties.exception_list)).toContain('query failed')
     })
 
     it('forwards an explicit errorType to $mcp_error_type on the tool-call event', async () => {
@@ -147,10 +147,10 @@ describe('PostHogMCP', () => {
       await tick()
 
       const exception = onlyCapture(PostHogMCPAnalyticsEvent.Exception)
-      expect(JSON.stringify(exception.properties.$exception_list)).toContain('execute-sql')
+      expect(JSON.stringify(exception.properties.exception_list)).toContain('execute-sql')
     })
 
-    it('suppresses the $exception sibling when enableExceptionAutocapture is false', async () => {
+    it('suppresses the edp_exception sibling when enableExceptionAutocapture is false', async () => {
       const client = newClient({ enableExceptionAutocapture: false })
       try {
         client.captureToolCall({
@@ -199,7 +199,7 @@ describe('PostHogMCP', () => {
         expectIntent: undefined,
         expectSource: undefined,
       },
-    ])('$name', async ({ intent, intentSource, expectIntent, expectSource }) => {
+    ])('name', async ({ intent, intentSource, expectIntent, expectSource }) => {
       posthog.captureToolCall({ toolName: 'execute-sql', distinctId: 'user-123', isError: false, intent, intentSource })
       await tick()
 
@@ -332,12 +332,12 @@ describe('PostHogMCP', () => {
       expect(p[PostHogMCPAnalyticsProperty.DurationMs]).toBe(3)
     })
 
-    it('fans out an $exception sibling when the listing fails', async () => {
+    it('fans out an edp_exception sibling when the listing fails', async () => {
       posthog.captureToolsList({ distinctId: 'user-123', isError: true, error: new Error('list blew up') })
       await tick()
 
       expect(onlyCapture(PostHogMCPAnalyticsEvent.ToolsList).properties[PostHogMCPAnalyticsProperty.IsError]).toBe(true)
-      expect(JSON.stringify(onlyCapture(PostHogMCPAnalyticsEvent.Exception).properties.$exception_list)).toContain(
+      expect(JSON.stringify(onlyCapture(PostHogMCPAnalyticsEvent.Exception).properties.exception_list)).toContain(
         'list blew up'
       )
     })
@@ -378,7 +378,7 @@ describe('PostHogMCP', () => {
   })
 
   describe('identity + session handling', () => {
-    it('writes setProperties to $set', async () => {
+    it('writes setProperties to edp_set', async () => {
       posthog.captureToolCall({
         toolName: 'execute-sql',
         distinctId: 'user-123',
@@ -388,7 +388,7 @@ describe('PostHogMCP', () => {
       await tick()
 
       const p = onlyCapture(PostHogMCPAnalyticsEvent.ToolCall).properties
-      expect(p.$set).toEqual({ email: 'a@b.com', plan: 'pro' })
+      expect(p.edp_set).toEqual({ email: 'a@b.com', plan: 'pro' })
     })
 
     it('marks anonymous and skips person processing when no distinctId is given', async () => {
@@ -397,10 +397,10 @@ describe('PostHogMCP', () => {
 
       const payload = onlyCapture(PostHogMCPAnalyticsEvent.ToolCall)
       expect(payload.distinct_id).toBe('anonymous')
-      expect(payload.properties.$process_person_profile).toBe(false)
+      expect(payload.properties.process_person_profile).toBe(false)
     })
 
-    it('omits $session_id entirely when no session is supplied', async () => {
+    it('omits session_id entirely when no session is supplied', async () => {
       posthog.captureToolCall({ toolName: 'execute-sql', distinctId: 'user-123', isError: false })
       await tick()
 

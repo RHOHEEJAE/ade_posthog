@@ -273,7 +273,7 @@ describe('$-prefixed property serialization', () => {
     })
   })
 
-  test('serializes identify properties with $set and $set_once', async () => {
+  test('serializes identify properties with edp_set and edp_set_once', async () => {
     const component = { lib: { identify: 'identify_ref' } }
     const posthog = new PostHog(component as never)
     const ctx = mockSchedulerCtx()
@@ -281,16 +281,16 @@ describe('$-prefixed property serialization', () => {
     await posthog.identify(ctx as never, {
       distinctId: 'user-1',
       properties: {
-        $set: { name: 'Alice' },
-        $set_once: { created_at: '2026-01-01' },
+        edp_set: { name: 'Alice' },
+        edp_set_once: { created_at: '2026-01-01' },
       },
     })
 
     const [, , args] = ctx.scheduler.runAfter.mock.calls[0]
     expect(typeof args.properties).toBe('string')
     expect(JSON.parse(args.properties)).toEqual({
-      $set: { name: 'Alice' },
-      $set_once: { created_at: '2026-01-01' },
+      edp_set: { name: 'Alice' },
+      edp_set_once: { created_at: '2026-01-01' },
     })
   })
 
@@ -356,13 +356,13 @@ describe('$-prefixed property serialization', () => {
     await posthog.captureException(ctx as never, {
       error: new Error('test'),
       distinctId: 'user-1',
-      additionalProperties: { $ai_trace_id: 'trace-123', page: '/checkout' },
+      additionalProperties: { ai_trace_id: 'trace-123', page: '/checkout' },
     })
 
     const [, , args] = ctx.scheduler.runAfter.mock.calls[0]
     expect(typeof args.additionalProperties).toBe('string')
     expect(JSON.parse(args.additionalProperties)).toEqual({
-      $ai_trace_id: 'trace-123',
+      ai_trace_id: 'trace-123',
       page: '/checkout',
     })
   })
@@ -510,7 +510,7 @@ describe('beforeSend', () => {
   test('applies beforeSend to identify events', async () => {
     const component = { lib: { identify: 'identify_ref' } }
     const beforeSend: BeforeSendFn = (event) => {
-      expect(event.event).toBe('$identify')
+      expect(event.event).toBe('edp_identify')
       return null
     }
     const posthog = new PostHog(component as never, {
@@ -528,7 +528,7 @@ describe('beforeSend', () => {
   test('applies beforeSend to alias events', async () => {
     const component = { lib: { alias: 'alias_ref' } }
     const beforeSend: BeforeSendFn = (event) => {
-      expect(event.event).toBe('$create_alias')
+      expect(event.event).toBe('edp_create_alias')
       return event
     }
     const posthog = new PostHog(component as never, {
@@ -549,7 +549,7 @@ describe('beforeSend', () => {
       lib: { captureException: 'captureException_ref' },
     }
     const beforeSend: BeforeSendFn = (event) => {
-      expect(event.event).toBe('$exception')
+      expect(event.event).toBe('edp_exception')
       return null
     }
     const posthog = new PostHog(component as never, {
@@ -569,7 +569,7 @@ describe('beforeSend', () => {
       lib: { groupIdentify: 'groupIdentify_ref' },
     }
     const beforeSend: BeforeSendFn = (event) => {
-      expect(event.event).toBe('$groupidentify')
+      expect(event.event).toBe('edp_groupidentify')
       return event
     }
     const posthog = new PostHog(component as never, {

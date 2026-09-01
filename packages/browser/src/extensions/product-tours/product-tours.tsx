@@ -527,8 +527,8 @@ export class ProductTourManager {
                 localStore._set(`${TOUR_SHOWN_KEY_PREFIX}${tour.id}`, true)
                 localStore._set(`${LAST_SEEN_TOUR_DATE_KEY_PREFIX}${tour.tour_type}`, new Date().toISOString())
 
-                this._instance.capture('$set', {
-                    $set: { [`$product_tour_shown/${tour.id}`]: true },
+                this._instance.capture('edp_set', {
+                    edp_set: { [`product_tour_shown/${tour.id}`]: true },
                 })
             }
         } else {
@@ -609,8 +609,8 @@ export class ProductTourManager {
         if (!this._isPreviewMode) {
             localStore._set(`${TOUR_DISMISSED_KEY_PREFIX}${this._activeTour.id}`, true)
 
-            this._instance.capture('$set', {
-                $set: { [`$product_tour_dismissed/${this._activeTour.id}`]: true },
+            this._instance.capture('edp_set', {
+                edp_set: { [`product_tour_dismissed/${this._activeTour.id}`]: true },
             })
         }
 
@@ -703,9 +703,9 @@ export class ProductTourManager {
         if (!this._isPreviewMode) {
             localStore._set(`${TOUR_COMPLETED_KEY_PREFIX}${this._activeTour.id}`, true)
 
-            this._instance.capture('$set', {
-                $set: {
-                    [`$product_tour_completed/${this._activeTour.id}`]: true,
+            this._instance.capture('edp_set', {
+                edp_set: {
+                    [`product_tour_completed/${this._activeTour.id}`]: true,
                 },
             })
         }
@@ -924,7 +924,7 @@ export class ProductTourManager {
         })
 
         const handleSubmit = (response: string | number | null) => {
-            const responseKey = questionId ? `$survey_response_${questionId}` : '$survey_response'
+            const responseKey = questionId ? `survey_response_${questionId}` : 'survey_response'
             this._captureEvent(SurveyEventName.SENT, {
                 [SurveyEventProperties.SURVEY_ID]: surveyId,
                 [SurveyEventProperties.PRODUCT_TOUR_ID]: tourId,

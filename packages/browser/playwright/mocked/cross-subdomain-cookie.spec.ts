@@ -111,8 +111,8 @@ test('already-open sibling subdomains adopt identify and reset cookie changes', 
     expect(resetAnonymousId).not.toBe('identified-user')
     expect(await captureDistinctId(page, 'after-sibling-reset')).toBe(resetAnonymousId)
     const resetEvent = (await page.capturedEvents()).find((event) => event.event === 'after-sibling-reset')
-    expect(resetEvent?.properties).not.toHaveProperty('$feature/session-recording-player')
-    expect(resetEvent?.properties).not.toHaveProperty('$groups')
+    expect(resetEvent?.properties).not.toHaveProperty('feature/session-recording-player')
+    expect(resetEvent?.properties).not.toHaveProperty('groups')
     expect(resetEvent?.properties).not.toHaveProperty('previous_user_property')
     expect(
         await page.evaluate(() => (window as WindowWithPostHog).posthog?.get_property('cross_domain_property'))

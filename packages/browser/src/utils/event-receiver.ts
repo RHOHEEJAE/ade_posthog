@@ -275,7 +275,7 @@ export abstract class EventReceiver<T extends EventTriggerable> {
         const logger = this._getLogger()
 
         // An item reacting to one of its own lifecycle events (shown / dismissed / sent).
-        const itemId = eventPayload?.properties?.$survey_id || eventPayload?.properties?.$product_tour_id
+        const itemId = eventPayload?.properties?.survey_id || eventPayload?.properties?.product_tour_id
         if (itemId && this.getActivatedIds().includes(itemId)) {
             const outcome = this._activationOutcome(event, itemId)
             if (outcome === 'consume') {

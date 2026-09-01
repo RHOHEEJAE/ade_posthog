@@ -315,9 +315,9 @@ export const buildCaptureV1Event = (message: CaptureV1Message): CaptureV1Event =
     const properties = { ...message.properties }
     const options: CaptureV1EventOptions = {}
     const optionSentinels = [
-        ['$cookieless_mode', 'cookieless_mode'],
+        ['cookieless_mode', 'cookieless_mode'],
         ['$ignore_sent_at', 'disable_skew_correction'],
-        ['$process_person_profile', 'process_person_profile'],
+        ['process_person_profile', 'process_person_profile'],
     ] as const
     for (const [property, option] of optionSentinels) {
         const value = coerceBoolean(properties[property])
@@ -326,17 +326,17 @@ export const buildCaptureV1Event = (message: CaptureV1Message): CaptureV1Event =
         }
         delete properties[property]
     }
-    if (typeof properties.$product_tour_id === 'string') {
-        options.product_tour_id = properties.$product_tour_id
+    if (typeof properties.product_tour_id === 'string') {
+        options.product_tour_id = properties.product_tour_id
     }
-    delete properties.$product_tour_id
+    delete properties.product_tour_id
 
-    const sessionId = properties.$session_id
-    const windowId = properties.$window_id
-    delete properties.$session_id
-    delete properties.$window_id
-    delete properties.$lib
-    delete properties.$lib_version
+    const sessionId = properties.session_id
+    const windowId = properties.window_id
+    delete properties.session_id
+    delete properties.window_id
+    delete properties.lib
+    delete properties.lib_version
     delete properties.token
     delete properties.distinct_id
 

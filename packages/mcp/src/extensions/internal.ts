@@ -121,8 +121,8 @@ export function mergeIdentities(previous: UserIdentity | undefined, next: UserId
 
 /**
  * Resolves the optional `identify` callback on every request (the resolved
- * identity is what stamps `distinct_id`/`$set` onto events), but publishes the
- * `$identify` event at most once per session: at `initialize`, when a
+ * identity is what stamps `distinct_id`/`edp_set` onto events), but publishes the
+ * `edp_identify` event at most once per session: at `initialize`, when a
  * long-lived server first sees the identity, or when it materially changes.
  */
 export async function handleIdentify(
@@ -167,10 +167,10 @@ export async function handleIdentify(
       // pod (fresh instrument() per request) is every request. A token session
       // was already announced by whichever pod handled `initialize`, so only the
       // handshake, or a genuine change a long-lived server observed, publishes
-      // $identify. Every event still carries distinct_id/$set regardless, so
+      // edp_identify. Every event still carries distinct_id/edp_set regardless, so
       // person properties are never lost. Known accepted gap (ADR-0003): an
       // identity resolving only after `initialize` on a token session gets no
-      // standalone $identify, so its pre-identify events aren't aliased onto
+      // standalone edp_identify, so its pre-identify events aren't aliased onto
       // the user.
       const changed = previousIdentity !== undefined && !areIdentitiesEqual(previousIdentity, mergedIdentity)
       const firstSeen = previousIdentity === undefined

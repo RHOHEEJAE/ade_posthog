@@ -216,7 +216,7 @@ const captureFromEvent = (
           }
         } else if (['string', 'number', 'boolean'].includes(typeof value)) {
           if (key === 'children') {
-            el.$el_text = typeof value === 'string' ? value : JSON.stringify(value)
+            el.el_text = typeof value === 'string' ? value : JSON.stringify(value)
           } else {
             el[`attr__${key}`] = value as JsonType
           }

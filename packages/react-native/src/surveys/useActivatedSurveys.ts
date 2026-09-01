@@ -42,7 +42,7 @@ export function useActivatedSurveys(posthog: PostHog, surveys: Survey[]): Readon
             setActivatedSurveys((current) => new Set([...current, ...matchingSurveyIds]))
           }
         } else if (payload.event === SURVEY_SHOWN_EVENT_NAME) {
-          const surveyId = payload.properties?.$survey_id as string | undefined
+          const surveyId = payload.properties?.survey_id as string | undefined
           if (surveyId) {
             setActivatedSurveys((current) => {
               if (!current.has(surveyId)) {

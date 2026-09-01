@@ -2,7 +2,7 @@
  * @file Adapted from [posthog-js](https://github.com/PostHog/posthog-js/blob/8157df935a4d0e71d2fefef7127aa85ee51c82d1/src/extensions/sentry-integration.ts) with modifications for the Node SDK.
  */
 /**
- * Integrate Sentry with PostHog. This will add a direct link to the person in Sentry, and an $exception event in PostHog.
+ * Integrate Sentry with PostHog. This will add a direct link to the person in Sentry, and an edp_exception event in PostHog.
  *
  * @deprecated This integration is deprecated and will be removed in a future major version. Use PostHog Error Tracking for Node instead:
  * https://posthog.com/docs/error-tracking/installation/node
@@ -61,12 +61,12 @@ interface _SentryIntegrationClass {
 }
 
 interface SentryExceptionProperties {
-  $sentry_event_id?: string
-  $sentry_exception?: { values?: _SentryException[] }
-  $sentry_exception_message?: string
-  $sentry_exception_type?: string
-  $sentry_tags: { [key: string]: _SentryPrimitive }
-  $sentry_url?: string
+  sentry_event_id?: string
+  sentry_exception?: { values?: _SentryException[] }
+  sentry_exception_message?: string
+  sentry_exception_type?: string
+  sentry_tags: { [key: string]: _SentryPrimitive }
+  sentry_url?: string
 }
 
 export type SentryIntegrationOptions = {
@@ -134,32 +134,32 @@ export function createEventProcessor(
     const properties: SentryExceptionProperties & {
       // two properties added to match any exception auto-capture
       // added manually to avoid any dependency on the lazily loaded content
-      $exception_message: any
-      $exception_type: any
-      $exception_list: any
-      $exception_level: CoreErrorTracking.SeverityLevel
-      $release_id?: string
+      exception_message: any
+      exception_type: any
+      exception_list: any
+      exception_level: CoreErrorTracking.SeverityLevel
+      release_id?: string
     } = {
       // PostHog Exception Properties,
-      $exception_message: exceptions[0]?.value || event.message,
-      $exception_type: exceptions[0]?.type,
-      $exception_level: event.level,
-      $exception_list: exceptionList,
+      exception_message: exceptions[0]?.value || event.message,
+      exception_type: exceptions[0]?.type,
+      exception_level: event.level,
+      exception_list: exceptionList,
       // Sentry Exception Properties
-      $sentry_event_id: event.event_id,
-      $sentry_exception: event.exception,
-      $sentry_exception_message: exceptions[0]?.value || event.message,
-      $sentry_exception_type: exceptions[0]?.type,
-      $sentry_tags: event.tags,
+      sentry_event_id: event.event_id,
+      sentry_exception: event.exception,
+      sentry_exception_message: exceptions[0]?.value || event.message,
+      sentry_exception_type: exceptions[0]?.type,
+      sentry_tags: event.tags,
     }
 
     const injectedReleaseId = CoreErrorTracking.getInjectedReleaseId()
     if (injectedReleaseId) {
-      properties.$release_id = injectedReleaseId
+      properties.release_id = injectedReleaseId
     }
 
     if (organization && projectId) {
-      properties['$sentry_url'] =
+      properties['sentry_url'] =
         (prefix || 'https://sentry.io/organizations/') +
         organization +
         '/issues/?project=' +
@@ -169,7 +169,7 @@ export function createEventProcessor(
     }
 
     if (sendExceptionsToPostHog) {
-      _posthog.capture({ event: '$exception', distinctId: userId, properties })
+      _posthog.capture({ event: 'edp_exception', distinctId: userId, properties })
     }
 
     return event

@@ -28,8 +28,8 @@ private func containsFatalJsErrorMarker(_ text: String?) -> Bool {
 }
 
 private func isReactNativeFatalJsError(_ event: PostHogEvent) -> Bool {
-    guard event.event == "$exception",
-          let exceptionList = event.properties["$exception_list"] as? [[String: Any]]
+    guard event.event == "edp_exception",
+          let exceptionList = event.properties["exception_list"] as? [[String: Any]]
     else { return false }
     return exceptionList.contains { exception in
         if containsFatalJsErrorMarker(exception["type"] as? String) {

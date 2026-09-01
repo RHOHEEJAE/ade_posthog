@@ -11,7 +11,7 @@ Under the 2025-11-25 spec, the only value a compliant client replays on **every*
 
 ## Decision
 
-At `initialize`, when neither the client nor the transport supplied a session id, mint the `Mcp-Session-Id` header as a self-encoded token: `base64url(JSON)` with shortened keys (`sid` = session id, `cn`/`cv` = client name/version, `pv` = protocol version). Any pod decodes the replayed header and recovers the same `$session_id` plus client metadata — no server-side store, no sticky routing, no client changes.
+At `initialize`, when neither the client nor the transport supplied a session id, mint the `Mcp-Session-Id` header as a self-encoded token: `base64url(JSON)` with shortened keys (`sid` = session id, `cn`/`cv` = client name/version, `pv` = protocol version). Any pod decodes the replayed header and recovers the same `session_id` plus client metadata — no server-side store, no sticky routing, no client changes.
 
 Supporting choices:
 
@@ -23,9 +23,9 @@ Supporting choices:
 ## Consequences
 
 - Clients that don't replay the header degrade to the old behavior: one generated session per request.
-- `$identify` is published at most once per session, and a token session is assumed to have been announced at `initialize` by whichever pod handled it. Known gap: an identity that only resolves *after* `initialize` on a stateless deployment gets no standalone `$identify` (person properties still land via `$set` on every event). Inherent to statelessness; accepted rather than worked around.
+- `edp_identify` is published at most once per session, and a token session is assumed to have been announced at `initialize` by whichever pod handled it. Known gap: an identity that only resolves *after* `initialize` on a stateless deployment gets no standalone `edp_identify` (person properties still land via `edp_set` on every event). Inherent to statelessness; accepted rather than worked around.
 - The 2026-07-28 revision removes the header outright (servers MUST NOT mint or echo it), so this whole mechanism is legacy-only for clients on that revision — see ADR-0004. Era detection to gate it explicitly is an open follow-up.
 
 ## References
 
-- PostHog/posthog-js#4123 (tokens), #4210 (negotiated protocol version), #4144 ($identify once per session), PostHog/posthog#68635 (customer report)
+- PostHog/posthog-js#4123 (tokens), #4210 (negotiated protocol version), #4144 (edp_identify once per session), PostHog/posthog#68635 (customer report)

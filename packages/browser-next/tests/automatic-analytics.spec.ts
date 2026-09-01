@@ -96,7 +96,7 @@ describe('@posthog/browser automatic analytics', () => {
 
             await posthog.flush()
 
-            expect((requests[0]?.body?.batch as Array<{ event: string }> | undefined)?.[0]?.event).toBe('$pageview')
+            expect((requests[0]?.body?.batch as Array<{ event: string }> | undefined)?.[0]?.event).toBe('edp_pageview')
             await posthog.shutdown()
         } finally {
             if (originalDocument) {

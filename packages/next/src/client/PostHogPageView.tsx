@@ -9,7 +9,7 @@ import { getCurrentUrl } from '../shared/browser.js'
  * Tracks pageviews on route change in Next.js App Router.
  *
  * Place this component inside your `PostHogProvider` (typically in `app/layout.tsx`).
- * It will automatically capture a `$pageview` event whenever the route changes.
+ * It will automatically capture a `edp_pageview` event whenever the route changes.
  *
  * Includes its own Suspense boundary (required by `useSearchParams()`), so you
  * don't need to wrap it in one yourself.
@@ -53,7 +53,7 @@ function PageViewTracker() {
             return
         }
 
-        posthog.capture('$pageview', { $current_url: currentUrl })
+        posthog.capture('edp_pageview', { current_url: currentUrl })
     }, [pathname, searchParams, posthog])
 
     return null

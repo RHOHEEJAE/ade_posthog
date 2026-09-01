@@ -114,7 +114,7 @@ function normalizeUnsetPersonProperties(value: string | string[]): string[] {
 }
 
 /**
- * Derive `$feature/{key}` and `$active_feature_flags` event properties from a flat
+ * Derive `feature/{key}` and `active_feature_flags` event properties from a flat
  * `{ key: value }` map returned by the legacy `sendFeatureFlags` path.
  */
 function buildFlagEventProperties(flagValues: Record<string, FeatureFlagValue> | undefined): Record<string, any> {
@@ -123,13 +123,13 @@ function buildFlagEventProperties(flagValues: Record<string, FeatureFlagValue> |
   }
   const additionalProperties: Record<string, any> = {}
   for (const [feature, variant] of Object.entries(flagValues)) {
-    additionalProperties[`$feature/${feature}`] = variant
+    additionalProperties[`feature/${feature}`] = variant
   }
   const activeFlags = Object.keys(flagValues)
     .filter((flag) => flagValues[flag] !== false)
     .sort()
   if (activeFlags.length > 0) {
-    additionalProperties['$active_feature_flags'] = activeFlags
+    additionalProperties['active_feature_flags'] = activeFlags
   }
   return additionalProperties
 }
@@ -155,7 +155,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
   private _flagOverrides?: Record<string, FeatureFlagValue>
   private _payloadOverrides?: Record<string, JsonType>
 
-  // Server-controlled gate for minimal $feature_flag_called events. Single client-level gate,
+  // Server-controlled gate for minimal edp_feature_flag_called events. Single client-level gate,
   // last-writer-wins across the two signal sources (v2 /flags responses and the poller's
   // flag-definition loads) — both derive from the same per-team server config and converge.
   private _minimalFlagCalledEvents: boolean = false
@@ -623,8 +623,8 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
    * Returns the common properties attached to every captured event.
    *
    * @remarks
-   * Extends the shared core properties (`$lib`, `$lib_version`) with
-   * `$is_server: true` so that events emitted from the server-side SDKs
+   * Extends the shared core properties (`lib`, `lib_version`) with
+   * `is_server: true` so that events emitted from the server-side SDKs
    * (posthog-node and posthog-edge, which both extend this class) are
    * distinguishable from browser and react-native events. Browser and
    * react-native clients do not extend `PostHogBackendClient`, so they
@@ -632,17 +632,17 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
    *
    * This is controlled by the `isServer` option, which defaults to `true`.
    * When `isServer` is `false` (e.g. when using the SDK as a client/CLI), the
-   * `$is_server` property is omitted entirely so the device OS is attributed
+   * `is_server` property is omitted entirely so the device OS is attributed
    * normally.
    *
-   * @returns The common event properties, including `$is_server: true` when
+   * @returns The common event properties, including `is_server: true` when
    * the `isServer` option is enabled.
    */
   protected override getCommonEventProperties(): PostHogEventProperties {
     const commonProperties = super.getCommonEventProperties()
 
     if (this.options.isServer ?? true) {
-      commonProperties.$is_server = true
+      commonProperties.is_server = true
     }
 
     return commonProperties
@@ -716,7 +716,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
     if (typeof props === 'string') {
       this._logger.warn(stringArgumentWarning)
     }
-    if (props.event === '$exception' && !props._originatedFromCaptureException) {
+    if (props.event === 'edp_exception' && !props._originatedFromCaptureException) {
       this._logger.warn(exceptionCaptureWarning)
     }
   }
@@ -782,7 +782,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
     this._warnIfInvalidCapture(
       props,
       'Called capture() with a string as the first argument when an object was expected.',
-      "Using `posthog.capture('$exception')` is unreliable because it does not attach required metadata. Use `posthog.captureException(error)` instead, which attaches required metadata automatically."
+      "Using `posthog.capture('edp_exception')` is unreliable because it does not attach required metadata. Use `posthog.captureException(error)` instead, which attaches required metadata automatically."
     )
     this._capturePreparedEvent(props, false)
   }
@@ -834,7 +834,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
     this._warnIfInvalidCapture(
       props,
       'Called captureImmediate() with a string as the first argument when an object was expected.',
-      "Capturing a `$exception` event via `posthog.captureImmediate('$exception')` is unreliable because it does not attach required metadata. Use `posthog.captureExceptionImmediate(error)` instead, which attaches this metadata by default."
+      "Capturing a `edp_exception` event via `posthog.captureImmediate('edp_exception')` is unreliable because it does not attach required metadata. Use `posthog.captureExceptionImmediate(error)` instead, which attaches this metadata by default."
     )
     return this._capturePreparedEvent(props, true)
   }
@@ -905,13 +905,13 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
    *
    * @example
    * ```ts
-   * // Using $set and $set_once
+   * // Using edp_set and edp_set_once
    * client.identify({
    *   distinctId: 'user_123',
    *   properties: {
-   *     $set: { name: 'John Doe', email: 'john@example.com' },
-   *     $set_once: { first_login: new Date().toISOString() }
-   *     $anon_distinct_id: 'anonymous_user_456'
+   *     edp_set: { name: 'John Doe', email: 'john@example.com' },
+   *     edp_set_once: { first_login: new Date().toISOString() }
+   *     anon_distinct_id: 'anonymous_user_456'
    *   }
    * })
    * ```
@@ -921,19 +921,19 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
    * @param data - The identify data containing distinctId and properties
    */
   identify({ distinctId, properties = {}, disableGeoip }: IdentifyMessage): void {
-    // Catch properties passed as $set and move them to the top level
-    const { $set, $set_once, $anon_distinct_id, ...rest } = properties
-    // if no $set is provided we assume all rest properties are $set
-    const setProps = $set || rest
-    const setOnceProps = $set_once || {}
+    // Catch properties passed as edp_set and move them to the top level
+    const { edp_set, edp_set_once, anon_distinct_id, ...rest } = properties
+    // if no edp_set is provided we assume all rest properties are edp_set
+    const setProps = edp_set || rest
+    const setOnceProps = edp_set_once || {}
     const eventProperties = {
-      $set: setProps,
-      $set_once: setOnceProps,
-      $anon_distinct_id: $anon_distinct_id ?? undefined,
+      edp_set: setProps,
+      edp_set_once: setOnceProps,
+      anon_distinct_id: anon_distinct_id ?? undefined,
     }
     this._sendPreparedEvent(
       'identify',
-      { distinctId, event: '$identify', properties: eventProperties, disableGeoip },
+      { distinctId, event: 'edp_identify', properties: eventProperties, disableGeoip },
       false,
       { includeContextProperties: false }
     )
@@ -960,19 +960,19 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
    * @returns Promise that resolves when the identify is processed
    */
   async identifyImmediate({ distinctId, properties = {}, disableGeoip }: IdentifyMessage): Promise<void> {
-    // Catch properties passed as $set and move them to the top level
-    const { $set, $set_once, $anon_distinct_id, ...rest } = properties
-    // if no $set is provided we assume all rest properties are $set
-    const setProps = $set || rest
-    const setOnceProps = $set_once || {}
+    // Catch properties passed as edp_set and move them to the top level
+    const { edp_set, edp_set_once, anon_distinct_id, ...rest } = properties
+    // if no edp_set is provided we assume all rest properties are edp_set
+    const setProps = edp_set || rest
+    const setOnceProps = edp_set_once || {}
     const eventProperties = {
-      $set: setProps,
-      $set_once: setOnceProps,
-      $anon_distinct_id: $anon_distinct_id ?? undefined,
+      edp_set: setProps,
+      edp_set_once: setOnceProps,
+      anon_distinct_id: anon_distinct_id ?? undefined,
     }
     await this._sendPreparedEvent(
       'identify',
-      { distinctId, event: '$identify', properties: eventProperties, disableGeoip },
+      { distinctId, event: 'edp_identify', properties: eventProperties, disableGeoip },
       true,
       { includeContextProperties: false }
     )
@@ -1001,15 +1001,15 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
 
     const eventProperties: Record<string, any> = {}
     if (Object.keys(properties).length > 0) {
-      eventProperties.$set = properties
+      eventProperties.edp_set = properties
     }
     if (Object.keys(propertiesOnce).length > 0) {
-      eventProperties.$set_once = propertiesOnce
+      eventProperties.edp_set_once = propertiesOnce
     }
 
     this.capture({
       distinctId,
-      event: '$set',
+      event: 'edp_set',
       properties: eventProperties,
     })
   }
@@ -1035,7 +1035,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
       return
     }
 
-    this.capture({ distinctId, event: '$set', properties: { $unset: propertyNames } })
+    this.capture({ distinctId, event: 'edp_set', properties: { unset: propertyNames } })
   }
 
   /**
@@ -1059,7 +1059,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
       'alias',
       {
         distinctId: data.distinctId,
-        event: '$create_alias',
+        event: 'edp_create_alias',
         properties: { distinct_id: data.distinctId, alias: data.alias },
         disableGeoip: data.disableGeoip,
       },
@@ -1090,7 +1090,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
       'alias',
       {
         distinctId: data.distinctId,
-        event: '$create_alias',
+        event: 'edp_create_alias',
         properties: { distinct_id: data.distinctId, alias: data.alias },
         disableGeoip: data.disableGeoip,
       },
@@ -1364,30 +1364,30 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
     if (sendFeatureFlagEvents) {
       const response = result === undefined ? undefined : result.enabled === false ? false : (result.variant ?? true)
       const properties: Record<string, any> = {
-        $feature_flag: key,
-        $feature_flag_response: response,
-        $feature_flag_id: flagId,
-        $feature_flag_version: flagVersion,
-        $feature_flag_reason: flagReason,
+        feature_flag: key,
+        feature_flag_response: response,
+        feature_flag_id: flagId,
+        feature_flag_version: flagVersion,
+        feature_flag_reason: flagReason,
         locally_evaluated: flagWasLocallyEvaluated,
-        [`$feature/${key}`]: response,
-        $feature_flag_request_id: requestId,
-        $feature_flag_evaluated_at: flagWasLocallyEvaluated ? Date.now() : evaluatedAt,
+        [`feature/${key}`]: response,
+        feature_flag_request_id: requestId,
+        feature_flag_evaluated_at: flagWasLocallyEvaluated ? Date.now() : evaluatedAt,
       }
 
       if (flagHasExperiment !== undefined) {
-        properties.$feature_flag_has_experiment = flagHasExperiment
+        properties.feature_flag_has_experiment = flagHasExperiment
       }
 
       if (flagWasLocallyEvaluated && this.featureFlagsPoller) {
         const flagDefinitionsLoadedAt = this.featureFlagsPoller.getFlagDefinitionsLoadedAt()
         if (flagDefinitionsLoadedAt !== undefined) {
-          properties.$feature_flag_definitions_loaded_at = flagDefinitionsLoadedAt
+          properties.feature_flag_definitions_loaded_at = flagDefinitionsLoadedAt
         }
       }
 
       if (featureFlagError) {
-        properties.$feature_flag_error = featureFlagError
+        properties.feature_flag_error = featureFlagError
       }
 
       this._captureFlagCalledEventIfNeeded({
@@ -1555,7 +1555,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
     }
 
     // sendFeatureFlagEvents is intentionally ignored for payload-only calls.
-    // getFeatureFlagPayload never sends $feature_flag_called events, matching pre-refactoring behavior.
+    // getFeatureFlagPayload never sends edp_feature_flag_called events, matching pre-refactoring behavior.
     // The option is kept in the signature for backwards compatibility (marked @deprecated above).
     const result = await this._getFeatureFlagResult(
       key,
@@ -1941,7 +1941,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
    * into a single `/flags` request per incoming request.
    *
    * **Local evaluation is transparent.** When the poller can resolve a flag from
-   * cached definitions, no network call is made and the snapshot's `$feature_flag_called`
+   * cached definitions, no network call is made and the snapshot's `edp_feature_flag_called`
    * events are tagged `locally_evaluated: true`. A requested key missing from local
    * definitions is included in a `/flags` fallback unless `onlyEvaluateLocally` is true.
    * Locally resolved values remain authoritative when remote results are merged.
@@ -2097,7 +2097,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
 
     // Fall back to remote evaluation for any flags the poller couldn't resolve locally.
     // We use the detail-shaped endpoint so the resulting records carry id/version/reason
-    // and fired $feature_flag_called events match what isFeatureEnabled()/getFeatureFlag() emit.
+    // and fired edp_feature_flag_called events match what isFeatureEnabled()/getFeatureFlag() emit.
     const requestedFlagMissingLocally =
       requestedFlagKeys !== undefined &&
       Array.from(requestedFlagKeys).some((key) => this.featureFlagsPoller?.featureFlagsByKey[key] === undefined)
@@ -2197,22 +2197,22 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
   }
 
   /**
-   * Minimal iff this is a `$feature_flag_called` event, the server gate is on, and the flag
+   * Minimal iff this is a `edp_feature_flag_called` event, the server gate is on, and the flag
    * is known to not be linked to an experiment. Any missing signal — no gate seen yet,
-   * `$feature_flag_has_experiment` absent — falls back to the full event.
+   * `feature_flag_has_experiment` absent — falls back to the full event.
    *
    * @internal
    */
   private _shouldSendMinimalFlagCalledEvent(event: string, properties: PostHogEventProperties): boolean {
     return (
-      event === '$feature_flag_called' &&
+      event === 'edp_feature_flag_called' &&
       this._minimalFlagCalledEvents &&
-      properties.$feature_flag_has_experiment === false
+      properties.feature_flag_has_experiment === false
     )
   }
 
   /**
-   * Fires a `$feature_flag_called` event for the given flag if the (distinctId, flag, response)
+   * Fires a `edp_feature_flag_called` event for the given flag if the (distinctId, flag, response)
    * triple hasn't already been reported for this client. Shared by the single-flag evaluation
    * path and `FeatureFlagEvaluations.isEnabled() / getFlag()` so both paths dedupe identically.
    *
@@ -2244,7 +2244,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
 
     this.capture({
       distinctId,
-      event: '$feature_flag_called',
+      event: 'edp_feature_flag_called',
       properties,
       groups,
       disableGeoip,
@@ -2309,11 +2309,11 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
       'capture',
       {
         distinctId: distinctId || `$${groupType}_${groupKey}`,
-        event: '$groupidentify',
+        event: 'edp_groupidentify',
         properties: {
-          $group_type: groupType,
-          $group_key: groupKey,
-          $group_set: properties || {},
+          group_type: groupType,
+          group_key: groupKey,
+          group_set: properties || {},
         },
         disableGeoip,
       },
@@ -2355,11 +2355,11 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
       'capture',
       {
         distinctId: distinctId || `$${groupType}_${groupKey}`,
-        event: '$groupidentify',
+        event: 'edp_groupidentify',
         properties: {
-          $group_type: groupType,
-          $group_key: groupKey,
-          $group_set: properties || {},
+          group_type: groupType,
+          group_key: groupKey,
+          group_set: properties || {},
         },
         disableGeoip,
       },
@@ -2776,7 +2776,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
     if (groups) {
       for (const groupName of Object.keys(groups)) {
         allGroupProperties[groupName] = {
-          $group_key: groups[groupName],
+          group_key: groups[groupName],
           ...(groupProperties?.[groupName] || {}),
         }
       }
@@ -2962,16 +2962,16 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
 
     if (!mergedDistinctId) {
       mergedDistinctId = uuidv7()
-      mergedProperties.$process_person_profile = false
+      mergedProperties.process_person_profile = false
     }
 
-    if (includeContextProperties && contextData?.sessionId && !mergedProperties.$session_id) {
-      mergedProperties.$session_id = contextData.sessionId
+    if (includeContextProperties && contextData?.sessionId && !mergedProperties.session_id) {
+      mergedProperties.session_id = contextData.sessionId
     }
 
-    // Minimal $feature_flag_called events: rebuild from the strict allowlist before before_send
+    // Minimal edp_feature_flag_called events: rebuild from the strict allowlist before before_send
     // runs, so a customer hook may deliberately re-add stripped properties. Everything the SDK
-    // itself adds after this point ($groups, $lib/$lib_version/$is_server, $geoip_disable) is
+    // itself adds after this point (groups, lib/lib_version/is_server, geoip_disable) is
     // allowlisted — no SDK enrichment may reintroduce stripped properties.
     const finalProperties = this._shouldSendMinimalFlagCalledEvent(event, mergedProperties)
       ? minimizeFlagCalledEventProperties(mergedProperties)
@@ -3029,7 +3029,7 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
           return buildFlagEventProperties(flagValues)
         }
 
-        // $feature_flag_called events are not enriched with cached flags — the flags
+        // edp_feature_flag_called events are not enriched with cached flags — the flags
         // on that event should reflect the specific call, not a potentially stale snapshot.
         return {}
       })
@@ -3044,23 +3044,23 @@ export abstract class PostHogBackendClient extends PostHogCoreStateless implemen
         return {
           ...additionalProperties,
           ...(eventMessage.properties || {}),
-          // Only stamp $groups from the top-level `groups` when present — otherwise a
-          // caller-provided properties.$groups would be clobbered with undefined (#3888).
+          // Only stamp groups from the top-level `groups` when present — otherwise a
+          // caller-provided properties.groups would be clobbered with undefined (#3888).
           ...(resolvedGroups !== undefined && Object.keys(resolvedGroups).length > 0
-            ? { $groups: resolvedGroups }
+            ? { groups: resolvedGroups }
             : {}),
         }
       })
 
     // Handle bot pageview collection based on preview flag
     if (
-      eventMessage.event === '$pageview' &&
+      eventMessage.event === 'edp_pageview' &&
       this.options.__preview_capture_bot_pageviews &&
-      typeof eventProperties.$raw_user_agent === 'string'
+      typeof eventProperties.raw_user_agent === 'string'
     ) {
-      if (isBlockedUA(eventProperties.$raw_user_agent, this.options.custom_blocked_useragents || [])) {
-        eventMessage.event = '$bot_pageview'
-        eventProperties.$browser_type = 'bot'
+      if (isBlockedUA(eventProperties.raw_user_agent, this.options.custom_blocked_useragents || [])) {
+        eventMessage.event = 'edp_bot_pageview'
+        eventProperties.browser_type = 'bot'
       }
     }
 

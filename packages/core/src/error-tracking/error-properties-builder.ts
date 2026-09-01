@@ -38,12 +38,12 @@ export class ErrorPropertiesBuilder {
     const exceptionWithStack = this.parseStacktrace(exceptionWithCause, parsingContext)
     const exceptionList = this.convertToExceptionList(exceptionWithStack, mechanism)
     return {
-      $exception_list: exceptionList,
-      $exception_level: 'error',
+      exception_list: exceptionList,
+      exception_level: 'error',
     }
   }
 
-  async modifyFrames(exceptionList: ErrorProperties['$exception_list']): Promise<ErrorProperties['$exception_list']> {
+  async modifyFrames(exceptionList: ErrorProperties['exception_list']): Promise<ErrorProperties['exception_list']> {
     for (const exc of exceptionList) {
       if (exc.stacktrace && exc.stacktrace.frames && isArray(exc.stacktrace.frames)) {
         exc.stacktrace.frames = await this.applyModifiers(exc.stacktrace.frames)

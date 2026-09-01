@@ -31,7 +31,7 @@ Do **not** write one for refactors, renames, bug fixes, dependency bumps, test c
 
 ## Consequences
 
-- Recall is cheap: "why does `$session_id` come from a hash?" is answered by one file with the trade-offs preserved, including the options we rejected.
+- Recall is cheap: "why does `session_id` come from a hash?" is answered by one file with the trade-offs preserved, including the options we rejected.
 - Comments shrink: rationale lives in exactly one place, so the same fact is no longer retold in three files that drift independently.
 - Writing an ADR is a forcing function on new decisions — if the Context/Consequences are hard to write, the decision isn't understood yet.
 - ADRs 0002–0004 are backfilled from merged work; from here on, records are written as decisions are made.

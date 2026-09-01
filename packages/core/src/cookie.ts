@@ -60,7 +60,7 @@ export function getPostHogCookieName(apiKey: string): string {
 /**
  * Serializes an anonymous ID into the JSON format posthog-js expects.
  *
- * When `distinct_id === $device_id`, posthog-js treats the user as anonymous.
+ * When `distinct_id === device_id`, posthog-js treats the user as anonymous.
  *
  * @param anonymousId - The anonymous distinct ID to serialize
  * @returns JSON string suitable for the PostHog cookie value
@@ -70,9 +70,9 @@ export function serializePostHogCookie(anonymousId: string): string {
   const sessionId = uuidv7()
   return JSON.stringify({
     distinct_id: anonymousId,
-    $device_id: anonymousId,
-    $user_state: 'anonymous',
-    $sesid: [now, sessionId, now],
+    device_id: anonymousId,
+    user_state: 'anonymous',
+    sesid: [now, sessionId, now],
   })
 }
 
@@ -89,7 +89,7 @@ export function readPostHogCookie(cookies: CookieStore, apiKey: string): PostHog
 }
 
 /**
- * Converts cookie state into PostHog properties (e.g. `$session_id`, `$device_id`).
+ * Converts cookie state into PostHog properties (e.g. `session_id`, `device_id`).
  */
 export function cookieStateToProperties(state: PostHogCookieState | null): Record<string, string> | undefined {
   if (!state) {
@@ -97,10 +97,10 @@ export function cookieStateToProperties(state: PostHogCookieState | null): Recor
   }
   const props: Record<string, string> = {}
   if (state.sessionId) {
-    props.$session_id = state.sessionId
+    props.session_id = state.sessionId
   }
   if (state.deviceId) {
-    props.$device_id = state.deviceId
+    props.device_id = state.deviceId
   }
   return Object.keys(props).length > 0 ? props : undefined
 }
@@ -108,8 +108,8 @@ export function cookieStateToProperties(state: PostHogCookieState | null): Recor
 /**
  * Parses a PostHog cookie value and extracts identity information.
  *
- * The cookie value is a JSON object containing `distinct_id` and `$user_state`.
- * A user is considered identified if `$user_state` is `'identified'`.
+ * The cookie value is a JSON object containing `distinct_id` and `user_state`.
+ * A user is considered identified if `user_state` is `'identified'`.
  *
  * @param cookieValue - The raw cookie string value
  * @returns Parsed identity state, or null if the cookie is missing/invalid
@@ -125,14 +125,14 @@ export function parsePostHogCookie(cookieValue: string): PostHogCookieState | nu
       return null
     }
 
-    // $sesid is stored as [lastActivityTimestamp, sessionId, sessionStartTimestamp]
-    const sesid = isArray(parsed.$sesid) ? parsed.$sesid[1] : undefined
+    // sesid is stored as [lastActivityTimestamp, sessionId, sessionStartTimestamp]
+    const sesid = isArray(parsed.sesid) ? parsed.sesid[1] : undefined
 
     return {
       distinctId: String(parsed.distinct_id),
-      isIdentified: parsed.$user_state === 'identified',
+      isIdentified: parsed.user_state === 'identified',
       sessionId: typeof sesid === 'string' ? sesid : undefined,
-      deviceId: typeof parsed.$device_id === 'string' ? parsed.$device_id : undefined,
+      deviceId: typeof parsed.device_id === 'string' ? parsed.device_id : undefined,
     }
   } catch {
     return null

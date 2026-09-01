@@ -1051,7 +1051,7 @@ describe('preload link load-listener accumulation', () => {
     },
   ];
 
-  it.each(noListenerLeakCases)('$name', ({ rel, as, expectedAdds }) => {
+  it.each(noListenerLeakCases)('name', ({ rel, as, expectedAdds }) => {
     const fakeSheet =
       rel === 'stylesheet'
         ? ({ cssRules: [], rules: [] } as unknown as CSSStyleSheet)
@@ -1100,7 +1100,7 @@ describe('preload link load-listener accumulation', () => {
     },
   ];
 
-  it.each(noMultiplicationCases)('$name', ({ rel, as }) => {
+  it.each(noMultiplicationCases)('name', ({ rel, as }) => {
     const { link } = setupLink({
       rel,
       as,

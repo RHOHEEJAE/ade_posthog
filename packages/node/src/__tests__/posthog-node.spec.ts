@@ -103,12 +103,12 @@ describe('PostHog Node.js', () => {
           distinct_id: '123',
           event: 'test-event',
           properties: {
-            $groups: { org: 123 },
+            groups: { org: 123 },
             foo: 'bar',
-            $geoip_disable: true,
-            $lib: 'posthog-node',
-            $lib_version: '1.2.3',
-            $is_server: true,
+            geoip_disable: true,
+            lib: 'posthog-node',
+            lib_version: '1.2.3',
+            is_server: true,
           },
           uuid: expect.any(String),
           timestamp: expect.any(String),
@@ -138,7 +138,7 @@ describe('PostHog Node.js', () => {
         expect(batchEvents).toHaveLength(1)
         expect(batchEvents?.[0]).toMatchObject({
           distinct_id: 'user-1',
-          event: '$exception',
+          event: 'edp_exception',
         })
       } finally {
         buildEventMessageSpy.mockRestore()
@@ -164,7 +164,7 @@ describe('PostHog Node.js', () => {
       })
     })
 
-    it('should not include $is_server when isServer is false (client/CLI usage)', async () => {
+    it('should not include is_server when isServer is false (client/CLI usage)', async () => {
       const cliClient = new PostHog('TEST_API_KEY', {
         host: 'http://example.com',
         fetchRetryCount: 0,
@@ -182,11 +182,11 @@ describe('PostHog Node.js', () => {
           expect.objectContaining({
             event: 'test-event',
             properties: expect.objectContaining({
-              $lib: 'posthog-node',
+              lib: 'posthog-node',
             }),
           })
         )
-        expect(batchEvents?.[0]?.properties).not.toHaveProperty('$is_server')
+        expect(batchEvents?.[0]?.properties).not.toHaveProperty('is_server')
       } finally {
         await cliClient.shutdown()
       }
@@ -202,7 +202,7 @@ describe('PostHog Node.js', () => {
           distinct_id: '123',
           event: 'test-event',
           properties: expect.objectContaining({
-            $groups: { org: 123 },
+            groups: { org: 123 },
             foo: 'bar',
           }),
         })
@@ -222,9 +222,9 @@ describe('PostHog Node.js', () => {
           distinct_id: '123',
           event: 'test-event',
           properties: expect.objectContaining({
-            $groups: { other_group: 'x' },
+            groups: { other_group: 'x' },
             foo: 'bar',
-            $geoip_disable: true,
+            geoip_disable: true,
           }),
         })
       )
@@ -239,56 +239,56 @@ describe('PostHog Node.js', () => {
       expect(batchEvents).toMatchObject([
         {
           distinct_id: '123',
-          event: '$identify',
+          event: 'edp_identify',
           properties: {
-            $set: {
+            edp_set: {
               foo: 'bar',
             },
-            $geoip_disable: true,
+            geoip_disable: true,
           },
         },
       ])
     })
 
-    it('should handle identify using $set and $set_once', async () => {
+    it('should handle identify using edp_set and edp_set_once', async () => {
       expect(mockedFetch).toHaveBeenCalledTimes(0)
-      posthog.identify({ distinctId: '123', properties: { $set: { foo: 'bar' }, $set_once: { vip: true } } })
+      posthog.identify({ distinctId: '123', properties: { edp_set: { foo: 'bar' }, edp_set_once: { vip: true } } })
       await waitForFlushTimer()
       const batchEvents = getLastBatchEvents()
       expect(batchEvents).toMatchObject([
         {
           distinct_id: '123',
-          event: '$identify',
+          event: 'edp_identify',
           properties: {
-            $set: {
+            edp_set: {
               foo: 'bar',
             },
-            $set_once: {
+            edp_set_once: {
               vip: true,
             },
-            $geoip_disable: true,
+            geoip_disable: true,
           },
         },
       ])
     })
 
-    it('should handle identify using $set_once', async () => {
+    it('should handle identify using edp_set_once', async () => {
       expect(mockedFetch).toHaveBeenCalledTimes(0)
-      posthog.identify({ distinctId: '123', properties: { foo: 'bar', $set_once: { vip: true } } })
+      posthog.identify({ distinctId: '123', properties: { foo: 'bar', edp_set_once: { vip: true } } })
       await waitForFlushTimer()
       const batchEvents = getLastBatchEvents()
       expect(batchEvents).toMatchObject([
         {
           distinct_id: '123',
-          event: '$identify',
+          event: 'edp_identify',
           properties: {
-            $set: {
+            edp_set: {
               foo: 'bar',
             },
-            $set_once: {
+            edp_set_once: {
               vip: true,
             },
-            $geoip_disable: true,
+            geoip_disable: true,
           },
         },
       ])
@@ -302,11 +302,11 @@ describe('PostHog Node.js', () => {
       expect(batchEvents).toMatchObject([
         {
           distinct_id: '123',
-          event: '$create_alias',
+          event: 'edp_create_alias',
           properties: {
             distinct_id: '123',
             alias: '1234',
-            $geoip_disable: true,
+            geoip_disable: true,
           },
         },
       ])
@@ -323,29 +323,29 @@ describe('PostHog Node.js', () => {
       expect(batchEvents).toMatchObject([
         {
           distinct_id: '123',
-          event: '$identify',
+          event: 'edp_identify',
           properties: {
-            $set: {
+            edp_set: {
               foo: 'bar',
             },
-            $geoip_disable: true,
+            geoip_disable: true,
           },
         },
       ])
     })
 
     it.each([
-      ['set properties', { properties: { foo: 'bar' } }, { $set: { foo: 'bar' } }, '$set_once'],
+      ['set properties', { properties: { foo: 'bar' } }, { edp_set: { foo: 'bar' } }, 'edp_set_once'],
       [
         'set once properties',
         { propertiesOnce: { first_seen: '2026-06-15' } },
-        { $set_once: { first_seen: '2026-06-15' } },
-        '$set',
+        { edp_set_once: { first_seen: '2026-06-15' } },
+        'edp_set',
       ],
       [
         'set and set once properties',
         { properties: { foo: 'bar' }, propertiesOnce: { first_seen: '2026-06-15' } },
-        { $set: { foo: 'bar' }, $set_once: { first_seen: '2026-06-15' } },
+        { edp_set: { foo: 'bar' }, edp_set_once: { first_seen: '2026-06-15' } },
         undefined,
       ],
     ] as Array<
@@ -356,7 +356,7 @@ describe('PostHog Node.js', () => {
         string | undefined,
       ]
     >)(
-      'should capture a $set event from setPersonProperties with %s',
+      'should capture a edp_set event from setPersonProperties with %s',
       async (_, input, expectedProperties, absentKey) => {
         expect(mockedFetch).toHaveBeenCalledTimes(0)
 
@@ -370,10 +370,10 @@ describe('PostHog Node.js', () => {
         expect(batchEvents).toMatchObject([
           {
             distinct_id: '123',
-            event: '$set',
+            event: 'edp_set',
             properties: {
               ...expectedProperties,
-              $geoip_disable: true,
+              geoip_disable: true,
             },
           },
         ])
@@ -387,7 +387,7 @@ describe('PostHog Node.js', () => {
       ['single property', 'plan', ['plan']],
       ['multiple properties', ['plan', 'email'], ['plan', 'email']],
     ] as Array<[string, string | string[], string[]]>)(
-      'should capture a $set event with a $unset array for %s',
+      'should capture a edp_set event with a unset array for %s',
       async (_, properties, expectedUnset) => {
         expect(mockedFetch).toHaveBeenCalledTimes(0)
 
@@ -398,10 +398,10 @@ describe('PostHog Node.js', () => {
         expect(batchEvents).toMatchObject([
           {
             distinct_id: '123',
-            event: '$set',
+            event: 'edp_set',
             properties: {
-              $unset: expectedUnset,
-              $geoip_disable: true,
+              unset: expectedUnset,
+              geoip_disable: true,
             },
           },
         ])
@@ -484,11 +484,11 @@ describe('PostHog Node.js', () => {
       await waitForFlushTimer()
       const batchEvents = getLastBatchEvents()
       expect(batchEvents?.[0].properties).toEqual({
-        $groups: { org: 123 },
+        groups: { org: 123 },
         foo: 'bar',
-        $lib: 'posthog-node',
-        $lib_version: '1.2.3',
-        $is_server: true,
+        lib: 'posthog-node',
+        lib_version: '1.2.3',
+        is_server: true,
       })
     })
 
@@ -505,11 +505,11 @@ describe('PostHog Node.js', () => {
 
       let batchEvents = getLastBatchEvents()
       expect(batchEvents?.[0].properties).toEqual({
-        $groups: { org: 123 },
+        groups: { org: 123 },
         foo: 'bar',
-        $lib: 'posthog-node',
-        $lib_version: '1.2.3',
-        $is_server: true,
+        lib: 'posthog-node',
+        lib_version: '1.2.3',
+        is_server: true,
       })
 
       client.capture({
@@ -524,12 +524,12 @@ describe('PostHog Node.js', () => {
 
       batchEvents = getLastBatchEvents()
       expect(batchEvents?.[0].properties).toEqual({
-        $groups: { org: 123 },
+        groups: { org: 123 },
         foo: 'bar',
-        $lib: 'posthog-node',
-        $lib_version: '1.2.3',
-        $geoip_disable: true,
-        $is_server: true,
+        lib: 'posthog-node',
+        lib_version: '1.2.3',
+        geoip_disable: true,
+        is_server: true,
       })
 
       client.capture({
@@ -545,11 +545,11 @@ describe('PostHog Node.js', () => {
 
       batchEvents = getLastBatchEvents()
       expect(batchEvents?.[0].properties).toEqual({
-        $groups: { org: 123 },
+        groups: { org: 123 },
         foo: 'bar',
-        $lib: 'posthog-node',
-        $lib_version: '1.2.3',
-        $is_server: true,
+        lib: 'posthog-node',
+        lib_version: '1.2.3',
+        is_server: true,
       })
 
       await client.shutdown()
@@ -812,16 +812,16 @@ describe('PostHog Node.js', () => {
           ph.identify({ distinctId: '123', properties: { foo: 'bar' } })
           await waitForFlushTimer()
         },
-        '$identify',
+        'edp_identify',
         '123',
-        { $set: { foo: 'bar' }, beforeSend: true },
+        { edp_set: { foo: 'bar' }, beforeSend: true },
       ],
       [
         'identifyImmediate',
         (ph: PostHog) => ph.identifyImmediate({ distinctId: '123', properties: { foo: 'bar' } }),
-        '$identify',
+        'edp_identify',
         '123',
-        { $set: { foo: 'bar' }, beforeSend: true },
+        { edp_set: { foo: 'bar' }, beforeSend: true },
       ],
       [
         'groupIdentify',
@@ -829,12 +829,12 @@ describe('PostHog Node.js', () => {
           ph.groupIdentify({ groupType: 'posthog', groupKey: 'team-1', properties: { analytics: true } })
           await waitForFlushTimer()
         },
-        '$groupidentify',
+        'edp_groupidentify',
         '$posthog_team-1',
         {
-          $group_type: 'posthog',
-          $group_key: 'team-1',
-          $group_set: { analytics: true },
+          group_type: 'posthog',
+          group_key: 'team-1',
+          group_set: { analytics: true },
           beforeSend: true,
         },
       ],
@@ -842,12 +842,12 @@ describe('PostHog Node.js', () => {
         'groupIdentifyImmediate',
         (ph: PostHog) =>
           ph.groupIdentifyImmediate({ groupType: 'posthog', groupKey: 'team-1', properties: { analytics: true } }),
-        '$groupidentify',
+        'edp_groupidentify',
         '$posthog_team-1',
         {
-          $group_type: 'posthog',
-          $group_key: 'team-1',
-          $group_set: { analytics: true },
+          group_type: 'posthog',
+          group_key: 'team-1',
+          group_set: { analytics: true },
           beforeSend: true,
         },
       ],
@@ -857,14 +857,14 @@ describe('PostHog Node.js', () => {
           ph.alias({ distinctId: '123', alias: '1234' })
           await waitForFlushTimer()
         },
-        '$create_alias',
+        'edp_create_alias',
         '123',
         { distinct_id: '123', alias: '1234', beforeSend: true },
       ],
       [
         'aliasImmediate',
         (ph: PostHog) => ph.aliasImmediate({ distinctId: '123', alias: '1234' }),
-        '$create_alias',
+        'edp_create_alias',
         '123',
         { distinct_id: '123', alias: '1234', beforeSend: true },
       ],
@@ -955,7 +955,7 @@ describe('PostHog Node.js', () => {
           ph.identify({ distinctId: '123', properties: { foo: 'bar' } })
           await waitForFlushTimer()
         },
-        '$identify',
+        'edp_identify',
       ],
       [
         'groupIdentify',
@@ -963,7 +963,7 @@ describe('PostHog Node.js', () => {
           ph.groupIdentify({ groupType: 'posthog', groupKey: 'team-1', properties: { analytics: true } })
           await waitForFlushTimer()
         },
-        '$groupidentify',
+        'edp_groupidentify',
       ],
       [
         'alias',
@@ -971,7 +971,7 @@ describe('PostHog Node.js', () => {
           ph.alias({ distinctId: '123', alias: '1234' })
           await waitForFlushTimer()
         },
-        '$create_alias',
+        'edp_create_alias',
       ],
     ] as Array<[string, (ph: PostHog) => Promise<void>, string]>)(
       'should not add registered or context properties to %s',
@@ -992,7 +992,7 @@ describe('PostHog Node.js', () => {
         expect(batchEvents![0]).toMatchObject({ event: expectedEvent })
         expect(batchEvents![0].properties).not.toHaveProperty('registered_prop')
         expect(batchEvents![0].properties).not.toHaveProperty('context_prop')
-        expect(batchEvents![0].properties).not.toHaveProperty('$session_id')
+        expect(batchEvents![0].properties).not.toHaveProperty('session_id')
       }
     )
 
@@ -1157,9 +1157,9 @@ describe('PostHog Node.js', () => {
         distinct_id: '9',
         event: 'test-event',
         properties: {
-          $lib: 'posthog-node',
-          $lib_version: '1.2.3',
-          $geoip_disable: true,
+          lib: 'posthog-node',
+          lib_version: '1.2.3',
+          geoip_disable: true,
         },
         timestamp: expect.any(String),
       })
@@ -1230,13 +1230,13 @@ describe('PostHog Node.js', () => {
       expect(batchEvents).toMatchObject([
         {
           distinct_id: '$posthog_team-1',
-          event: '$groupidentify',
+          event: 'edp_groupidentify',
           properties: {
-            $group_type: 'posthog',
-            $group_key: 'team-1',
-            $group_set: { analytics: true },
-            $lib: 'posthog-node',
-            $geoip_disable: true,
+            group_type: 'posthog',
+            group_key: 'team-1',
+            group_set: { analytics: true },
+            lib: 'posthog-node',
+            geoip_disable: true,
           },
         },
       ])
@@ -1254,13 +1254,13 @@ describe('PostHog Node.js', () => {
       expect(batchEvents).toMatchObject([
         {
           distinct_id: '123',
-          event: '$groupidentify',
+          event: 'edp_groupidentify',
           properties: {
-            $group_type: 'posthog',
-            $group_key: 'team-1',
-            $group_set: { analytics: true },
-            $lib: 'posthog-node',
-            $geoip_disable: true,
+            group_type: 'posthog',
+            group_key: 'team-1',
+            group_set: { analytics: true },
+            lib: 'posthog-node',
+            geoip_disable: true,
           },
         },
       ])
@@ -1286,13 +1286,13 @@ describe('PostHog Node.js', () => {
         expect(batchEvents).toMatchObject([
           {
             distinct_id: expectedDistinctId,
-            event: '$groupidentify',
+            event: 'edp_groupidentify',
             properties: {
-              $group_type: 'posthog',
-              $group_key: 'team-1',
-              $group_set: { analytics: true },
-              $lib: 'posthog-node',
-              $geoip_disable: true,
+              group_type: 'posthog',
+              group_key: 'team-1',
+              group_set: { analytics: true },
+              lib: 'posthog-node',
+              geoip_disable: true,
             },
           },
         ])
@@ -1462,14 +1462,14 @@ describe('PostHog Node.js', () => {
           distinct_id: 'distinct_id',
           event: 'node test event',
           properties: expect.objectContaining({
-            $active_feature_flags: ['feature-1', 'feature-2', 'feature-array', 'feature-variant'],
-            '$feature/feature-1': true,
-            '$feature/feature-2': true,
-            '$feature/feature-array': true,
-            '$feature/feature-variant': 'variant',
-            $lib: 'posthog-node',
-            $lib_version: '1.2.3',
-            $geoip_disable: true,
+            active_feature_flags: ['feature-1', 'feature-2', 'feature-array', 'feature-variant'],
+            'feature/feature-1': true,
+            'feature/feature-2': true,
+            'feature/feature-array': true,
+            'feature/feature-variant': 'variant',
+            lib: 'posthog-node',
+            lib_version: '1.2.3',
+            geoip_disable: true,
           }),
         })
       )
@@ -1525,7 +1525,7 @@ describe('PostHog Node.js', () => {
         name: 'still accepts the deprecated personalApiKey alias',
         keyOption: { personalApiKey: 'TEST_PERSONAL_API_KEY' },
       },
-    ])('$name', async ({ keyOption }) => {
+    ])('name', async ({ keyOption }) => {
       posthog = new PostHog('TEST_API_KEY', {
         host: 'http://example.com',
         fetchRetryCount: 0,
@@ -1632,20 +1632,20 @@ describe('PostHog Node.js', () => {
           distinct_id: 'distinct_id',
           event: 'node test event',
           properties: expect.objectContaining({
-            $lib: 'posthog-node',
-            $lib_version: '1.2.3',
-            $geoip_disable: true,
+            lib: 'posthog-node',
+            lib_version: '1.2.3',
+            geoip_disable: true,
           }),
         })
       )
       // Should NOT have automatic flag enrichment
       expect(
-        Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, '$feature/beta-feature-local')
+        Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, 'feature/beta-feature-local')
       ).toBe(false)
-      expect(Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, '$feature/beta-feature')).toBe(
+      expect(Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, 'feature/beta-feature')).toBe(
         false
       )
-      expect(Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, '$active_feature_flags')).toBe(
+      expect(Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, 'active_feature_flags')).toBe(
         false
       )
 
@@ -1691,16 +1691,16 @@ describe('PostHog Node.js', () => {
           distinct_id: 'distinct_id',
           event: 'node test event',
           properties: expect.objectContaining({
-            $lib: 'posthog-node',
-            $lib_version: '1.2.3',
-            $geoip_disable: true,
+            lib: 'posthog-node',
+            lib_version: '1.2.3',
+            geoip_disable: true,
           }),
         })
       )
       expect(
-        Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, '$feature/beta-feature-local')
+        Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, 'feature/beta-feature-local')
       ).toBe(false)
-      expect(Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, '$feature/beta-feature')).toBe(
+      expect(Object.prototype.hasOwnProperty.call(getLastBatchEvents()?.[0].properties, 'feature/beta-feature')).toBe(
         false
       )
     })
@@ -1732,15 +1732,15 @@ describe('PostHog Node.js', () => {
       )
 
       expect(getLastBatchEvents()?.[0].properties).toEqual({
-        $active_feature_flags: ['feature-1', 'feature-2', 'feature-array', 'feature-variant'],
-        '$feature/feature-1': true,
-        '$feature/feature-2': true,
-        '$feature/feature-array': true,
-        '$feature/disabled-flag': false,
-        '$feature/feature-variant': 'variant',
-        $lib: 'posthog-node',
-        $lib_version: '1.2.3',
-        $is_server: true,
+        active_feature_flags: ['feature-1', 'feature-2', 'feature-array', 'feature-variant'],
+        'feature/feature-1': true,
+        'feature/feature-2': true,
+        'feature/feature-array': true,
+        'feature/disabled-flag': false,
+        'feature/feature-variant': 'variant',
+        lib: 'posthog-node',
+        lib_version: '1.2.3',
+        is_server: true,
       })
 
       // no calls to `/local_evaluation`
@@ -1893,9 +1893,9 @@ describe('PostHog Node.js', () => {
             distinct_id: 'user123',
             event: 'test event',
             properties: expect.objectContaining({
-              '$feature/basic-flag': true,
-              '$feature/person-property-flag': false,
-              '$feature/group-property-flag': false,
+              'feature/basic-flag': true,
+              'feature/person-property-flag': false,
+              'feature/group-property-flag': false,
             }),
           })
         )
@@ -1948,8 +1948,8 @@ describe('PostHog Node.js', () => {
             event: 'test event',
             properties: expect.objectContaining({
               // Should include locally evaluated flags that matched based on property overrides
-              '$feature/basic-flag': true,
-              '$feature/person-property-flag': true, // Should be true because plan=premium override
+              'feature/basic-flag': true,
+              'feature/person-property-flag': true, // Should be true because plan=premium override
             }),
           })
         )
@@ -1981,8 +1981,8 @@ describe('PostHog Node.js', () => {
           properties: {
             plan: 'premium',
             tier: 'gold',
-            '$feature/existing_flag': 'value', // Should be passed through
-            $lib: 'posthog-node', // Should be passed through
+            'feature/existing_flag': 'value', // Should be passed through
+            lib: 'posthog-node', // Should be passed through
             numericValue: 123,
             booleanValue: true,
           },
@@ -1996,11 +1996,11 @@ describe('PostHog Node.js', () => {
             properties: expect.objectContaining({
               plan: 'premium',
               tier: 'gold',
-              '$feature/existing_flag': 'value',
-              $lib: 'posthog-node',
+              'feature/existing_flag': 'value',
+              lib: 'posthog-node',
               numericValue: 123,
               booleanValue: true,
-              '$feature/person-property-flag': true, // Should match due to explicit plan=premium
+              'feature/person-property-flag': true, // Should match due to explicit plan=premium
             }),
           })
         )
@@ -2045,14 +2045,14 @@ describe('PostHog Node.js', () => {
         expect(batchEvents?.[0]).toEqual(
           expect.objectContaining({
             properties: expect.objectContaining({
-              '$feature/group-property-flag': true, // Should match due to explicit organization.size=large
-              '$feature/person-property-flag': false, // Should not match because plan=basic
+              'feature/group-property-flag': true, // Should match due to explicit organization.size=large
+              'feature/person-property-flag': false, // Should not match because plan=basic
             }),
           })
         )
       })
 
-      it('should not call _getFlags for $feature_flag_called events even with sendFeatureFlags=true', async () => {
+      it('should not call _getFlags for edp_feature_flag_called events even with sendFeatureFlags=true', async () => {
         mockedFetch.mockClear()
 
         posthog = new PostHog('TEST_API_KEY', {
@@ -2068,12 +2068,12 @@ describe('PostHog Node.js', () => {
 
         posthog.capture({
           distinctId: 'user123',
-          event: '$feature_flag_called',
+          event: 'edp_feature_flag_called',
           sendFeatureFlags: true,
           properties: {
             plan: 'premium',
-            $feature_flag: 'test-flag',
-            $feature_flag_response: true,
+            feature_flag: 'test-flag',
+            feature_flag_response: true,
           },
         })
 
@@ -2083,11 +2083,11 @@ describe('PostHog Node.js', () => {
         expect(batchEvents?.[0]).toEqual(
           expect.objectContaining({
             distinct_id: 'user123',
-            event: '$feature_flag_called',
+            event: 'edp_feature_flag_called',
             properties: expect.objectContaining({
               plan: 'premium',
-              $feature_flag: 'test-flag',
-              $feature_flag_response: true,
+              feature_flag: 'test-flag',
+              feature_flag_response: true,
             }),
           })
         )
@@ -2185,8 +2185,8 @@ describe('PostHog Node.js', () => {
             distinct_id: 'user123',
             event: 'test event',
             properties: expect.objectContaining({
-              '$feature/person-property-flag': true,
-              '$feature/group-property-flag': true,
+              'feature/person-property-flag': true,
+              'feature/group-property-flag': true,
             }),
           })
         )
@@ -2245,7 +2245,7 @@ describe('PostHog Node.js', () => {
             distinct_id: 'user123',
             event: 'test event',
             properties: expect.objectContaining({
-              '$feature/remote-flag': true,
+              'feature/remote-flag': true,
             }),
           })
         )
@@ -2365,9 +2365,9 @@ describe('PostHog Node.js', () => {
             event: 'test event',
             properties: expect.objectContaining({
               foo: 'bar',
-              '$feature/basic-flag': true,
-              '$feature/person-property-flag': true, // Should be true due to explicit personProperties
-              $active_feature_flags: ['basic-flag', 'person-property-flag'],
+              'feature/basic-flag': true,
+              'feature/person-property-flag': true, // Should be true due to explicit personProperties
+              active_feature_flags: ['basic-flag', 'person-property-flag'],
             }),
           })
         )
@@ -2411,8 +2411,8 @@ describe('PostHog Node.js', () => {
             event: 'test event',
             properties: expect.objectContaining({
               foo: 'bar',
-              '$feature/basic-flag': true,
-              $active_feature_flags: ['basic-flag'],
+              'feature/basic-flag': true,
+              active_feature_flags: ['basic-flag'],
             }),
           })
         )
@@ -2520,7 +2520,7 @@ describe('PostHog Node.js', () => {
             event: 'test event',
             properties: expect.objectContaining({
               foo: 'bar',
-              '$feature/remote-flag': true,
+              'feature/remote-flag': true,
             }),
           })
         )
@@ -2556,8 +2556,8 @@ describe('PostHog Node.js', () => {
             event: 'test event',
             properties: expect.objectContaining({
               foo: 'bar',
-              '$feature/basic-flag': true,
-              $active_feature_flags: ['basic-flag'],
+              'feature/basic-flag': true,
+              active_feature_flags: ['basic-flag'],
             }),
           })
         )
@@ -2595,9 +2595,9 @@ describe('PostHog Node.js', () => {
             event: 'test event',
             properties: expect.objectContaining({
               foo: 'bar',
-              '$feature/basic-flag': true,
-              '$feature/person-property-flag': true, // Should be true due to explicit personProperties
-              $active_feature_flags: ['basic-flag', 'person-property-flag'],
+              'feature/basic-flag': true,
+              'feature/person-property-flag': true, // Should be true due to explicit personProperties
+              active_feature_flags: ['basic-flag', 'person-property-flag'],
             }),
           })
         )
@@ -2639,15 +2639,15 @@ describe('PostHog Node.js', () => {
             event: 'test event',
             properties: expect.objectContaining({
               foo: 'bar',
-              '$feature/basic-flag': true, // Should be included
-              $active_feature_flags: ['basic-flag'], // Only basic-flag should be active
+              'feature/basic-flag': true, // Should be included
+              active_feature_flags: ['basic-flag'], // Only basic-flag should be active
               // person-property-flag should NOT be included even though personProperties would match
             }),
           })
         )
 
         // Verify person-property-flag is not in the properties
-        expect(batchEvents?.[0].properties).not.toHaveProperty('$feature/person-property-flag')
+        expect(batchEvents?.[0].properties).not.toHaveProperty('feature/person-property-flag')
       })
     })
 
@@ -2697,14 +2697,14 @@ describe('PostHog Node.js', () => {
         expect(batchEvents).toMatchObject([
           {
             distinct_id: distinctId,
-            event: '$feature_flag_called',
+            event: 'edp_feature_flag_called',
             properties: expect.objectContaining({
-              $feature_flag: 'beta-feature',
-              $feature_flag_response: true,
-              $lib: 'posthog-node',
-              $lib_version: '1.2.3',
+              feature_flag: 'beta-feature',
+              feature_flag_response: true,
+              lib: 'posthog-node',
+              lib_version: '1.2.3',
               locally_evaluated: true,
-              '$feature/beta-feature': true,
+              'feature/beta-feature': true,
             }),
           },
         ])
@@ -2714,7 +2714,7 @@ describe('PostHog Node.js', () => {
       }
     })
 
-    it('$feature_flag_called is called appropriately when querying flags', async () => {
+    it('edp_feature_flag_called is called appropriately when querying flags', async () => {
       mockedFetch.mockClear()
 
       const flags = {
@@ -2766,15 +2766,15 @@ describe('PostHog Node.js', () => {
       expect(getLastBatchEvents()?.[0]).toEqual(
         expect.objectContaining({
           distinct_id: 'some-distinct-id',
-          event: '$feature_flag_called',
+          event: 'edp_feature_flag_called',
           properties: expect.objectContaining({
-            $feature_flag: 'beta-feature',
-            $feature_flag_response: true,
-            '$feature/beta-feature': true,
-            $lib: 'posthog-node',
-            $lib_version: '1.2.3',
+            feature_flag: 'beta-feature',
+            feature_flag_response: true,
+            'feature/beta-feature': true,
+            lib: 'posthog-node',
+            lib_version: '1.2.3',
             locally_evaluated: true,
-            $geoip_disable: true,
+            geoip_disable: true,
           }),
         })
       )
@@ -2808,17 +2808,17 @@ describe('PostHog Node.js', () => {
       expect(getLastBatchEvents()?.[0]).toEqual(
         expect.objectContaining({
           distinct_id: 'some-distinct-id2',
-          event: '$feature_flag_called',
+          event: 'edp_feature_flag_called',
         })
       )
       expect(getLastBatchEvents()?.[0].properties).toMatchObject({
-        $feature_flag: 'beta-feature',
-        $feature_flag_response: true,
-        $lib: 'posthog-node',
-        $lib_version: '1.2.3',
+        feature_flag: 'beta-feature',
+        feature_flag_response: true,
+        lib: 'posthog-node',
+        lib_version: '1.2.3',
         locally_evaluated: true,
-        '$feature/beta-feature': true,
-        $groups: { x: 'y' },
+        'feature/beta-feature': true,
+        groups: { x: 'y' },
       })
       mockedFetch.mockClear()
 
@@ -2851,15 +2851,15 @@ describe('PostHog Node.js', () => {
       expect(getLastBatchEvents()?.[0]).toEqual(
         expect.objectContaining({
           distinct_id: 'some-distinct-id2345',
-          event: '$feature_flag_called',
+          event: 'edp_feature_flag_called',
           properties: expect.objectContaining({
-            $feature_flag: 'flags-flag',
-            $feature_flag_response: 'flags-value',
-            $lib: 'posthog-node',
-            $lib_version: '1.2.3',
+            feature_flag: 'flags-flag',
+            feature_flag_response: 'flags-value',
+            lib: 'posthog-node',
+            lib_version: '1.2.3',
             locally_evaluated: false,
-            '$feature/flags-flag': 'flags-value',
-            $groups: { organization: 'org1' },
+            'feature/flags-flag': 'flags-value',
+            groups: { organization: 'org1' },
           }),
         })
       )
@@ -2912,7 +2912,7 @@ describe('PostHog Node.js', () => {
         { name: 'isFeatureEnabled', expectedValue: true },
       ] as const
 
-      describe.each(methods)('$name', ({ name: methodName, expectedValue }) => {
+      describe.each(methods)('name', ({ name: methodName, expectedValue }) => {
         it('respects client sendFeatureFlagEvent option when method-level option is not provided', async () => {
           posthog = new PostHog('TEST_API_KEY', {
             host: 'http://example.com',
@@ -2930,7 +2930,7 @@ describe('PostHog Node.js', () => {
           await waitForPromises()
           await posthog.flush()
 
-          // Should NOT send $feature_flag_called event because global setting is false
+          // Should NOT send edp_feature_flag_called event because global setting is false
           expect(mockedFetch).not.toHaveBeenCalledWith('http://example.com/batch/', expect.anything())
         })
 
@@ -3058,8 +3058,8 @@ describe('PostHog Node.js', () => {
               x1: 'y1',
             },
             group_properties: {
-              company: { $group_key: 'id:5', x: 'y' },
-              instance: { $group_key: 'app.posthog.com' },
+              company: { group_key: 'id:5', x: 'y' },
+              instance: { group_key: 'app.posthog.com' },
             },
             geoip_disable: true,
             flag_keys_to_evaluate: ['random_key'],
@@ -3072,7 +3072,7 @@ describe('PostHog Node.js', () => {
       await posthog.getFeatureFlag('random_key', 'some_id', {
         groups: { company: 'id:5', instance: 'app.posthog.com' },
         personProperties: { distinct_id: 'override' },
-        groupProperties: { company: { $group_key: 'group_override' } },
+        groupProperties: { company: { group_key: 'group_override' } },
       })
       jest.runOnlyPendingTimers()
 
@@ -3087,8 +3087,8 @@ describe('PostHog Node.js', () => {
               distinct_id: 'override',
             },
             group_properties: {
-              company: { $group_key: 'group_override' },
-              instance: { $group_key: 'app.posthog.com' },
+              company: { group_key: 'group_override' },
+              instance: { group_key: 'app.posthog.com' },
             },
             geoip_disable: true,
             flag_keys_to_evaluate: ['random_key'],
@@ -3137,7 +3137,7 @@ describe('PostHog Node.js', () => {
             distinct_id: 'some_id',
             groups: { company: 'id:5' },
             person_properties: {},
-            group_properties: { company: { $group_key: 'id:5' } },
+            group_properties: { company: { group_key: 'id:5' } },
             geoip_disable: true,
           }),
         })

@@ -140,7 +140,7 @@ test.describe('split storage (split_storage)', () => {
         expect(snap.flags?.[ENABLED_FEATURE_FLAGS]).toBeTruthy()
     })
 
-    test('gate on (surveys): $surveys is split out, the survey shows, and dismissal survives reload', async ({
+    test('gate on (surveys): surveys is split out, the survey shows, and dismissal survives reload', async ({
         page,
         context,
     }) => {
@@ -174,7 +174,7 @@ test.describe('split storage (split_storage)', () => {
 
         await expect(page.locator(`.PostHogSurvey-${surveyId}`).locator('.survey-form')).toBeVisible()
 
-        // $surveys must not ride in the main blob when the gate is on
+        // surveys must not ride in the main blob when the gate is on
         const snap = await readPersistence(page)
         expect(snap.main?.[SURVEYS]).toBeUndefined()
 
@@ -218,11 +218,11 @@ test.describe('split storage (split_storage)', () => {
         await waitForRemoteConfig(page)
         await recorderPromise
 
-        // drop the startup $pageview so the recording assertion sees only $snapshot
+        // drop the startup edp_pageview so the recording assertion sees only edp_snapshot
         await page.resetCapturedEvents()
 
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'edp_snapshot')
         await assertThatRecordingStarted(page)
 
         // the session id is not a split key — it must remain in the main blob

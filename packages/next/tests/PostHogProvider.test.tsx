@@ -253,10 +253,10 @@ describe('PostHogProvider', () => {
     describe('with bootstrapFlags', () => {
         const identifiedCookieValue = JSON.stringify({
             distinct_id: 'user_abc',
-            $device_id: 'device_xyz',
-            $user_state: 'identified',
+            device_id: 'device_xyz',
+            user_state: 'identified',
         })
-        const anonymousCookieValue = JSON.stringify({ distinct_id: 'device_xyz', $device_id: 'device_xyz' })
+        const anonymousCookieValue = JSON.stringify({ distinct_id: 'device_xyz', device_id: 'device_xyz' })
 
         function setupCookieMock(cookieValue: string) {
             const { cookies } = require('next/headers.js')
@@ -538,8 +538,8 @@ describe('PostHogProvider', () => {
     describe('consent awareness', () => {
         const identifiedCookieValue = JSON.stringify({
             distinct_id: 'user_abc',
-            $device_id: 'device_xyz',
-            $user_state: 'identified',
+            device_id: 'device_xyz',
+            user_state: 'identified',
         })
 
         function setupCookiesWithConsent(cookies: Record<string, string>) {

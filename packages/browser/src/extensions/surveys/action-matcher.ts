@@ -118,7 +118,7 @@ export class ActionMatcher {
     private _checkStepUrl(event?: CaptureResult, step?: ActionStepType): boolean {
         // CHECK CONDITIONS, OTHERWISE SKIPPED
         if (step?.url) {
-            const eventUrl = event?.properties?.$current_url
+            const eventUrl = event?.properties?.current_url
             if (!eventUrl || typeof eventUrl !== 'string') {
                 return false
             }
@@ -144,7 +144,7 @@ export class ActionMatcher {
             return elements.some((el) => matchString(el.href, step.href!, step.href_matching || 'exact'))
         }
 
-        const chain = (event?.properties?.$elements_chain as string) || ''
+        const chain = (event?.properties?.elements_chain as string) || ''
         if (chain) {
             return matchString(extractHref(chain), step.href, step.href_matching || 'exact')
         }
@@ -160,11 +160,11 @@ export class ActionMatcher {
             return elements.some(
                 (el) =>
                     matchString(el.text, step.text!, step.text_matching || 'exact') ||
-                    matchString(el.$el_text, step.text!, step.text_matching || 'exact')
+                    matchString(el.el_text, step.text!, step.text_matching || 'exact')
             )
         }
 
-        const chain = (event?.properties?.$elements_chain as string) || ''
+        const chain = (event?.properties?.elements_chain as string) || ''
         if (chain) {
             return matchTexts(extractTexts(chain), step.text, step.text_matching || 'exact')
         }
@@ -175,14 +175,14 @@ export class ActionMatcher {
     private _checkStepSelector(event?: CaptureResult, step?: ActionStepType): boolean {
         if (!step?.selector) return true
 
-        // check exact match on $element_selectors from autocapture
-        const elementSelectors = event?.properties?.$element_selectors as string[] | undefined
+        // check exact match on element_selectors from autocapture
+        const elementSelectors = event?.properties?.element_selectors as string[] | undefined
         if (elementSelectors?.includes(step.selector)) {
             return true
         }
 
         // check against compiled regex
-        const chain = (event?.properties?.$elements_chain as string) || ''
+        const chain = (event?.properties?.elements_chain as string) || ''
         if (step.selector_regex && chain) {
             try {
                 return new RegExp(step.selector_regex).test(chain)
@@ -195,11 +195,11 @@ export class ActionMatcher {
     }
 
     private _getElementsList(event?: CaptureResult): SurveyElement[] {
-        if (event?.properties?.$elements == null) {
+        if (event?.properties?.elements == null) {
             return []
         }
 
-        return event?.properties.$elements as unknown as SurveyElement[]
+        return event?.properties.elements as unknown as SurveyElement[]
     }
 
     private _checkStepProperties(event?: CaptureResult, step?: ActionStepType): boolean {

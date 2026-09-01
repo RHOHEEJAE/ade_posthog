@@ -24,9 +24,9 @@ test.describe('ErrorTracking chunkIds', () => {
             type: 'module',
             url: 'https://errortracking.com/script.js',
         })
-        const exception = await events.waitForEvent('$exception')
-        expect(exception.properties.$exception_list).toHaveLength(1)
-        expect(exception.properties.$exception_list[0].stacktrace.frames).toHaveLength(1)
-        expect(exception.properties.$exception_list[0].stacktrace.frames[0].chunk_id).toEqual(chunkId)
+        const exception = await events.waitForEvent('edp_exception')
+        expect(exception.properties.exception_list).toHaveLength(1)
+        expect(exception.properties.exception_list[0].stacktrace.frames).toHaveLength(1)
+        expect(exception.properties.exception_list[0].stacktrace.frames[0].chunk_id).toEqual(chunkId)
     })
 })

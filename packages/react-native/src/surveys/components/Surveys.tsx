@@ -23,10 +23,10 @@ import { usePostHog } from '../../hooks/usePostHog'
 
 export const sendSurveyShownEvent = (survey: Survey, posthog: PostHog, surveyLanguage?: string | null): void => {
   posthog.capture('survey shown', {
-    $survey_name: survey.name,
-    $survey_id: survey.id,
-    ...maybeAdd('$survey_iteration', survey.current_iteration),
-    ...maybeAdd('$survey_iteration_start_date', survey.current_iteration_start_date),
+    survey_name: survey.name,
+    survey_id: survey.id,
+    ...maybeAdd('survey_iteration', survey.current_iteration),
+    ...maybeAdd('survey_iteration_start_date', survey.current_iteration_start_date),
     ...(surveyLanguage ? { [SURVEY_LANGUAGE_PROPERTY]: surveyLanguage } : {}),
   })
 }
@@ -38,13 +38,13 @@ export const sendSurveyEvent = (
   surveyLanguage?: string | null
 ): void => {
   posthog.capture('survey sent', {
-    $survey_name: survey.name,
-    $survey_id: survey.id,
-    ...maybeAdd('$survey_iteration', survey.current_iteration),
-    ...maybeAdd('$survey_iteration_start_date', survey.current_iteration_start_date),
+    survey_name: survey.name,
+    survey_id: survey.id,
+    ...maybeAdd('survey_iteration', survey.current_iteration),
+    ...maybeAdd('survey_iteration_start_date', survey.current_iteration_start_date),
     ...(surveyLanguage ? { [SURVEY_LANGUAGE_PROPERTY]: surveyLanguage } : {}),
     ...buildSurveyResponseProperties(responses, survey),
-    $set: {
+    edp_set: {
       [getSurveyInteractionProperty(survey, 'responded')]: true,
     },
   })
@@ -57,14 +57,14 @@ export const dismissedSurveyEvent = (
   surveyLanguage?: string | null
 ): void => {
   posthog.capture('survey dismissed', {
-    $survey_name: survey.name,
-    $survey_id: survey.id,
-    ...maybeAdd('$survey_iteration', survey.current_iteration),
-    ...maybeAdd('$survey_iteration_start_date', survey.current_iteration_start_date),
+    survey_name: survey.name,
+    survey_id: survey.id,
+    ...maybeAdd('survey_iteration', survey.current_iteration),
+    ...maybeAdd('survey_iteration_start_date', survey.current_iteration_start_date),
     ...(surveyLanguage ? { [SURVEY_LANGUAGE_PROPERTY]: surveyLanguage } : {}),
-    $survey_partially_completed: surveyHasResponses(responses),
+    survey_partially_completed: surveyHasResponses(responses),
     ...buildSurveyResponseProperties(responses, survey),
-    $set: {
+    edp_set: {
       [getSurveyInteractionProperty(survey, 'dismissed')]: true,
     },
   })

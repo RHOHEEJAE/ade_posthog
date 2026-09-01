@@ -152,7 +152,7 @@ const toolCalls = of('$mcp_tool_call')
 const p = (e, k) => e?.properties?.[k]
 
 const errCall = toolCalls.find((e) => p(e, '$mcp_tool_name') === 'fail_always')
-const callSessions = new Set(toolCalls.map((e) => p(e, '$session_id')).filter(Boolean))
+const callSessions = new Set(toolCalls.map((e) => p(e, 'session_id')).filter(Boolean))
 const echoTool = (r.list?.result?.tools ?? []).find((t) => t.name === 'echo')
 const advertises = Object.keys(echoTool?.inputSchema?.properties ?? {}).includes('conversation_id')
 const isV2 = SDK === 'v2'
@@ -193,7 +193,7 @@ const results = {
   // message is clean — no conversation_id prompt-back concatenated into it.
   errors:
     p(errCall, '$mcp_is_error') === true &&
-    of('$exception').length >= 1 &&
+    of('edp_exception').length >= 1 &&
     p(errCall, '$mcp_error_message') === 'intentional failure',
   // The agent stated its intent via the injected `context` parameter: it must be
   // captured as $mcp_intent, and the tool must still have answered correctly with

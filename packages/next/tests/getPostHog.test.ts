@@ -104,8 +104,8 @@ describe('createPostHog().getPostHog', () => {
         const cookieStore = createMockCookies({
             ph_phc_test123_posthog: JSON.stringify({
                 distinct_id: 'user_abc',
-                $device_id: 'device_xyz',
-                $sesid: [1708700000000, 'session-123', 1708700000000],
+                device_id: 'device_xyz',
+                sesid: [1708700000000, 'session-123', 1708700000000],
             }),
         })
         ;(cookies as jest.Mock).mockResolvedValue(cookieStore)
@@ -117,7 +117,7 @@ describe('createPostHog().getPostHog', () => {
             {
                 distinctId: 'user_abc',
                 sessionId: 'session-123',
-                properties: { $session_id: 'session-123', $device_id: 'device_xyz' },
+                properties: { session_id: 'session-123', device_id: 'device_xyz' },
             },
             expect.any(Function)
         )
@@ -256,8 +256,8 @@ describe('createPostHog().getPostHog', () => {
                     distinctId: 'header-user-789',
                     sessionId: 'header-session-456',
                     properties: {
-                        $session_id: 'header-session-456',
-                        $window_id: 'window-abc',
+                        session_id: 'header-session-456',
+                        window_id: 'window-abc',
                     },
                 },
                 expect.any(Function)
@@ -268,8 +268,8 @@ describe('createPostHog().getPostHog', () => {
             const cookieStore = createMockCookies({
                 ph_phc_test123_posthog: JSON.stringify({
                     distinct_id: 'cookie-user',
-                    $device_id: 'device_xyz',
-                    $sesid: [1708700000000, 'cookie-session', 1708700000000],
+                    device_id: 'device_xyz',
+                    sesid: [1708700000000, 'cookie-session', 1708700000000],
                 }),
             })
             ;(cookies as jest.Mock).mockResolvedValue(cookieStore)
@@ -287,8 +287,8 @@ describe('createPostHog().getPostHog', () => {
                     distinctId: 'header-user',
                     sessionId: 'header-session',
                     properties: {
-                        $session_id: 'header-session',
-                        $device_id: 'device_xyz',
+                        session_id: 'header-session',
+                        device_id: 'device_xyz',
                     },
                 },
                 expect.any(Function)
@@ -299,8 +299,8 @@ describe('createPostHog().getPostHog', () => {
             const cookieStore = createMockCookies({
                 ph_phc_test123_posthog: JSON.stringify({
                     distinct_id: 'cookie-user',
-                    $device_id: 'device_xyz',
-                    $sesid: [1708700000000, 'cookie-session', 1708700000000],
+                    device_id: 'device_xyz',
+                    sesid: [1708700000000, 'cookie-session', 1708700000000],
                 }),
             })
             ;(cookies as jest.Mock).mockResolvedValue(cookieStore)
@@ -315,20 +315,20 @@ describe('createPostHog().getPostHog', () => {
                     distinctId: 'cookie-user',
                     sessionId: 'cookie-session',
                     properties: {
-                        $session_id: 'cookie-session',
-                        $device_id: 'device_xyz',
+                        session_id: 'cookie-session',
+                        device_id: 'device_xyz',
                     },
                 },
                 expect.any(Function)
             )
         })
 
-        it('adds $window_id from tracing headers alongside cookie properties', async () => {
+        it('adds window_id from tracing headers alongside cookie properties', async () => {
             const cookieStore = createMockCookies({
                 ph_phc_test123_posthog: JSON.stringify({
                     distinct_id: 'cookie-user',
-                    $device_id: 'device_xyz',
-                    $sesid: [1708700000000, 'cookie-session', 1708700000000],
+                    device_id: 'device_xyz',
+                    sesid: [1708700000000, 'cookie-session', 1708700000000],
                 }),
             })
             ;(cookies as jest.Mock).mockResolvedValue(cookieStore)
@@ -345,9 +345,9 @@ describe('createPostHog().getPostHog', () => {
                     distinctId: 'cookie-user',
                     sessionId: 'cookie-session',
                     properties: {
-                        $session_id: 'cookie-session',
-                        $device_id: 'device_xyz',
-                        $window_id: 'window-123',
+                        session_id: 'cookie-session',
+                        device_id: 'device_xyz',
+                        window_id: 'window-123',
                     },
                 },
                 expect.any(Function)
@@ -360,7 +360,7 @@ describe('createPostHog().getPostHog', () => {
             const cookieStore = createMockCookies({
                 ph_phc_test123_posthog: JSON.stringify({
                     distinct_id: 'user_abc',
-                    $device_id: 'device_xyz',
+                    device_id: 'device_xyz',
                 }),
                 __ph_opt_in_out_phc_test123: '0',
             })
@@ -377,7 +377,7 @@ describe('createPostHog().getPostHog', () => {
             const cookieStore = createMockCookies({
                 ph_phc_test123_posthog: JSON.stringify({
                     distinct_id: 'user_abc',
-                    $device_id: 'device_xyz',
+                    device_id: 'device_xyz',
                 }),
                 __ph_opt_in_out_phc_test123: '1',
             })

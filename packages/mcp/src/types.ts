@@ -13,7 +13,7 @@ import type { LoggerFn } from './extensions/logger'
 
 export type JsonRecord = Record<string, unknown>
 
-/** PostHog error-tracking properties (`$exception_list`). Re-exported from `@posthog/core`. */
+/** PostHog error-tracking properties (`exception_list`). Re-exported from `@posthog/core`. */
 export type ErrorProperties = ErrorTracking.ErrorProperties
 /** A single parsed stack frame. Re-exported from `@posthog/core`. */
 export type StackFrame = ErrorTracking.StackFrame
@@ -112,17 +112,17 @@ export interface MCPAnalyticsOptions {
    * thing that can carry a session across calls is the agent itself.
    *
    * Turning this on injects a `conversation_id` parameter into every tool, mints one
-   * on the first call, asks the agent to echo it back, and derives `$session_id` from
+   * on the first call, asks the agent to echo it back, and derives `session_id` from
    * that handle — so calls correlate across reconnects, restarts, and per-request
    * instances.
    *
    * Off by default, and fully inert when off: no parameter is injected, no schema is
-   * touched, no prompt-back is appended, and `$session_id` resolves exactly as it did
+   * touched, no prompt-back is appended, and `session_id` resolves exactly as it did
    * before (the request's own session id, else this instance's).
    */
   enableConversationId?: boolean
   /**
-   * Emit a `$exception` event alongside any failed tool call. Defaults to `true`.
+   * Emit a `edp_exception` event alongside any failed tool call. Defaults to `true`.
    * Set to `false` if you handle error tracking elsewhere and don't want MCP errors
    * fanning out into PostHog error tracking.
    */
@@ -144,9 +144,9 @@ export interface MCPAnalyticsOptions {
    */
   captureModel?: boolean | MCPAnalyticsModelOptions
   /**
-   * Identify the calling user. Returning a non-null value sets `distinct_id` and `$set`
+   * Identify the calling user. Returning a non-null value sets `distinct_id` and `edp_set`
    * on subsequent events for the session. Object form is treated as a static identity.
-   * A standalone `$identify` event is published once per session — at `initialize`, or
+   * A standalone `edp_identify` event is published once per session — at `initialize`, or
    * when a long-lived server sees the identity appear or change — never per tool call.
    */
   identify?:
@@ -165,7 +165,7 @@ export interface MCPAnalyticsOptions {
    * Inspect, modify, or drop each event right before it is sent to PostHog
    * (matching posthog-node's `beforeSend`). Receives the fully-built capture
    * payload — event name, `distinct_id`, and `properties` — and runs once per
-   * emitted event, including the `$exception` sibling of a failed tool call.
+   * emitted event, including the `edp_exception` sibling of a failed tool call.
    *
    * Return the (possibly mutated) event to send it, or `null`/`undefined` to
    * drop it. Use this to redact sensitive values, add or remove properties, or
@@ -238,7 +238,7 @@ export interface Event {
    * Coarse failure category → `$mcp_error_type`. An explicit, low-cardinality
    * label the host can supply (e.g. `validation`, `permission`, `timeout`).
    * When omitted on an errored call, it falls back to the thrown error's type
-   * (the `$exception_list` entry's `type`).
+   * (the `exception_list` entry's `type`).
    */
   errorType?: string
   eventId?: string
@@ -259,7 +259,7 @@ export interface Event {
    */
   eventName?: string
   id: string
-  /** Resolved person properties for the session, written to `$set`. */
+  /** Resolved person properties for the session, written to `edp_set`. */
   identifyActorData?: JsonRecord
   /** Resolved distinct id for the session (from `identify().distinctId`). */
   identifyActorGivenId?: string
@@ -374,14 +374,14 @@ export interface UserIdentity {
    */
   distinctId: string
   /**
-   * Person properties, written to `$set` (e.g. `{ name, email, plan }`) — the
+   * Person properties, written to `edp_set` (e.g. `{ name, email, plan }`) — the
    * same `properties` you'd pass to posthog-node's `identify`.
    */
   properties?: JsonRecord
   /**
    * PostHog group memberships as `{ groupType: groupKey }`. Stamped onto every
-   * event for the session as `$groups`, so callers never hand-write the
-   * `$groups` dollar-key themselves.
+   * event for the session as `groups`, so callers never hand-write the
+   * `groups` dollar-key themselves.
    */
   groups?: Record<string, string>
 }
@@ -450,11 +450,11 @@ export interface CaptureEventData {
 export interface McpCaptureCommon {
   /**
    * Resolved person distinct id (becomes `distinct_id`). Supplying it enables
-   * person processing so `$set` lands on a real person; omitting it falls back
-   * to an anonymous capture with `$process_person_profile: false`.
+   * person processing so `edp_set` lands on a real person; omitting it falls back
+   * to an anonymous capture with `process_person_profile: false`.
    */
   distinctId?: string
-  /** Session id → `$session_id`. Omitted from the event entirely when not provided. */
+  /** Session id → `session_id`. Omitted from the event entirely when not provided. */
   sessionId?: string
   /**
    * Negotiated MCP protocol (spec) version → `$mcp_protocol_version`. Pass it on
@@ -480,9 +480,9 @@ export interface McpCaptureCommon {
    * alongside {@link McpCaptureCommon.clientUserAgent}. Sent verbatim.
    */
   vendorClient?: string
-  /** Person properties → `$set` (e.g. `{ name, email, plan }`). */
+  /** Person properties → `edp_set` (e.g. `{ name, email, plan }`). */
   setProperties?: JsonRecord
-  /** Group memberships → `$groups`. */
+  /** Group memberships → `groups`. */
   groups?: Record<string, string>
   /** Extra event properties, spread onto the PostHog event verbatim. */
   properties?: JsonRecord
@@ -522,14 +522,14 @@ export interface ToolCallCaptureData extends McpCaptureCommon {
   /**
    * The thrown value (Error, string, object, or CallToolResult). When `isError`
    * is true and `enableExceptionAutocapture` is on, this is turned into the
-   * `$exception` sibling event. If omitted on an error, a generic exception is
+   * `edp_exception` sibling event. If omitted on an error, a generic exception is
    * synthesized from the tool name.
    */
   error?: unknown
   /**
    * Coarse failure category → `$mcp_error_type` (e.g. `validation`,
    * `permission`, `timeout`, `rate_limited`). A low-cardinality label that lets
-   * the dashboard break failures down by reason without joining to `$exception`.
+   * the dashboard break failures down by reason without joining to `edp_exception`.
    * When omitted on an error, the SDK falls back to the thrown error's type.
    */
   errorType?: string
@@ -564,7 +564,7 @@ export interface ToolsListCaptureData extends McpCaptureCommon {
   durationMs?: number
   /** Whether building the listing failed → `$mcp_is_error`. */
   isError?: boolean
-  /** The thrown value when `isError` is true → fans out an `$exception` sibling. */
+  /** The thrown value when `isError` is true → fans out an `edp_exception` sibling. */
   error?: unknown
   /** Coarse failure category → `$mcp_error_type`. Falls back to the thrown error's type. */
   errorType?: string

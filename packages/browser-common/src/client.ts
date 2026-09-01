@@ -40,9 +40,9 @@ export interface CaptureOptions {
     timestamp?: Date
     /** Override the event UUID used for de-duplication. */
     uuid?: string
-    /** Person properties to set, emitted as `$set`. */
+    /** Person properties to set, emitted as `edp_set`. */
     set?: Record<string, unknown>
-    /** Person properties to set if unset, emitted as `$set_once`. */
+    /** Person properties to set if unset, emitted as `edp_set_once`. */
     setOnce?: Record<string, unknown>
 }
 
@@ -105,7 +105,7 @@ export interface Client {
     readonly library: { readonly name: string; readonly version: string }
     /** Initial person properties used for feature evaluation. */
     readonly initialPersonProperties: DeepReadonly<Record<string, unknown>>
-    /** Active group memberships attached to events as `$groups`. */
+    /** Active group memberships attached to events as `groups`. */
     readonly groups: DeepReadonly<Record<string, string>>
     /** The current session, created on first read if needed. */
     readonly session: SessionContext

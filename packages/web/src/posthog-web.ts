@@ -136,7 +136,7 @@ export class PostHog extends PostHogCore {
 
     // Only capture pageview if the pathname has changed
     if (currentPathname !== this._lastPathname) {
-      this.capture('$pageview', { navigation_type: navigationType })
+      this.capture('edp_pageview', { navigation_type: navigationType })
       this._lastPathname = currentPathname
     }
   }

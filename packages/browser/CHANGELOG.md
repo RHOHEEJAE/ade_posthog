@@ -11,7 +11,7 @@
 
 ### Patch Changes
 
-- [#4626](https://github.com/PostHog/posthog-js/pull/4626) [`3c650a1`](https://github.com/PostHog/posthog-js/commit/3c650a15f1d3eaf5add26b7e4c33cf4286af75f4) Thanks [@nandinitiw](https://github.com/nandinitiw)! - Re-translate popover surveys when the display language changes while the survey is on screen, either from a browser `languagechange` event or from `identify()` updating the `language` person property. In-progress answers are preserved. `$survey_questions[].question` and `$survey_language` on `survey sent` / `survey dismissed` now report the text and language the user saw when they answered, not the language active when the event fired. Feedback-button (widget) surveys are unchanged.
+- [#4626](https://github.com/PostHog/posthog-js/pull/4626) [`3c650a1`](https://github.com/PostHog/posthog-js/commit/3c650a15f1d3eaf5add26b7e4c33cf4286af75f4) Thanks [@nandinitiw](https://github.com/nandinitiw)! - Re-translate popover surveys when the display language changes while the survey is on screen, either from a browser `languagechange` event or from `identify()` updating the `language` person property. In-progress answers are preserved. `survey_questions[].question` and `survey_language` on `survey sent` / `survey dismissed` now report the text and language the user saw when they answered, not the language active when the event fired. Feedback-button (widget) surveys are unchanged.
   (2026-08-28)
 - Updated dependencies [[`3c650a1`](https://github.com/PostHog/posthog-js/commit/3c650a15f1d3eaf5add26b7e4c33cf4286af75f4)]:
     - @posthog/core@1.49.2
@@ -48,7 +48,7 @@
 
 ### Minor Changes
 
-- [#4658](https://github.com/PostHog/posthog-js/pull/4658) [`db8687c`](https://github.com/PostHog/posthog-js/commit/db8687c46bc34d1364c092a030adaef7c67c6c67) Thanks [@posthog](https://github.com/apps/posthog)! - Report `$sdk_debug_replay_throttled_mutations_dropped` on captured events, counting the attribute changes the session recorder discarded during that session. The recorder throttles elements that change hundreds of times a second, and a discarded `class` or `style` change never reaches the player — so a recording can keep showing an element the live page had already hidden. Query this property to see whether your app is affected.
+- [#4658](https://github.com/PostHog/posthog-js/pull/4658) [`db8687c`](https://github.com/PostHog/posthog-js/commit/db8687c46bc34d1364c092a030adaef7c67c6c67) Thanks [@posthog](https://github.com/apps/posthog)! - Report `sdk_debug_replay_throttled_mutations_dropped` on captured events, counting the attribute changes the session recorder discarded during that session. The recorder throttles elements that change hundreds of times a second, and a discarded `class` or `style` change never reaches the player — so a recording can keep showing an element the live page had already hidden. Query this property to see whether your app is affected.
   (2026-08-27)
 
 ## 1.421.2
@@ -212,7 +212,7 @@
 
 - [#4418](https://github.com/PostHog/posthog-js/pull/4418) [`be2161d`](https://github.com/PostHog/posthog-js/commit/be2161d68946b30d27d7a0a5c2cb5671b04d5ac0) Thanks [@posthog](https://github.com/apps/posthog)! - feat: add granular automatic pageview options for SPA navigation
 
-    `capture_pageview` now accepts an object with `path`, `search`, and `hash` options. Each selected URL component triggers a `$pageview` when it changes, including direct hash changes used by hash-based routers. The existing `'history_change'` option continues to capture pathname changes. (2026-08-24)
+    `capture_pageview` now accepts an object with `path`, `search`, and `hash` options. Each selected URL component triggers a `edp_pageview` when it changes, including direct hash changes used by hash-based routers. The existing `'history_change'` option continues to capture pathname changes. (2026-08-24)
 
 - Updated dependencies [[`be2161d`](https://github.com/PostHog/posthog-js/commit/be2161d68946b30d27d7a0a5c2cb5671b04d5ac0)]:
     - @posthog/types@1.405.2
@@ -266,7 +266,7 @@
 
 ### Patch Changes
 
-- [#4459](https://github.com/PostHog/posthog-js/pull/4459) [`caed377`](https://github.com/PostHog/posthog-js/commit/caed377b3827c365fcb4bc9a093ec811030a7356) Thanks [@posthog](https://github.com/apps/posthog)! - fix(browser): stop the `$posthog_cookieless` sentinel from leaking into `identify()` and real events. A tab that missed a cross-tab consent flip could emit the sentinel as a durable distinct_id — merging distinct real users into a single person. It now adopts the identity persisted by the tab that handled consent, falling back to a fresh anonymous device id when persistence is not shared.
+- [#4459](https://github.com/PostHog/posthog-js/pull/4459) [`caed377`](https://github.com/PostHog/posthog-js/commit/caed377b3827c365fcb4bc9a093ec811030a7356) Thanks [@posthog](https://github.com/apps/posthog)! - fix(browser): stop the `posthog_cookieless` sentinel from leaking into `identify()` and real events. A tab that missed a cross-tab consent flip could emit the sentinel as a durable distinct_id — merging distinct real users into a single person. It now adopts the identity persisted by the tab that handled consent, falling back to a fresh anonymous device id when persistence is not shared.
   (2026-08-21)
 
 - [#4567](https://github.com/PostHog/posthog-js/pull/4567) [`5bd2c8d`](https://github.com/PostHog/posthog-js/commit/5bd2c8d0f30ecdd2fa14f0f05b3d43ef4e6b8d41) Thanks [@github-actions](https://github.com/apps/github-actions)! - Render React component stacks as linked exception causes so error tracking identifies the crashing component.
@@ -297,7 +297,7 @@
 
 ### Patch Changes
 
-- [#4309](https://github.com/PostHog/posthog-js/pull/4309) [`b564d61`](https://github.com/PostHog/posthog-js/commit/b564d619fe97682413edfded287c2c2ffe446dbd) Thanks [@posthog](https://github.com/apps/posthog)! - Fix session recording in the full browser bundles. `array.full.js` and `module.full.es.js` only inlined rrweb, so they still fetched the recorder script at runtime - the request the full bundles exist to avoid. They now inline the whole recorder. Also flags the session with `$sdk_debug_recording_script_not_loaded` when the recorder script fails to load, so a blocked recorder is visible in analytics rather than only in the console.
+- [#4309](https://github.com/PostHog/posthog-js/pull/4309) [`b564d61`](https://github.com/PostHog/posthog-js/commit/b564d619fe97682413edfded287c2c2ffe446dbd) Thanks [@posthog](https://github.com/apps/posthog)! - Fix session recording in the full browser bundles. `array.full.js` and `module.full.es.js` only inlined rrweb, so they still fetched the recorder script at runtime - the request the full bundles exist to avoid. They now inline the whole recorder. Also flags the session with `sdk_debug_recording_script_not_loaded` when the recorder script fails to load, so a blocked recorder is visible in analytics rather than only in the console.
   (2026-08-19)
 
 ## 1.418.3
@@ -380,7 +380,7 @@
     A visibility or focus change near a click is the opposite — a sign the click did something (it woke/focused the tab, opened a new tab, or opened a new window/popup) — so these signals now only ever _suppress_ a dead click, never cause one:
     - Visibility changes are recorded in both directions (a click that opens a new tab sends the current tab to `hidden`), and a window `focus`/`blur` observer is added, since a click that opens a new window/popup may leave the tab visible and only surface as the current window losing focus.
     - A click within a wake-up/interaction window (1s, wide enough for a real "tab back, then click" gesture) of any such change is suppressed.
-    - The visibility signal no longer feeds the dead-marking path at all. `$dead_click_visibility_changed_timeout` stays in the payload (always false) for shape compatibility, and a new `$dead_click_focus_changed_delay_ms` is emitted for observability.
+    - The visibility signal no longer feeds the dead-marking path at all. `edp_dead_click_visibility_changed_timeout` stays in the payload (always false) for shape compatibility, and a new `edp_dead_click_focus_changed_delay_ms` is emitted for observability.
     - Visibility/focus changes are now recorded onto each queued candidate the instant they fire (like scroll), instead of being read from a single shared timestamp when the click is checked ~1s later. A click that hides or blurs the tab (opening a new tab/window) suspends that check while the tab is backgrounded; by the time it resumes the tab has usually returned, and the shared timestamp would have been overwritten by that later transition — losing the click-correlated one and wrongly flagging the click dead. Stamping the candidate as the event fires makes delayed hide→show and blur→focus sequences suppress correctly. (2026-08-14)
 
 - Updated dependencies [[`0a0206f`](https://github.com/PostHog/posthog-js/commit/0a0206f907f4b58dc28f36aa1fc441b55c489faf), [`eb05237`](https://github.com/PostHog/posthog-js/commit/eb0523729c4f989663a38d3ce9d0e61d4f262ee1)]:
@@ -406,9 +406,9 @@
 - [#4443](https://github.com/PostHog/posthog-js/pull/4443) [`b2c6830`](https://github.com/PostHog/posthog-js/commit/b2c683051fae7da40be872666a3e8cadf958f804) Thanks [@arnohillen](https://github.com/arnohillen)! - Harden the session replay stylesheet inlining budget (`inlineStylesheetBudgetRules`):
     - The default budget (10,000 rules) moves from the recorder chunk into posthog-js session recording options, so npm-pinned or cached bundles keep their configured override (including `0` to disable) and direct `rrweb.record()` consumers keep unbounded inlining unless they opt in.
     - Deferred inlining is bounded inside a sheet: a resumable cursor stringifies 200 rules per idle slice and emits a sheet's `_cssText` atomically, so monolithic sheets no longer produce one long task and partial CSS never reaches the wire.
-    - Deferred sheets are flushed synchronously when recording stops and on `pagehide`; residual failure modes are counted via `$sdk_debug_replay_deferred_stylesheets_failed` / `_abandoned`.
+    - Deferred sheets are flushed synchronously when recording stops and on `pagehide`; residual failure modes are counted via `sdk_debug_replay_deferred_stylesheets_failed` / `_abandoned`.
     - CSSOM-only styles (`insertRule` output, `adoptedStyleSheets`) no longer charge the budget, since deferring `<link>` sheets buys those pages nothing.
-    - Telemetry fixes: full-snapshot duration wraps the whole synchronous task, deferred counts are cumulative per session, new gauges cover non-deferrable rules and idle stringification cost, and duration samples straddling tab suspension are discarded (`$sdk_debug_replay_discarded_duration_samples`). (2026-08-13)
+    - Telemetry fixes: full-snapshot duration wraps the whole synchronous task, deferred counts are cumulative per session, new gauges cover non-deferrable rules and idle stringification cost, and duration samples straddling tab suspension are discarded (`sdk_debug_replay_discarded_duration_samples`). (2026-08-13)
 
 - Updated dependencies [[`c9086de`](https://github.com/PostHog/posthog-js/commit/c9086de42e1c7f102b6cca318c875bdf030d630f), [`b2c6830`](https://github.com/PostHog/posthog-js/commit/b2c683051fae7da40be872666a3e8cadf958f804)]:
     - @posthog/core@1.48.0
@@ -597,7 +597,7 @@
 
     Stylesheet inlining now stops after a budget of CSSRules per snapshot (`session_recording.inlineStylesheetBudgetRules`, default 10,000; set `0` for the previous unbounded behaviour). Sheets past the budget are serialized without `_cssText`, keeping `rel`/`href` so replay can load them remotely, and are then inlined one per idle callback and delivered as attribute mutations. Replay fidelity is preserved; the work is just no longer one long blocking task.
 
-    The snapshot's cost is also now measured and reported on captured events, so slow snapshots are visible without a browser profile: `$sdk_debug_replay_slowest_full_snapshot_ms`, `$sdk_debug_replay_slowest_full_snapshot_stylesheet_ms`, `$sdk_debug_replay_slowest_full_snapshot_nodes`, `$sdk_debug_replay_slowest_full_snapshot_css_rules`, `$sdk_debug_replay_deferred_stylesheets`, and, for the incremental path, `$sdk_debug_replay_slowest_mutation_batch_ms`. (2026-08-05)
+    The snapshot's cost is also now measured and reported on captured events, so slow snapshots are visible without a browser profile: `sdk_debug_replay_slowest_full_snapshot_ms`, `sdk_debug_replay_slowest_full_snapshot_stylesheet_ms`, `sdk_debug_replay_slowest_full_snapshot_nodes`, `sdk_debug_replay_slowest_full_snapshot_css_rules`, `sdk_debug_replay_deferred_stylesheets`, and, for the incremental path, `sdk_debug_replay_slowest_mutation_batch_ms`. (2026-08-05)
 
 ## 1.411.0
 
@@ -609,7 +609,7 @@
 
 ### Patch Changes
 
-- [#4287](https://github.com/PostHog/posthog-js/pull/4287) [`d3c4538`](https://github.com/PostHog/posthog-js/commit/d3c4538b7c22aa468aa0ab9e0edb63d2966618e7) Thanks [@posthog](https://github.com/apps/posthog)! - Keep `$referring_domain` and canonical `utm_*`/campaign parameters on minimal `$feature_flag_called` events. Previously the minimal allowlist stripped every campaign parameter, so a flag-called event landing first in a session could set the session's UTM attribution and channel type to NULL in web analytics.
+- [#4287](https://github.com/PostHog/posthog-js/pull/4287) [`d3c4538`](https://github.com/PostHog/posthog-js/commit/d3c4538b7c22aa468aa0ab9e0edb63d2966618e7) Thanks [@posthog](https://github.com/apps/posthog)! - Keep `referring_domain` and canonical `utm_*`/campaign parameters on minimal `edp_feature_flag_called` events. Previously the minimal allowlist stripped every campaign parameter, so a flag-called event landing first in a session could set the session's UTM attribution and channel type to NULL in web analytics.
   (2026-08-04)
 - Updated dependencies [[`d3c4538`](https://github.com/PostHog/posthog-js/commit/d3c4538b7c22aa468aa0ab9e0edb63d2966618e7), [`43d1850`](https://github.com/PostHog/posthog-js/commit/43d18506565b491c4a1013f9237aa732ae3d6f4e)]:
     - @posthog/core@1.46.7
@@ -740,7 +740,7 @@
 
 ### Patch Changes
 
-- [#4354](https://github.com/PostHog/posthog-js/pull/4354) [`6c500f1`](https://github.com/PostHog/posthog-js/commit/6c500f1c3165834f71e524eb500fc64eb792ec0c) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - Fail open when an error tracking suppression rule cannot be evaluated, so an unknown operator or a key outside `$exception_types` / `$exception_values` no longer drops the exception.
+- [#4354](https://github.com/PostHog/posthog-js/pull/4354) [`6c500f1`](https://github.com/PostHog/posthog-js/commit/6c500f1c3165834f71e524eb500fc64eb792ec0c) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - Fail open when an error tracking suppression rule cannot be evaluated, so an unknown operator or a key outside `exception_types` / `exception_values` no longer drops the exception.
   (2026-07-31)
 
 ## 1.409.4
@@ -779,7 +779,7 @@
 
 ### Minor Changes
 
-- [#4308](https://github.com/PostHog/posthog-js/pull/4308) [`6e7f3ae`](https://github.com/PostHog/posthog-js/commit/6e7f3aeaf65d66d015508aec0618c0d7fe505db5) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - Emit the release id that posthog-cli injects into your bundle as `$release_id` on `$exception` events, so PostHog can attach exceptions to a release without joining through symbol sets. Adds `getInjectedReleaseId()` to `@posthog/core`. The property is only attached when an injected release id can be read.
+- [#4308](https://github.com/PostHog/posthog-js/pull/4308) [`6e7f3ae`](https://github.com/PostHog/posthog-js/commit/6e7f3aeaf65d66d015508aec0618c0d7fe505db5) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - Emit the release id that posthog-cli injects into your bundle as `release_id` on `edp_exception` events, so PostHog can attach exceptions to a release without joining through symbol sets. Adds `getInjectedReleaseId()` to `@posthog/core`. The property is only attached when an injected release id can be read.
   (2026-07-30)
 
 ### Patch Changes
@@ -968,7 +968,7 @@
 
 ### Patch Changes
 
-- [#4127](https://github.com/PostHog/posthog-js/pull/4127) [`220fa2c`](https://github.com/PostHog/posthog-js/commit/220fa2ce1c5cbb65d9f52dad05e3c8070f616e4a) Thanks [@sarmah-rup](https://github.com/sarmah-rup)! - Don't let save_referrer overwrite a $referrer / $referring_domain that was explicitly set via posthog.register(), so registered attribution values survive pageviews in SPA and iframe contexts
+- [#4127](https://github.com/PostHog/posthog-js/pull/4127) [`220fa2c`](https://github.com/PostHog/posthog-js/commit/220fa2ce1c5cbb65d9f52dad05e3c8070f616e4a) Thanks [@sarmah-rup](https://github.com/sarmah-rup)! - Don't let save_referrer overwrite a referrer / referring_domain that was explicitly set via posthog.register(), so registered attribution values survive pageviews in SPA and iframe contexts
   (2026-07-21)
 
 ## 1.406.0
@@ -1012,9 +1012,9 @@
 
 ### Minor Changes
 
-- [#4172](https://github.com/PostHog/posthog-js/pull/4172) [`9621830`](https://github.com/PostHog/posthog-js/commit/9621830c359a9955ffec0db61164e5fc450e5443) Thanks [@haacked](https://github.com/haacked)! - send minimal `$feature_flag_called` events when the server enables it
+- [#4172](https://github.com/PostHog/posthog-js/pull/4172) [`9621830`](https://github.com/PostHog/posthog-js/commit/9621830c359a9955ffec0db61164e5fc450e5443) Thanks [@haacked](https://github.com/haacked)! - send minimal `edp_feature_flag_called` events when the server enables it
 
-    When the v2 `/flags` response carries `minimalFlagCalledEvents: true` (or, for posthog-node local evaluation, the flag-definitions payload carries `minimal_flag_called_events: true`) and the evaluated flag is not linked to an experiment (`$feature_flag_has_experiment === false`), `$feature_flag_called` events are rebuilt from a strict allowlist of flag-evaluation, processing-control, and SDK-identity properties. Super properties, `$set`/`$set_once`, the `$feature/<key>` enumeration, `$active_feature_flags`, and the context envelope are stripped. Any missing signal (no gate on the response, bootstrapped or locally injected flags, `has_experiment` unknown) falls back to the full event, and experiment-linked flags always send the full envelope. The gate is stored alongside the cached flags (posthog-js persistence, posthog-node poller state) and is server-controlled, with no SDK-side configuration. `before_send` runs after the filter and may re-add stripped properties. (2026-07-20)
+    When the v2 `/flags` response carries `minimalFlagCalledEvents: true` (or, for posthog-node local evaluation, the flag-definitions payload carries `minimal_flag_called_events: true`) and the evaluated flag is not linked to an experiment (`feature_flag_has_experiment === false`), `edp_feature_flag_called` events are rebuilt from a strict allowlist of flag-evaluation, processing-control, and SDK-identity properties. Super properties, `edp_set`/`edp_set_once`, the `feature/<key>` enumeration, `active_feature_flags`, and the context envelope are stripped. Any missing signal (no gate on the response, bootstrapped or locally injected flags, `has_experiment` unknown) falls back to the full event, and experiment-linked flags always send the full envelope. The gate is stored alongside the cached flags (posthog-js persistence, posthog-node poller state) and is server-controlled, with no SDK-side configuration. `before_send` runs after the filter and may re-add stripped properties. (2026-07-20)
 
 ### Patch Changes
 
@@ -1032,7 +1032,7 @@
 
 ### Minor Changes
 
-- [#4149](https://github.com/PostHog/posthog-js/pull/4149) [`607bf54`](https://github.com/PostHog/posthog-js/commit/607bf543b63dd8f9c9a2ad891048194601a942e8) Thanks [@pauldambra](https://github.com/pauldambra)! - Add dead swipe detection to dead clicks autocapture. When dead clicks autocapture is enabled, touch swipe gestures that produce no observable screen change (no scroll, mutation, selection or visibility change) are now captured as `$dead_swipe` events, surfacing failed navigations on touch devices. Configurable via `capture_dead_swipes` (default `true`) and `swipe_threshold_px` (default `30`) on the `capture_dead_clicks` config. Swipes over surfaces whose response cannot be observed (canvas, video and other media elements under the finger) are skipped, and captures are limited per page load via `max_dead_swipes_per_page_load` (default `10`).
+- [#4149](https://github.com/PostHog/posthog-js/pull/4149) [`607bf54`](https://github.com/PostHog/posthog-js/commit/607bf543b63dd8f9c9a2ad891048194601a942e8) Thanks [@pauldambra](https://github.com/pauldambra)! - Add dead swipe detection to dead clicks autocapture. When dead clicks autocapture is enabled, touch swipe gestures that produce no observable screen change (no scroll, mutation, selection or visibility change) are now captured as `edp_dead_swipe` events, surfacing failed navigations on touch devices. Configurable via `capture_dead_swipes` (default `true`) and `swipe_threshold_px` (default `30`) on the `capture_dead_clicks` config. Swipes over surfaces whose response cannot be observed (canvas, video and other media elements under the finger) are skipped, and captures are limited per page load via `max_dead_swipes_per_page_load` (default `10`).
   (2026-07-16)
 
 ### Patch Changes
@@ -1046,9 +1046,9 @@
 
 ### Minor Changes
 
-- [#4159](https://github.com/PostHog/posthog-js/pull/4159) [`fad6d9a`](https://github.com/PostHog/posthog-js/commit/fad6d9adae4163cd63859766916cdcbae629a110) Thanks [@haacked](https://github.com/haacked)! - add `$feature_flag_has_experiment` to `$feature_flag_called` events
+- [#4159](https://github.com/PostHog/posthog-js/pull/4159) [`fad6d9a`](https://github.com/PostHog/posthog-js/commit/fad6d9adae4163cd63859766916cdcbae629a110) Thanks [@haacked](https://github.com/haacked)! - add `feature_flag_has_experiment` to `edp_feature_flag_called` events
 
-    `$feature_flag_called` events now carry a `$feature_flag_has_experiment` boolean sourced from the server's `has_experiment` flag metadata (the `/flags?v=2` response for remote evaluation, the `/api/feature_flag/local_evaluation` definitions for posthog-node local evaluation). The property is only sent when the server explicitly reports `has_experiment`; it is omitted entirely when the value is unknown (older servers, missing metadata, bootstrapped or locally injected flags). (2026-07-16)
+    `edp_feature_flag_called` events now carry a `feature_flag_has_experiment` boolean sourced from the server's `has_experiment` flag metadata (the `/flags?v=2` response for remote evaluation, the `/api/feature_flag/local_evaluation` definitions for posthog-node local evaluation). The property is only sent when the server explicitly reports `has_experiment`; it is omitted entirely when the value is unknown (older servers, missing metadata, bootstrapped or locally injected flags). (2026-07-16)
 
 ### Patch Changes
 
@@ -1099,7 +1099,7 @@
 
 ### Minor Changes
 
-- [#4143](https://github.com/PostHog/posthog-js/pull/4143) [`0e8ad14`](https://github.com/PostHog/posthog-js/commit/0e8ad14fdadd7984da985df4936c9a3b128bb772) Thanks [@robbie-c](https://github.com/robbie-c)! - Stamp the current hostname as `$snapshot_host` on every `$snapshot` event the session recorder sends. The value is derived from the page URL after it passes through the existing replay URL masking pipeline (`maskCapturedNetworkRequestFn` / deprecated `maskNetworkRequestFn`, hash stripping, personal-data query-param masking), so it cannot bypass a customer's masking config. When masking removes the URL or the masked result doesn't parse as a URL, the property is omitted entirely. This gives ingestion consumers a per-message host signal even for mid-session snapshot batches that contain no URL-bearing events.
+- [#4143](https://github.com/PostHog/posthog-js/pull/4143) [`0e8ad14`](https://github.com/PostHog/posthog-js/commit/0e8ad14fdadd7984da985df4936c9a3b128bb772) Thanks [@robbie-c](https://github.com/robbie-c)! - Stamp the current hostname as `snapshot_host` on every `edp_snapshot` event the session recorder sends. The value is derived from the page URL after it passes through the existing replay URL masking pipeline (`maskCapturedNetworkRequestFn` / deprecated `maskNetworkRequestFn`, hash stripping, personal-data query-param masking), so it cannot bypass a customer's masking config. When masking removes the URL or the masked result doesn't parse as a URL, the property is omitted entirely. This gives ingestion consumers a per-message host signal even for mid-session snapshot batches that contain no URL-bearing events.
   (2026-07-15)
 
 ## 1.401.0
@@ -1159,7 +1159,7 @@
 
 ### Patch Changes
 
-- [#4133](https://github.com/PostHog/posthog-js/pull/4133) [`4ebb618`](https://github.com/PostHog/posthog-js/commit/4ebb61837adaed8960abbe3f8e0e28781e6bf905) Thanks [@mikenicholls88](https://github.com/mikenicholls88)! - Make `jsonStringify` circular-safe so event serialization never throws. Previously a captured property holding a circular value — most commonly a DOM node that retains a React fiber pointing back at the element — made `JSON.stringify` throw `Converting circular structure to JSON`; with `capture_exceptions` enabled that throw was recaptured as a new `$exception`, at times in a loop. On a throw we now fall back to `safeJsonStringify` from `@posthog/core`. The fast (non-circular) path is unchanged, and only true cycles become `"[Circular]"`, so shared-but-acyclic references keep their real values.
+- [#4133](https://github.com/PostHog/posthog-js/pull/4133) [`4ebb618`](https://github.com/PostHog/posthog-js/commit/4ebb61837adaed8960abbe3f8e0e28781e6bf905) Thanks [@mikenicholls88](https://github.com/mikenicholls88)! - Make `jsonStringify` circular-safe so event serialization never throws. Previously a captured property holding a circular value — most commonly a DOM node that retains a React fiber pointing back at the element — made `JSON.stringify` throw `Converting circular structure to JSON`; with `capture_exceptions` enabled that throw was recaptured as a new `edp_exception`, at times in a loop. On a throw we now fall back to `safeJsonStringify` from `@posthog/core`. The fast (non-circular) path is unchanged, and only true cycles become `"[Circular]"`, so shared-but-acyclic references keep their real values.
   (2026-07-13)
 
 ## 1.399.2
@@ -1305,7 +1305,7 @@
   (2026-07-03)
 
 - [#4031](https://github.com/PostHog/posthog-js/pull/4031) [`94a0530`](https://github.com/PostHog/posthog-js/commit/94a053043847293a4427e315e67c798b58894107) Thanks [@posthog](https://github.com/apps/posthog)! - Improve survey display reliability:
-    - **posthog-js**: refresh the cached `$surveys` definitions after a short TTL (stale-while-revalidate) so server-side changes such as switching a survey from popover to API propagate to long-lived tabs without a page reload.
+    - **posthog-js**: refresh the cached `surveys` definitions after a short TTL (stale-while-revalidate) so server-side changes such as switching a survey from popover to API propagate to long-lived tabs without a page reload.
     - **posthog-js**: add `posthog.surveys.markSurveyAsSeen(surveyId, { iteration })` so custom integrators that render surveys through their own backend can honour the "already seen" and wait-period checks.
     - **posthog-react-native**: guarantee the survey `Modal` notifies its parent on close even when iOS `Modal.onDismiss` fails to fire, so the transparent full-screen modal can no longer stay mounted intercepting touches and freezing the app. (2026-07-03)
 
@@ -1328,7 +1328,7 @@
 - [#4035](https://github.com/PostHog/posthog-js/pull/4035) [`18e543b`](https://github.com/PostHog/posthog-js/commit/18e543b301705048b2eef0d864088541a09a3150) Thanks [@posthog](https://github.com/apps/posthog)! - fix(web): isolate `onFeatureFlags` callbacks so a throwing user handler no longer breaks the remaining callback chain or gets misattributed as an SDK error
   (2026-07-01)
 
-- [#4039](https://github.com/PostHog/posthog-js/pull/4039) [`15bcb42`](https://github.com/PostHog/posthog-js/commit/15bcb42e3fa97bfec8de87a4118ee870b960d41f) Thanks [@github-actions](https://github.com/apps/github-actions)! - fix(replay): measure `$snapshot_bytes` as UTF-8 byte length instead of UTF-16 string length, so non-ASCII session replay payloads are counted accurately against the message size limit
+- [#4039](https://github.com/PostHog/posthog-js/pull/4039) [`15bcb42`](https://github.com/PostHog/posthog-js/commit/15bcb42e3fa97bfec8de87a4118ee870b960d41f) Thanks [@github-actions](https://github.com/apps/github-actions)! - fix(replay): measure `snapshot_bytes` as UTF-8 byte length instead of UTF-16 string length, so non-ASCII session replay payloads are counted accurately against the message size limit
   (2026-07-01)
 
 ## 1.396.3
@@ -1356,7 +1356,7 @@
 
 ### Minor Changes
 
-- [#3987](https://github.com/PostHog/posthog-js/pull/3987) [`74cc6bb`](https://github.com/PostHog/posthog-js/commit/74cc6bb6f255b944846567406dfac449be17095c) Thanks [@TueHaulund](https://github.com/TueHaulund)! - Add a `get_current_url` config option that overrides the URL used for client-side URL targeting — session replay URL triggers, the session replay URL blocklist, survey URL display conditions, product tour URL conditions, web experiment URL conditions, and autocapture URL allow/ignore lists. These match against `window.location.href` directly, which does not reflect a `$current_url` rewritten in `before_send`. Apps where the browser URL is not meaningful for targeting (e.g. Electron/desktop builds served from a generated host) can now return the logical URL to match against. Defaults to `window.location.href` when not set.
+- [#3987](https://github.com/PostHog/posthog-js/pull/3987) [`74cc6bb`](https://github.com/PostHog/posthog-js/commit/74cc6bb6f255b944846567406dfac449be17095c) Thanks [@TueHaulund](https://github.com/TueHaulund)! - Add a `get_current_url` config option that overrides the URL used for client-side URL targeting — session replay URL triggers, the session replay URL blocklist, survey URL display conditions, product tour URL conditions, web experiment URL conditions, and autocapture URL allow/ignore lists. These match against `window.location.href` directly, which does not reflect a `current_url` rewritten in `before_send`. Apps where the browser URL is not meaningful for targeting (e.g. Electron/desktop builds served from a generated host) can now return the logical URL to match against. Defaults to `window.location.href` when not set.
   (2026-06-29)
 
 ### Patch Changes
@@ -1368,7 +1368,7 @@
 
 ### Minor Changes
 
-- [#3977](https://github.com/PostHog/posthog-js/pull/3977) [`6200888`](https://github.com/PostHog/posthog-js/commit/6200888e5741dea2e6e11a5da1c98b6c79e62a3f) Thanks [@turnipdabeets](https://github.com/turnipdabeets)! - Add `getAllFeatureFlags()`, which returns all currently loaded feature flags as structured `FeatureFlagResult`s (`key`, `enabled`, `variant`, `payload`). It is a synchronous read of the cached flags and does not send a `$feature_flag_called` event.
+- [#3977](https://github.com/PostHog/posthog-js/pull/3977) [`6200888`](https://github.com/PostHog/posthog-js/commit/6200888e5741dea2e6e11a5da1c98b6c79e62a3f) Thanks [@turnipdabeets](https://github.com/turnipdabeets)! - Add `getAllFeatureFlags()`, which returns all currently loaded feature flags as structured `FeatureFlagResult`s (`key`, `enabled`, `variant`, `payload`). It is a synchronous read of the cached flags and does not send a `edp_feature_flag_called` event.
   (2026-06-26)
 
 ### Patch Changes
@@ -1380,7 +1380,7 @@
 
 ### Minor Changes
 
-- [#3986](https://github.com/PostHog/posthog-js/pull/3986) [`919abca`](https://github.com/PostHog/posthog-js/commit/919abcaea82513bc0422d398bf26ff03810e69ad) Thanks [@ioannisj](https://github.com/ioannisj)! - Capture the `$device_model` super-property on Android Chromium via `navigator.userAgentData.getHighEntropyValues(['model'])`. Resolved once during init and sent on subsequent events; opt out with `disableDeviceModel: true`.
+- [#3986](https://github.com/PostHog/posthog-js/pull/3986) [`919abca`](https://github.com/PostHog/posthog-js/commit/919abcaea82513bc0422d398bf26ff03810e69ad) Thanks [@ioannisj](https://github.com/ioannisj)! - Capture the `device_model` super-property on Android Chromium via `navigator.userAgentData.getHighEntropyValues(['model'])`. Resolved once during init and sent on subsequent events; opt out with `disableDeviceModel: true`.
   (2026-06-26)
 
 ## 1.393.6
@@ -1433,7 +1433,7 @@
 
 ### Minor Changes
 
-- [#3921](https://github.com/PostHog/posthog-js/pull/3921) [`c28b161`](https://github.com/PostHog/posthog-js/commit/c28b16143d04caade1d024819017b89cef3162ad) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `disable_capture_url_hashes` to strip URL fragments from automatically captured URLs. It is disabled by default for backwards compatibility, and enabled automatically when `config.defaults` is `'2026-06-25'` or later. Enabling it (either explicitly or via the `'2026-06-25'` defaults) is a breaking behavior change for SPAs that rely on URL hashes for routing or analytics, because hash-based routes will be collapsed to the same URL without the fragment in fields such as `$current_url`, `$initial_current_url`, `$session_entry_url`, autocapture `$elements[*].attr__href`, `$external_click_url`, replay `href` URLs, heatmaps, web vitals `$current_url`, logs `url.full`, conversations `current_url`/`request_url`, or Next.js Pages Router `$pageview` `$current_url`.
+- [#3921](https://github.com/PostHog/posthog-js/pull/3921) [`c28b161`](https://github.com/PostHog/posthog-js/commit/c28b16143d04caade1d024819017b89cef3162ad) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `disable_capture_url_hashes` to strip URL fragments from automatically captured URLs. It is disabled by default for backwards compatibility, and enabled automatically when `config.defaults` is `'2026-06-25'` or later. Enabling it (either explicitly or via the `'2026-06-25'` defaults) is a breaking behavior change for SPAs that rely on URL hashes for routing or analytics, because hash-based routes will be collapsed to the same URL without the fragment in fields such as `current_url`, `initial_current_url`, `session_entry_url`, autocapture `elements[*].attr__href`, `external_click_url`, replay `href` URLs, heatmaps, web vitals `current_url`, logs `url.full`, conversations `current_url`/`request_url`, or Next.js Pages Router `edp_pageview` `current_url`.
 
     If you only want to capture some hashes, leave hash capture enabled and use `before_send` to remove or redact sensitive hash values before events are sent. (2026-06-23)
 
@@ -1568,9 +1568,9 @@
 
 - [#3868](https://github.com/PostHog/posthog-js/pull/3868) [`a5dd54a`](https://github.com/PostHog/posthog-js/commit/a5dd54afbc10dc2df32f401a68e57e2887b0f35e) Thanks [@pauldambra](https://github.com/pauldambra)! - fix(replay): scope the session-recording flushed-size tracker to the session
 
-    `$sdk_debug_replay_flushed_size` was stored as a single device-global value in persistence and only reset on an in-page session rotation, so it leaked across page loads and tabs and over-counted on returning visitors. The tracker now keys the running total to the current session id, so a new session starts from zero and a fresh load reading an ongoing session sees the correct total.
+    `sdk_debug_replay_flushed_size` was stored as a single device-global value in persistence and only reset on an in-page session rotation, so it leaked across page loads and tabs and over-counted on returning visitors. The tracker now keys the running total to the current session id, so a new session starts from zero and a fresh load reading an ongoing session sees the correct total.
 
-    The internal persistence key backing this counter (`$sess_rec_flush_size`) was also unintentionally attached to every captured event as a super-property; it is now marked hidden so it no longer ships on events. The value remains available on session-replay debug events as `$sdk_debug_replay_flushed_size`. (2026-06-17)
+    The internal persistence key backing this counter (`sess_rec_flush_size`) was also unintentionally attached to every captured event as a super-property; it is now marked hidden so it no longer ships on events. The value remains available on session-replay debug events as `sdk_debug_replay_flushed_size`. (2026-06-17)
 
 ## 1.390.1
 
@@ -1659,7 +1659,7 @@
 
 ### Minor Changes
 
-- [#3709](https://github.com/PostHog/posthog-js/pull/3709) [`c6c163a`](https://github.com/PostHog/posthog-js/commit/c6c163aefb093d5609977ae243b056f96a2d3b4e) Thanks [@posthog](https://github.com/apps/posthog)! - Add `unsetPersonProperties()` to remove person properties, the counterpart to `setPersonProperties()`. Previously the only way to unset a person property was to hand-pass a `$unset` array inside a `capture()` call.
+- [#3709](https://github.com/PostHog/posthog-js/pull/3709) [`c6c163a`](https://github.com/PostHog/posthog-js/commit/c6c163aefb093d5609977ae243b056f96a2d3b4e) Thanks [@posthog](https://github.com/apps/posthog)! - Add `unsetPersonProperties()` to remove person properties, the counterpart to `setPersonProperties()`. Previously the only way to unset a person property was to hand-pass a `unset` array inside a `capture()` call.
   (2026-06-16)
 
 ### Patch Changes
@@ -1667,7 +1667,7 @@
 - [#3756](https://github.com/PostHog/posthog-js/pull/3756) [`b3ec845`](https://github.com/PostHog/posthog-js/commit/b3ec8453d3678bd7ab6737b25bae003e61117ef9) Thanks [@archievi](https://github.com/archievi)! - Drop the event and log a warning when a `before_send` hook removes the `token` property, instead of silently sending an event that ingest rejects with a 401.
   (2026-06-16)
 
-- [#3860](https://github.com/PostHog/posthog-js/pull/3860) [`c9c7df1`](https://github.com/PostHog/posthog-js/commit/c9c7df1e7f3ae6152aa80f98b49be206fdff1b23) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `$unset` to capture options and pass it through in browser capture payloads.
+- [#3860](https://github.com/PostHog/posthog-js/pull/3860) [`c9c7df1`](https://github.com/PostHog/posthog-js/commit/c9c7df1e7f3ae6152aa80f98b49be206fdff1b23) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `unset` to capture options and pass it through in browser capture payloads.
   (2026-06-16)
 
 - [#3855](https://github.com/PostHog/posthog-js/pull/3855) [`fadaa4f`](https://github.com/PostHog/posthog-js/commit/fadaa4f38e9216cd5c8b43127202dbb4e8f5629a) Thanks [@haacked](https://github.com/haacked)! - Stop sending the `ip` query parameter on feature flag requests. The flags endpoint ignores it, and some ad blockers match `/flags…ip=` to block flag evaluation on any domain. Dropping it from flag requests avoids the block with no functional change. Event and session recording requests are unchanged.
@@ -1716,7 +1716,7 @@
 
 ### Patch Changes
 
-- [#3801](https://github.com/PostHog/posthog-js/pull/3801) [`bd06ac7`](https://github.com/PostHog/posthog-js/commit/bd06ac7c09f48dc31b3019525561536452297b8d) Thanks [@ksvat](https://github.com/ksvat)! - fix(replay): prevent silent recorder teardown on session-id rotation. When the session id rotates during active rrweb capture, `_updateWindowAndSessionIds` calls `stop()` then synchronously `start('session_id_changed')`. If `stop()` took the `_stopAfterCompressionQueueDrains` path (which fires whenever the compression queue is non-empty — common during steady recording), its async cleanup would later resolve and call `_teardown()` against the freshly-started recorder, stopping rrweb, removing event listeners, and emptying the V2 trigger-group matchers. From that point on, the recorder's `status` getter kept reporting `active`/`sampled` (the `_strategy` reference was still set), but rrweb was no longer producing events, no listeners were registered, and no `$snapshot` data reached the server — the session looked recording-eligible from event metadata yet produced no replay. `start()` now invalidates the compression-queue state (generation bump plus reset of the stop-in-progress flag and queued-event count), so any pending cleanup from a prior `stop()` bails at its existing generation check and a later `stop()` of the new recorder is not mistaken for the old in-progress one. Affects long-running tabs that rotate session id mid-use (idle timeout, session-past-max-length, or `posthog.reset()`).
+- [#3801](https://github.com/PostHog/posthog-js/pull/3801) [`bd06ac7`](https://github.com/PostHog/posthog-js/commit/bd06ac7c09f48dc31b3019525561536452297b8d) Thanks [@ksvat](https://github.com/ksvat)! - fix(replay): prevent silent recorder teardown on session-id rotation. When the session id rotates during active rrweb capture, `_updateWindowAndSessionIds` calls `stop()` then synchronously `start('session_id_changed')`. If `stop()` took the `_stopAfterCompressionQueueDrains` path (which fires whenever the compression queue is non-empty — common during steady recording), its async cleanup would later resolve and call `_teardown()` against the freshly-started recorder, stopping rrweb, removing event listeners, and emptying the V2 trigger-group matchers. From that point on, the recorder's `status` getter kept reporting `active`/`sampled` (the `_strategy` reference was still set), but rrweb was no longer producing events, no listeners were registered, and no `edp_snapshot` data reached the server — the session looked recording-eligible from event metadata yet produced no replay. `start()` now invalidates the compression-queue state (generation bump plus reset of the stop-in-progress flag and queued-event count), so any pending cleanup from a prior `stop()` bails at its existing generation check and a later `stop()` of the new recorder is not mistaken for the old in-progress one. Affects long-running tabs that rotate session id mid-use (idle timeout, session-past-max-length, or `posthog.reset()`).
   (2026-06-11)
 
 ## 1.386.4
@@ -1741,7 +1741,7 @@
 
 - [#3795](https://github.com/PostHog/posthog-js/pull/3795) [`21441a8`](https://github.com/PostHog/posthog-js/commit/21441a8203006ca878d89cdd60cd21beec1bb537) Thanks [@pauldambra](https://github.com/pauldambra)! - fix(persistence): stop per-request metadata rewriting the split-storage entries on every load
 
-    `$feature_flag_evaluated_at`, `$feature_flag_request_id`, and `$surveys_loaded_at` change on every `/flags` (or `/surveys`) load even when the flag and survey content is unchanged. With `split_storage` enabled that made the multi-hundred-KB `__flags` / `__surveys` localStorage entries dirty on every SPA navigation, re-broadcasting the full payload to every open same-origin tab via cross-tab `storage` events — the exact pressure the split exists to remove. These keys are now marked volatile: a value-only change neither dirties the group nor alters its fingerprint, so the write is skipped and the freshest value rides along on the next real content write. Adding or deleting a volatile key still writes through (presence is fingerprinted, the moving value is not), and the in-memory value is always current — only the on-disk copy may lag until the next content change. (2026-06-11)
+    `feature_flag_evaluated_at`, `feature_flag_request_id`, and `surveys_loaded_at` change on every `/flags` (or `/surveys`) load even when the flag and survey content is unchanged. With `split_storage` enabled that made the multi-hundred-KB `__flags` / `__surveys` localStorage entries dirty on every SPA navigation, re-broadcasting the full payload to every open same-origin tab via cross-tab `storage` events — the exact pressure the split exists to remove. These keys are now marked volatile: a value-only change neither dirties the group nor alters its fingerprint, so the write is skipped and the freshest value rides along on the next real content write. Adding or deleting a volatile key still writes through (presence is fingerprinted, the moving value is not), and the in-memory value is always current — only the on-disk copy may lag until the next content change. (2026-06-11)
 
 - Updated dependencies [[`dbf2377`](https://github.com/PostHog/posthog-js/commit/dbf23777e1c14a811c67697684d56145518ebe16)]:
     - @posthog/types@1.386.3
@@ -1838,9 +1838,9 @@
 
 ### Minor Changes
 
-- [#3782](https://github.com/PostHog/posthog-js/pull/3782) [`0c2acb9`](https://github.com/PostHog/posthog-js/commit/0c2acb9f30d545bb89d1f950ba8f840c76e47dc2) Thanks [@pauldambra](https://github.com/pauldambra)! - Detect the Google Search App (GSA) as its own `$browser` value (`Google Search App`) via the cross-platform `GSA/` UA marker, instead of reporting the embedded webview as Mobile Safari (iOS) or Chrome (Android). Gated behind the new `detect_google_search_app` config option, which the `2026-05-30` config defaults opt into automatically — left off otherwise to keep existing browser attribution backwards-compatible.
+- [#3782](https://github.com/PostHog/posthog-js/pull/3782) [`0c2acb9`](https://github.com/PostHog/posthog-js/commit/0c2acb9f30d545bb89d1f950ba8f840c76e47dc2) Thanks [@pauldambra](https://github.com/pauldambra)! - Detect the Google Search App (GSA) as its own `browser` value (`Google Search App`) via the cross-platform `GSA/` UA marker, instead of reporting the embedded webview as Mobile Safari (iOS) or Chrome (Android). Gated behind the new `detect_google_search_app` config option, which the `2026-05-30` config defaults opt into automatically — left off otherwise to keep existing browser attribution backwards-compatible.
 
-    Note: `$browser_version` for `Google Search App` is not comparable across platforms — iOS yields a version like `284.0` (from `GSA/284.0.564099828`) while Android yields a version like `14.21` (from `GSA/14.21.20.28.arm64`), since Google maintains separate versioning schemes for the two apps. Avoid building cross-platform version dashboards on `$browser_version` for this browser. (2026-06-10)
+    Note: `browser_version` for `Google Search App` is not comparable across platforms — iOS yields a version like `284.0` (from `GSA/284.0.564099828`) while Android yields a version like `14.21` (from `GSA/14.21.20.28.arm64`), since Google maintains separate versioning schemes for the two apps. Avoid building cross-platform version dashboards on `browser_version` for this browser. (2026-06-10)
 
 ### Patch Changes
 
@@ -1885,7 +1885,7 @@
 - [#3771](https://github.com/PostHog/posthog-js/pull/3771) [`227c9b0`](https://github.com/PostHog/posthog-js/commit/227c9b03c19dcb93d9a15abb1ee6b9523d366767) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - feat(persistence): add `split_storage` config option to store the feature-flag config cluster in its own localStorage entry (`<name>__flags`) instead of the single main persistence blob. This payload is large and changes rarely, so keeping it out of the main blob stops it riding on every high-frequency main-blob write and broadcasting on cross-tab `storage` events. Reads are unchanged: on load the entry is merged back into the in-memory props, and the old main-blob location is read once and migrated forward so upgrades never miss a cached flag. The split only applies when persistence resolves to `localStorage` / `localStorage+cookie` (it is pointless for `memory` / `sessionStorage` and impossible for `cookie`), and `reset()` / opt-out wipe every entry. Defaults to `false` for backwards compatibility; the new `2026-05-30` config default opts in automatically.
   (2026-06-08)
 
-- [#3727](https://github.com/PostHog/posthog-js/pull/3727) [`393f9e2`](https://github.com/PostHog/posthog-js/commit/393f9e2a4697c6ffe52402cad6fb8550b48b5e00) Thanks [@pauldambra](https://github.com/pauldambra)! - feat(surveys): extend `split_storage` to also move the survey config (`$surveys`) out of the main persistence blob into its own `<name>__surveys` localStorage entry, on top of the feature-flag split. Surveys now stamp a `$surveys_loaded_at` freshness timestamp on every `/surveys` load — the survey analogue of `$feature_flag_evaluated_at` — so a stale `__surveys` entry can no longer win over a fresher survey payload written back into the main blob by a gate-off / older-SDK tab. With no timestamp on either side (migration leftover) the group entry still wins, so the migration path is unchanged. Same backend and `reset()` / opt-out semantics as the flag split.
+- [#3727](https://github.com/PostHog/posthog-js/pull/3727) [`393f9e2`](https://github.com/PostHog/posthog-js/commit/393f9e2a4697c6ffe52402cad6fb8550b48b5e00) Thanks [@pauldambra](https://github.com/pauldambra)! - feat(surveys): extend `split_storage` to also move the survey config (`surveys`) out of the main persistence blob into its own `<name>__surveys` localStorage entry, on top of the feature-flag split. Surveys now stamp a `surveys_loaded_at` freshness timestamp on every `/surveys` load — the survey analogue of `feature_flag_evaluated_at` — so a stale `__surveys` entry can no longer win over a fresher survey payload written back into the main blob by a gate-off / older-SDK tab. With no timestamp on either side (migration leftover) the group entry still wins, so the migration path is unchanged. Same backend and `reset()` / opt-out semantics as the flag split.
   (2026-06-08)
 
 ### Patch Changes
@@ -1902,7 +1902,7 @@
     - text-editing surfaces (`textarea`, text-like `input`s, and `contenteditable` elements), where rapid clicks are double/triple-click text selection rather than rage (`rageclick.ignore_text_selection`)
     - `+`/`-` stepper buttons, added to the default `content_ignorelist`
 
-    Symbol-only keywords in `content_ignorelist` (e.g. `+`, `-`, `>`, `<`) now match the element's text exactly instead of as a substring, so labels like `sign-up`, `5 > 3`, or `C++` are no longer treated as repeatedly-clicked controls. The heatmaps rageclick marker now applies the same suppression as the `$rageclick` event.
+    Symbol-only keywords in `content_ignorelist` (e.g. `+`, `-`, `>`, `<`) now match the element's text exactly instead of as a substring, so labels like `sign-up`, `5 > 3`, or `C++` are no longer treated as repeatedly-clicked controls. The heatmaps rageclick marker now applies the same suppression as the `edp_rageclick` event.
 
     A partial `rageclick` config object is now merged with the date-gated defaults instead of replacing them, so e.g. `rageclick: { threshold_px: 50 }` keeps the default `content_ignorelist` / `ignore_text_selection`. Pass an explicit value (e.g. `content_ignorelist: false`) to override a specific default, or a boolean to opt out entirely.
 
@@ -1991,7 +1991,7 @@
 
 ### Minor Changes
 
-- [#3722](https://github.com/PostHog/posthog-js/pull/3722) [`c487070`](https://github.com/PostHog/posthog-js/commit/c48707071586135de3357bf94e4165605c93e321) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `$sdk_dist_channel` event property for browser SDK `npm` and `cdn` distribution channels.
+- [#3722](https://github.com/PostHog/posthog-js/pull/3722) [`c487070`](https://github.com/PostHog/posthog-js/commit/c48707071586135de3357bf94e4165605c93e321) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `sdk_dist_channel` event property for browser SDK `npm` and `cdn` distribution channels.
   (2026-06-02)
 
 ### Patch Changes
@@ -2072,7 +2072,7 @@
 - [#3691](https://github.com/PostHog/posthog-js/pull/3691) [`cc71f3f`](https://github.com/PostHog/posthog-js/commit/cc71f3fa1f87838c28a68e593cd3f274f63db397) Thanks [@ksvat](https://github.com/ksvat)! - fix(replay): ship `ph-no-capture` absolute-position fix from #3678 to `posthog-js`. The original changeset only bumped `@posthog/rrweb` and `@posthog/rrweb-snapshot`; because `posthog-js` depends on `@posthog/rrweb` via `workspace:*`, the cascade did not bump `posthog-js`, so the rebuilt bundle containing the fix was not published. This changeset re-publishes `posthog-js` with the fix.
   (2026-05-28)
 
-- [#3695](https://github.com/PostHog/posthog-js/pull/3695) [`e1ff722`](https://github.com/PostHog/posthog-js/commit/e1ff722bf0bd333ffdf5d077f8f60893aaf7ef5e) Thanks [@ksvat](https://github.com/ksvat)! - chore(replay): expose `$sdk_debug_rrweb_attached` and `$sdk_debug_rrweb_start_attempted` debug properties on captured events. Today the SDK already stamps several `$sdk_debug_*` properties (start reason, linked-flag trigger status, recording status) that report the SDK's _intent_ to record — they all flip to "active" as soon as the state machine evaluates the configured triggers. None of them observe whether rrweb actually attached and is producing events. The new booleans close that gap: `$sdk_debug_rrweb_start_attempted` is set when `_startRecorder()` is first entered, and `$sdk_debug_rrweb_attached` reflects whether `_stopRrweb` is currently a non-falsy stop handle (i.e. `rrwebRecord({...})` returned successfully and the recorder has not been torn down). No behavior change — this only adds two booleans to the existing `sdkDebugProperties` channel, used to diagnose cases where a session reports `trigger_activated` / `recording_status: active` but no `$snapshot` data is ever uploaded.
+- [#3695](https://github.com/PostHog/posthog-js/pull/3695) [`e1ff722`](https://github.com/PostHog/posthog-js/commit/e1ff722bf0bd333ffdf5d077f8f60893aaf7ef5e) Thanks [@ksvat](https://github.com/ksvat)! - chore(replay): expose `sdk_debug_rrweb_attached` and `sdk_debug_rrweb_start_attempted` debug properties on captured events. Today the SDK already stamps several `$sdk_debug_*` properties (start reason, linked-flag trigger status, recording status) that report the SDK's _intent_ to record — they all flip to "active" as soon as the state machine evaluates the configured triggers. None of them observe whether rrweb actually attached and is producing events. The new booleans close that gap: `sdk_debug_rrweb_start_attempted` is set when `_startRecorder()` is first entered, and `sdk_debug_rrweb_attached` reflects whether `_stopRrweb` is currently a non-falsy stop handle (i.e. `rrwebRecord({...})` returned successfully and the recorder has not been torn down). No behavior change — this only adds two booleans to the existing `sdkDebugProperties` channel, used to diagnose cases where a session reports `trigger_activated` / `recording_status: active` but no `edp_snapshot` data is ever uploaded.
   (2026-05-28)
 - Updated dependencies [[`7b84b75`](https://github.com/PostHog/posthog-js/commit/7b84b7599d076c9c3c86f923f7d56cf937ad9874)]:
     - @posthog/core@1.29.13
@@ -2156,7 +2156,7 @@
 
 ### Patch Changes
 
-- [#3607](https://github.com/PostHog/posthog-js/pull/3607) [`557b893`](https://github.com/PostHog/posthog-js/commit/557b8934aa0b990184e0376fb1fc28433ad336c6) Thanks [@eli-r-ph](https://github.com/eli-r-ph)! - Enable $web_vitals reporting when cookieless mode is enabled
+- [#3607](https://github.com/PostHog/posthog-js/pull/3607) [`557b893`](https://github.com/PostHog/posthog-js/commit/557b8934aa0b990184e0376fb1fc28433ad336c6) Thanks [@eli-r-ph](https://github.com/eli-r-ph)! - Enable edp_web_vitals reporting when cookieless mode is enabled
   (2026-05-20)
 - Updated dependencies [[`557b893`](https://github.com/PostHog/posthog-js/commit/557b8934aa0b990184e0376fb1fc28433ad336c6), [`a880dbc`](https://github.com/PostHog/posthog-js/commit/a880dbcbbfd01bbef939c627f3b541744e3c3587)]:
     - @posthog/types@1.374.3
@@ -2169,7 +2169,7 @@
 - [#3550](https://github.com/PostHog/posthog-js/pull/3550) [`df91995`](https://github.com/PostHog/posthog-js/commit/df919950f298741980ed302828736cbf6785b1eb) Thanks [@TueHaulund](https://github.com/TueHaulund)! - Preserve session-recording remote config across `posthog.reset()`.
 
     `posthog.reset()` was clearing the entire persistence store, which wiped
-    `$session_recording_remote_config` along with user state. On the next session
+    `session_recording_remote_config` along with user state. On the next session
     rotation triggered by the reset, `start('session_id_changed')` would early-return
     because the remote config was missing — leaving rrweb torn down and the new
     session opening with no Meta + FullSnapshot until the next periodic 5-minute
@@ -2499,7 +2499,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Patch Changes
 
-- [#3419](https://github.com/PostHog/posthog-js/pull/3419) [`ea08727`](https://github.com/PostHog/posthog-js/commit/ea087272bbe210e5610c9271aa1194776e927353) Thanks [@haacked](https://github.com/haacked)! - Reinstate `$feature_flag_payloads` and `$surveys_activated` in captured event properties.
+- [#3419](https://github.com/PostHog/posthog-js/pull/3419) [`ea08727`](https://github.com/PostHog/posthog-js/commit/ea087272bbe210e5610c9271aa1194776e927353) Thanks [@haacked](https://github.com/haacked)! - Reinstate `feature_flag_payloads` and `surveys_activated` in captured event properties.
   (2026-04-18)
 
 - [#3416](https://github.com/PostHog/posthog-js/pull/3416) [`3d8b2e2`](https://github.com/PostHog/posthog-js/commit/3d8b2e282927d0c09670b3f112c7dc159cebf059) Thanks [@feliperalmeida](https://github.com/feliperalmeida)! - Updated dependencies: - protobufjs@7.5.5
@@ -2668,7 +2668,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Minor Changes
 
-- [#3302](https://github.com/PostHog/posthog-js/pull/3302) [`fc5589f`](https://github.com/PostHog/posthog-js/commit/fc5589fcc51bd53ba818822831867d3c00d83a11) Thanks [@dmarticus](https://github.com/dmarticus)! - preserve $set_once semantics in local flag evaluation cache
+- [#3302](https://github.com/PostHog/posthog-js/pull/3302) [`fc5589f`](https://github.com/PostHog/posthog-js/commit/fc5589fcc51bd53ba818822831867d3c00d83a11) Thanks [@dmarticus](https://github.com/dmarticus)! - preserve edp_set_once semantics in local flag evaluation cache
   (2026-04-07)
 
 ### Patch Changes
@@ -2681,7 +2681,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Patch Changes
 
-- [#3319](https://github.com/PostHog/posthog-js/pull/3319) [`b25b689`](https://github.com/PostHog/posthog-js/commit/b25b68967f7e85317e2aacb8ecc4dc66a95095eb) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - fix: send $groupidentify for new groups even when no properties are provided
+- [#3319](https://github.com/PostHog/posthog-js/pull/3319) [`b25b689`](https://github.com/PostHog/posthog-js/commit/b25b68967f7e85317e2aacb8ecc4dc66a95095eb) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - fix: send edp_groupidentify for new groups even when no properties are provided
   (2026-04-03)
 - Updated dependencies []:
     - @posthog/types@1.364.7
@@ -2847,7 +2847,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Minor Changes
 
-- [#3244](https://github.com/PostHog/posthog-js/pull/3244) [`ff8a93e`](https://github.com/PostHog/posthog-js/commit/ff8a93e99bb9bab98d02074d84973430d279a29d) Thanks [@sampennington](https://github.com/sampennington)! - Fixed $set_once initial person properties (e.g. $initial_current_url) not being included with $identify calls when they had already been sent with a prior event. This ensures initial properties are reliably set when identifying users across subdomains, even if an anonymous event was captured first.
+- [#3244](https://github.com/PostHog/posthog-js/pull/3244) [`ff8a93e`](https://github.com/PostHog/posthog-js/commit/ff8a93e99bb9bab98d02074d84973430d279a29d) Thanks [@sampennington](https://github.com/sampennington)! - Fixed edp_set_once initial person properties (e.g. initial_current_url) not being included with edp_identify calls when they had already been sent with a prior event. This ensures initial properties are reliably set when identifying users across subdomains, even if an anonymous event was captured first.
   (2026-03-18)
 
 ### Patch Changes
@@ -2872,10 +2872,10 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 - [#3201](https://github.com/PostHog/posthog-js/pull/3201) [`552c018`](https://github.com/PostHog/posthog-js/commit/552c01843b9ae1fbf8fdf1a2e98e0b7fdc37c851) Thanks [@frankh](https://github.com/frankh)! - Add a serviceName config option to logs config
   (2026-03-18)
 
-- [#3240](https://github.com/PostHog/posthog-js/pull/3240) [`e4a58d0`](https://github.com/PostHog/posthog-js/commit/e4a58d0a071c7605a69ae4492efd895cd50047bd) Thanks [@marandaneto](https://github.com/marandaneto)! - Add internal `_overrideSDKInfo` method to allow wrapper SDKs to override `$lib` and `$lib_version` event properties
+- [#3240](https://github.com/PostHog/posthog-js/pull/3240) [`e4a58d0`](https://github.com/PostHog/posthog-js/commit/e4a58d0a071c7605a69ae4492efd895cd50047bd) Thanks [@marandaneto](https://github.com/marandaneto)! - Add internal `_overrideSDKInfo` method to allow wrapper SDKs to override `lib` and `lib_version` event properties
   (2026-03-18)
 
-- [#3241](https://github.com/PostHog/posthog-js/pull/3241) [`fe1fd7b`](https://github.com/PostHog/posthog-js/commit/fe1fd7b222b2ca51164e01fceca892628efac89c) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - feat: add `advanced_feature_flags_dedup_per_session` config option to scope `$feature_flag_called` deduplication to the current session
+- [#3241](https://github.com/PostHog/posthog-js/pull/3241) [`fe1fd7b`](https://github.com/PostHog/posthog-js/commit/fe1fd7b222b2ca51164e01fceca892628efac89c) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - feat: add `advanced_feature_flags_dedup_per_session` config option to scope `edp_feature_flag_called` deduplication to the current session
   (2026-03-18)
 
 ### Patch Changes
@@ -3131,7 +3131,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Minor Changes
 
-- [#3135](https://github.com/PostHog/posthog-js/pull/3135) [`fba7e5b`](https://github.com/PostHog/posthog-js/commit/fba7e5bcf67d3a7e5b55b6bb95a0dcb637f56f6a) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - feat: Persist $user_state to cookie for server-side access
+- [#3135](https://github.com/PostHog/posthog-js/pull/3135) [`fba7e5b`](https://github.com/PostHog/posthog-js/commit/fba7e5bcf67d3a7e5b55b6bb95a0dcb637f56f6a) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - feat: Persist user_state to cookie for server-side access
   (2026-02-23)
 
 ### Patch Changes
@@ -3208,7 +3208,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Patch Changes
 
-- [#3107](https://github.com/PostHog/posthog-js/pull/3107) [`9dbc05e`](https://github.com/PostHog/posthog-js/commit/9dbc05ed65ddc8c37c9262b9aebfc51d0c748971) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - warning on manual capture('$exception')
+- [#3107](https://github.com/PostHog/posthog-js/pull/3107) [`9dbc05e`](https://github.com/PostHog/posthog-js/commit/9dbc05ed65ddc8c37c9262b9aebfc51d0c748971) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - warning on manual capture('edp_exception')
   (2026-02-18)
 - Updated dependencies [[`9dbc05e`](https://github.com/PostHog/posthog-js/commit/9dbc05ed65ddc8c37c9262b9aebfc51d0c748971)]:
     - @posthog/types@1.351.0
@@ -3260,7 +3260,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Patch Changes
 
-- [#3094](https://github.com/PostHog/posthog-js/pull/3094) [`0d30218`](https://github.com/PostHog/posthog-js/commit/0d30218b3087f27104408e873a3421e3ba27633d) Thanks [@TueHaulund](https://github.com/TueHaulund)! - feat(replay): add $snapshot_max_depth_exceeded debug property and bump rrweb to 0.0.42 with DOM depth limit
+- [#3094](https://github.com/PostHog/posthog-js/pull/3094) [`0d30218`](https://github.com/PostHog/posthog-js/commit/0d30218b3087f27104408e873a3421e3ba27633d) Thanks [@TueHaulund](https://github.com/TueHaulund)! - feat(replay): add snapshot_max_depth_exceeded debug property and bump rrweb to 0.0.42 with DOM depth limit
   (2026-02-13)
 
 - [#3093](https://github.com/PostHog/posthog-js/pull/3093) [`f19b7f2`](https://github.com/PostHog/posthog-js/commit/f19b7f2df37d24b81f57477497f21196006b72e7) Thanks [@TueHaulund](https://github.com/TueHaulund)! - fix(replay): retry session recording start when persisted remote config is stale
@@ -3353,7 +3353,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Minor Changes
 
-- [#2919](https://github.com/PostHog/posthog-js/pull/2919) [`fe8090c`](https://github.com/PostHog/posthog-js/commit/fe8090c00f0122ed4aad37465f43480c50392506) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - Add `$feature_flag_error` property to `$feature_flag_called` events
+- [#2919](https://github.com/PostHog/posthog-js/pull/2919) [`fe8090c`](https://github.com/PostHog/posthog-js/commit/fe8090c00f0122ed4aad37465f43480c50392506) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - Add `feature_flag_error` property to `edp_feature_flag_called` events
   (2026-02-09)
 
 ### Patch Changes
@@ -4106,9 +4106,9 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 - [#2834](https://github.com/PostHog/posthog-js/pull/2834) [`548b466`](https://github.com/PostHog/posthog-js/commit/548b466d8786685f0ae21f42b4b5842414bb68f2) Thanks [@ordehi](https://github.com/ordehi)! - fix: Clear `PageViewManager` state on session rotation to prevent cross-session duration pollution
 
-    When a browser tab is backgrounded and the session rotates (30 min idle or 24 hour max), `PageViewManager` now clears its state. This prevents `$prev_pageview_duration` from spanning session boundaries, which was causing impossibly large values (94+ hours observed) in web analytics "Average Time on Page" metrics.
+    When a browser tab is backgrounded and the session rotates (30 min idle or 24 hour max), `PageViewManager` now clears its state. This prevents `prev_pageview_duration` from spanning session boundaries, which was causing impossibly large values (94+ hours observed) in web analytics "Average Time on Page" metrics.
 
-    Users who implemented workarounds for inflated `$prev_pageview_duration` values (e.g., capping at 30 minutes) may want to review those after upgrading, as the root cause is now fixed. (2025-12-31)
+    Users who implemented workarounds for inflated `prev_pageview_duration` values (e.g., capping at 30 minutes) may want to review those after upgrading, as the root cause is now fixed. (2025-12-31)
 
 ## 1.311.0
 
@@ -4125,7 +4125,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 - [#2812](https://github.com/PostHog/posthog-js/pull/2812) [`ad42eae`](https://github.com/PostHog/posthog-js/commit/ad42eaea16305719e93ea98e75b6ee39eff38f30) Thanks [@lucasheriques](https://github.com/lucasheriques)! - fix(surveys): queue callbacks when fetch is in progress instead of returning error
   (2025-12-29)
 
-- [#2814](https://github.com/PostHog/posthog-js/pull/2814) [`3da6a4c`](https://github.com/PostHog/posthog-js/commit/3da6a4c739530db69d185d064f9d784c73cf404e) Thanks [@jurajmajerik](https://github.com/jurajmajerik)! - Persist $device_id to cookies so it survives localStorage clears
+- [#2814](https://github.com/PostHog/posthog-js/pull/2814) [`3da6a4c`](https://github.com/PostHog/posthog-js/commit/3da6a4c739530db69d185d064f9d784c73cf404e) Thanks [@jurajmajerik](https://github.com/jurajmajerik)! - Persist device_id to cookies so it survives localStorage clears
   (2025-12-29)
 
 ## 1.310.1
@@ -4197,7 +4197,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Patch Changes
 
-- [#2708](https://github.com/PostHog/posthog-js/pull/2708) [`3b7f30c`](https://github.com/PostHog/posthog-js/commit/3b7f30cfb5ea1ae743ca0e3471b33f7ba5ff1d0b) Thanks [@andehen](https://github.com/andehen)! - Include $device_id when fetching feature flags
+- [#2708](https://github.com/PostHog/posthog-js/pull/2708) [`3b7f30c`](https://github.com/PostHog/posthog-js/commit/3b7f30cfb5ea1ae743ca0e3471b33f7ba5ff1d0b) Thanks [@andehen](https://github.com/andehen)! - Include device_id when fetching feature flags
   (2025-12-16)
 
 ## 1.307.0
@@ -4230,7 +4230,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Patch Changes
 
-- [#2725](https://github.com/PostHog/posthog-js/pull/2725) [`90a0f14`](https://github.com/PostHog/posthog-js/commit/90a0f143e639b898fc698f247ec8e08ea3db9ddf) Thanks [@ordehi](https://github.com/ordehi)! - fix: include initial person props in $identify when group() called first
+- [#2725](https://github.com/PostHog/posthog-js/pull/2725) [`90a0f14`](https://github.com/PostHog/posthog-js/commit/90a0f143e639b898fc698f247ec8e08ea3db9ddf) Thanks [@ordehi](https://github.com/ordehi)! - fix: include initial person props in edp_identify when group() called first
   (2025-12-12)
 
 ## 1.305.0
@@ -4317,7 +4317,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Minor Changes
 
-- [#2603](https://github.com/PostHog/posthog-js/pull/2603) [`e1617d9`](https://github.com/PostHog/posthog-js/commit/e1617d91255b23dc39b1dcb15b05ae64c735d9d0) Thanks [@dmarticus](https://github.com/dmarticus)! - add $feature_flag_evaluated_at properties to $feature_flag_called events
+- [#2603](https://github.com/PostHog/posthog-js/pull/2603) [`e1617d9`](https://github.com/PostHog/posthog-js/commit/e1617d91255b23dc39b1dcb15b05ae64c735d9d0) Thanks [@dmarticus](https://github.com/dmarticus)! - add feature_flag_evaluated_at properties to edp_feature_flag_called events
   (2025-12-03)
 
 ### Patch Changes
@@ -4399,7 +4399,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Patch Changes
 
-- [#2575](https://github.com/PostHog/posthog-js/pull/2575) [`8acd88f`](https://github.com/PostHog/posthog-js/commit/8acd88f1b71d2c7e1222c43dd121abce78ef2bab) Thanks [@hpouillot](https://github.com/hpouillot)! - fix frame platform property for $exception events
+- [#2575](https://github.com/PostHog/posthog-js/pull/2575) [`8acd88f`](https://github.com/PostHog/posthog-js/commit/8acd88f1b71d2c7e1222c43dd121abce78ef2bab) Thanks [@hpouillot](https://github.com/hpouillot)! - fix frame platform property for edp_exception events
   (2025-11-19)
 - Updated dependencies [[`8acd88f`](https://github.com/PostHog/posthog-js/commit/8acd88f1b71d2c7e1222c43dd121abce78ef2bab)]:
     - @posthog/core@1.5.3
@@ -4548,7 +4548,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Minor Changes
 
-- [#2520](https://github.com/PostHog/posthog-js/pull/2520) [`068d55e`](https://github.com/PostHog/posthog-js/commit/068d55ed4193e82729cd34b42d9e433f85b6e606) Thanks [@lricoy](https://github.com/lricoy)! - Add bot pageview collection behind preview flag. Enables tracking bot traffic as `$bot_pageview` events when the `__preview_capture_bot_pageviews` flag is enabled.
+- [#2520](https://github.com/PostHog/posthog-js/pull/2520) [`068d55e`](https://github.com/PostHog/posthog-js/commit/068d55ed4193e82729cd34b42d9e433f85b6e606) Thanks [@lricoy](https://github.com/lricoy)! - Add bot pageview collection behind preview flag. Enables tracking bot traffic as `edp_bot_pageview` events when the `__preview_capture_bot_pageviews` flag is enabled.
 
 ### Patch Changes
 
@@ -4647,7 +4647,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Patch Changes
 
-- [#2431](https://github.com/PostHog/posthog-js/pull/2431) [`7d45a7a`](https://github.com/PostHog/posthog-js/commit/7d45a7a52c44ba768913d66a4c4363d107042682) Thanks [@marandaneto](https://github.com/marandaneto)! - fix: remove deprecated attribute $exception_personURL from exception events
+- [#2431](https://github.com/PostHog/posthog-js/pull/2431) [`7d45a7a`](https://github.com/PostHog/posthog-js/commit/7d45a7a52c44ba768913d66a4c4363d107042682) Thanks [@marandaneto](https://github.com/marandaneto)! - fix: remove deprecated attribute edp_exception_personURL from exception events
 
 - Updated dependencies [[`daf919b`](https://github.com/PostHog/posthog-js/commit/daf919be225527ee4ad026d806dec195b75e44aa), [`7d45a7a`](https://github.com/PostHog/posthog-js/commit/7d45a7a52c44ba768913d66a4c4363d107042682)]:
     - @posthog/core@1.3.0
@@ -4662,7 +4662,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ### Minor Changes
 
-- [#2426](https://github.com/PostHog/posthog-js/pull/2426) [`ae941c2`](https://github.com/PostHog/posthog-js/commit/ae941c27673e50d01cecdbf55364cffa894379c4) Thanks [@thmsobrmlr](https://github.com/thmsobrmlr)! - Apply $current_url masking in web vitals and heatmaps extensions.
+- [#2426](https://github.com/PostHog/posthog-js/pull/2426) [`ae941c2`](https://github.com/PostHog/posthog-js/commit/ae941c27673e50d01cecdbf55364cffa894379c4) Thanks [@thmsobrmlr](https://github.com/thmsobrmlr)! - Apply current_url masking in web vitals and heatmaps extensions.
 
 ## 1.274.3
 
@@ -5401,7 +5401,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ## 1.234.8 - 2025-04-04
 
-- chore: deduplicate all $set calls done from setPersonProperties (#1813)
+- chore: deduplicate all edp_set calls done from setPersonProperties (#1813)
 
 ## 1.234.7 - 2025-04-03
 
@@ -5473,7 +5473,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ## 1.231.3 - 2025-03-19
 
-- fix: do not allow non string `$current_url` to be provided (#1835)
+- fix: do not allow non string `current_url` to be provided (#1835)
 
 ## 1.231.2 - 2025-03-18
 
@@ -5548,7 +5548,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ## 1.228.1 - 2025-03-05
 
-- fix(flags): do not reset $anon_distinct_id after first decide call if advanced_disable_feature_flags_on_first_load is true (#1786)
+- fix(flags): do not reset anon_distinct_id after first decide call if advanced_disable_feature_flags_on_first_load is true (#1786)
 
 ## 1.228.0 - 2025-03-05
 
@@ -5866,7 +5866,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 - chore: deduplicate subsequent identify calls (#1649)
 - feat: Add the ability to mask some PII-containing URL parameters (#1654)
-- chore: Remove '$web_experiment_applied' event (#1653)
+- chore: Remove 'edp_web_experiment_applied' event (#1653)
 - chore: Update pull_request_template.md (#1651)
 
 ## 1.206.1 - 2025-01-14
@@ -5966,7 +5966,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ## 1.199.0 - 2024-12-12
 
-- chore(flags): Add new debugging property `$used_bootstrap_value`, `$feature_flag_bootstrapped_response` and `$feature_flag_bootstrapped_payload` to `$feature_flag_called` event (#1567)
+- chore(flags): Add new debugging property `used_bootstrap_value`, `feature_flag_bootstrapped_response` and `feature_flag_bootstrapped_payload` to `edp_feature_flag_called` event (#1567)
 
 ## 1.198.0 - 2024-12-12
 
@@ -6015,7 +6015,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ## 1.194.0 - 2024-11-29
 
-- feat: add $recording_status property (#1571)
+- feat: add recording_status property (#1571)
 
 ## 1.193.1 - 2024-11-28
 
@@ -6342,7 +6342,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ## 1.159.0 - 2024-08-29
 
-- fix: capture a $pageview event on opting in (#1372)
+- fix: capture a edp_pageview event on opting in (#1372)
 
 ## 1.158.3 - 2024-08-28
 
@@ -6607,7 +6607,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ## 1.139.5 - 2024-06-20
 
-- fix: Allow no capture of $opt_in event (#1250)
+- fix: Allow no capture of edp_opt_in event (#1250)
 
 ## 1.139.4 - 2024-06-20
 
@@ -6812,7 +6812,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 
 ## 1.125.0 - 2024-04-16
 
-- Rename $process_person to $process_person_profile (#1143)
+- Rename $process_person to process_person_profile (#1143)
 
 ## 1.124.0 - 2024-04-16
 
@@ -6900,7 +6900,7 @@ padding-right: ; padding-left: ;`. The previous behavior replaced the
 ## 1.118.1 - 2024-04-05
 
 - Fix nextjs playground version of posthog-js (#1117)
-- Fix $is_identified (#1116)
+- Fix is_identified (#1116)
 
 ## 1.118.0 - 2024-04-04
 
@@ -7207,7 +7207,7 @@ identical to 1.105.1 - bug in CI scripts
 ## 1.97.0 - 2024-01-09
 
 - fix: add a comment explaining browser type prop (#952)
-- feat: add opt_out_useragent_filter and $browser_type (#949)
+- feat: add opt_out_useragent_filter and browser_type (#949)
 - chore(surveys): add basic survey e2e tests (#948)
 - Tidying and removing of old value (#941)
 
@@ -7480,7 +7480,7 @@ identical to 1.105.1 - bug in CI scripts
 
 ## 1.81.4 - 2023-10-04
 
-- fix(capture): Always update stored person props from $set (#820)
+- fix(capture): Always update stored person props from edp_set (#820)
 
 ## 1.81.3 - 2023-10-02
 
@@ -7503,7 +7503,7 @@ identical to 1.105.1 - bug in CI scripts
 
 ## 1.80.0 - 2023-09-25
 
-- Add root $el_text (#806)
+- Add root el_text (#806)
 
 ## 1.79.1 - 2023-09-20
 
@@ -7746,7 +7746,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 
 - fix: properties with "length" value (#640)
 - docs: Update README around releasing and development (#634)
-- chore: add test for $identify events count optimization (#639)
+- chore: add test for edp_identify events count optimization (#639)
 - ci: consolidate library checks into one workflow (#638)
 - ci: add prettier and eslint linting stage (#637)
 - chore: add pre-commit to run lint staged. (#636)
@@ -7757,7 +7757,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 ## 1.57.1 - 2023-05-17
 
 - fix(decide): Make sure all stored properties are sent on first decide request (#633)
-- fix(identify): actually send $set_once on identify calls (#629)
+- fix(identify): actually send edp_set_once on identify calls (#629)
 
 ## 1.57.0 - 2023-05-15
 
@@ -7808,13 +7808,13 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 
 - feat: Custom campaign param support (#603)
 - chore(deps): Bump http-cache-semantics from 4.1.0 to 4.1.1 (#528)
-- fix: change user_id -> $user_id in docstring (#525)
+- fix: change user_id -> user_id in docstring (#525)
 - Remove flag param from useActiveFeatureFlags (#599)
 
 ## 1.52.0 - 2023-04-05
 
 - fix: Track referrer/search params per browser session (#496)
-  _**Note:** This change improves the accuracy of properties `$referrer` and `$referring_domain` in a major way. Previously, the values of these properties often represented pure backlinks in non-SPAs (non-single-page applications). Now those values will represent the true referrer for the current browser-level session (effectively: for the tab). Due to this, referrer data after this update \_may_ look different. It will be significantly more accurate though.\_
+  _**Note:** This change improves the accuracy of properties `referrer` and `referring_domain` in a major way. Previously, the values of these properties often represented pure backlinks in non-SPAs (non-single-page applications). Now those values will represent the true referrer for the current browser-level session (effectively: for the tab). Due to this, referrer data after this update \_may_ look different. It will be significantly more accurate though.\_
 - ci: Point out and close stale issues/PRs (#602)
 - docs(testcafe): update docs removing posthog server requirements (#594)
 
@@ -8093,7 +8093,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 
 ## 1.29.3 - 2022-08-29
 
-- fix(pageleave): Improve $pageleave reliability (#439)
+- fix(pageleave): Improve edp_pageleave reliability (#439)
 
 ## 1.29.2 - 2022-08-25
 
@@ -8246,8 +8246,8 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 ## 1.17.0 - 2022-01-10
 
 - Send APM data so that we don't need a plugin (#352)
-- Allow APM performance on all $pageview events (#350)
-- Include browser performance values on $pageview (#347)
+- Allow APM performance on all edp_pageview events (#350)
+- Include browser performance values on edp_pageview (#347)
 - add more advice to pull request template (#349)
 - Update README.md (#348)
 
@@ -8369,7 +8369,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 
 ## 1.13.9 - 2021-09-10
 
-- Split feature flags into `$feature/*` properties (#278)
+- Split feature flags into `feature/*` properties (#278)
 
 ## 1.13.8 - 2021-09-09
 
@@ -8521,7 +8521,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 - Add properties_string_max_length = 65535 (#197)
 - Remove unused notification code (#191)
 - Remove old upgrade code (never used) (#192)
-- Support $set_once with identify (#190)
+- Support edp_set_once with identify (#190)
 
 ## 1.8.9 - 2021-03-02
 
@@ -8556,7 +8556,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 ## 1.8.0 - 2020-12-14
 
 - Using gzip-based compression over lzstring using the fflate library: [fflate](https://github.com/101arrowz/fflate). This reduces the amount of data transferred, and makes posthog servers respond faster (requires posthog 1.19.0). https://github.com/PostHog/posthog/issues/2560
-- Support last touch $referrer and $referring_domain user properties https://github.com/PostHog/posthog-js/pull/139
+- Support last touch referrer and referring_domain user properties https://github.com/PostHog/posthog-js/pull/139
 - Publish a ES dist file https://github.com/PostHog/posthog-js/pull/157
 - Publish a react integration for feature flags https://github.com/PostHog/posthog-js/pull/154
 
@@ -8577,7 +8577,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 - Handle capturing self-referential objects (#123)
 - Make the library smaller by dropping unneeded code (#123, #128)
 - Update request batching logic (#118, #126)
-- Notify rrweb when $pageview events happen (#127)
+- Notify rrweb when edp_pageview events happen (#127)
 - Fix 'this.people.delete_user is undefined' (issue #39, #113)
 - Update rrweb block class to use `ph-no-capture` and `ph-ignore-input` (#112)
 - Deprecate calling posthog.capture with a callback (#129)
@@ -8588,9 +8588,9 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 ## 1.6.0 - 2020-11-05
 
 - Allow updating user properties when calling `posthog.identify('identity, { some: 'value' })` (#105)
-- Allow disabling $feature_flag_called event: `posthog.isFeatureEnabled('flag', { send_event: false }) (#100)
+- Allow disabling edp_feature_flag_called event: `posthog.isFeatureEnabled('flag', { send_event: false }) (#100)
 - Make cookieless analytics possible by passing `persistence: 'memory'` to posthog.init (#82)
-- Avoid sending $pageleave events when `capture_pageview: false` passed to posthog.init (#109)
+- Avoid sending edp_pageleave events when `capture_pageview: false` passed to posthog.init (#109)
 - Code cleanup, bug fixes, integration test suite and more tech debt work
 
 ## 1.5.2 - 2020-10-22
@@ -8601,14 +8601,14 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 ## 1.5.1 - 2020-10-22
 
 - Improve typing of posthog.js #97 (thanks @stonesthatwhisper)
-- Improve session recording, generate $session_id fields #91 #96
+- Improve session recording, generate session_id fields #91 #96
 - Fix a bug with session recording events not being saved #95
 - Improve test coverage #94
 
 ## 1.5.0 - 2020-09-08
 
 - Add beta functionality to do session recording
-- Add $feature_flag_called event
+- Add edp_feature_flag_called event
 - Add beta Sentry integration
 
 ## 1.4.5 - 2020-09-08
@@ -8681,7 +8681,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 
 ## 1.2.3 - 2020-07-01
 
-- Send $host and $pathname with $pageview requests (was just with $autocapture)
+- Send host and pathname with edp_pageview requests (was just with edp_autocapture)
 - Track clicks on elements which have `cursor:pointer`
 - Better test suite
 
@@ -8711,7 +8711,7 @@ Manual addition of version 1.66.0 because CI failed to automatically bump the ve
 
 ## 1.0.6 - 2020-03-09
 
-- Send beacon on $pageleave
+- Send beacon on edp_pageleave
 - Clean up a bunch of code
 - Don't reset device id on reset
 

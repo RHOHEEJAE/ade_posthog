@@ -1460,7 +1460,7 @@ describe('PostHogOpenAI - Jest test suite', () => {
     ])
   })
 
-  conditionalTest('anonymous user - $process_person_profile set to false', async () => {
+  conditionalTest('anonymous user - process_person_profile set to false', async () => {
     await client.chat.completions.create({
       model: 'gpt-4',
       messages: [{ role: 'user', content: 'Hello' }],
@@ -1472,10 +1472,10 @@ describe('PostHogOpenAI - Jest test suite', () => {
     const { distinctId, properties } = captureArgs[0]
 
     expect(distinctId).toBe('trace-123')
-    expect(properties['$process_person_profile']).toBe(false)
+    expect(properties['process_person_profile']).toBe(false)
   })
 
-  conditionalTest('identified user - $process_person_profile not set', async () => {
+  conditionalTest('identified user - process_person_profile not set', async () => {
     await client.chat.completions.create({
       model: 'gpt-4',
       messages: [{ role: 'user', content: 'Hello' }],
@@ -1488,7 +1488,7 @@ describe('PostHogOpenAI - Jest test suite', () => {
     const { distinctId, properties } = captureArgs[0]
 
     expect(distinctId).toBe('user-456')
-    expect(properties['$process_person_profile']).toBeUndefined()
+    expect(properties['process_person_profile']).toBeUndefined()
   })
 
   describe('Streaming Responses', () => {
@@ -1656,7 +1656,7 @@ describe('PostHogOpenAI - Jest test suite', () => {
         },
       ]
 
-      test.each(streamErrorCases)('$name stream error is not rethrown unhandled', async (streamErrorCase) => {
+      test.each(streamErrorCases)('name stream error is not rethrown unhandled', async (streamErrorCase) => {
         const streamError = new Error('provider error injected into SSE stream')
         const createErroringIterator = (): MockAsyncIterator<unknown> => ({
           async *[Symbol.asyncIterator]() {

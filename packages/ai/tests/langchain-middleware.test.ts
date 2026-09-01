@@ -92,7 +92,7 @@ describe('createPostHogMiddleware', () => {
 
     const [generation, toolSpan, trace] = events
     expect(generation.properties).toMatchObject({
-      $ai_trace_id: trace.properties.$ai_trace_id,
+      ai_trace_id: trace.properties.ai_trace_id,
       $ai_parent_id: trace.properties.$ai_span_id,
       $ai_model: 'test-model',
       $ai_provider: 'test-provider',
@@ -101,7 +101,7 @@ describe('createPostHogMiddleware', () => {
       environment: 'test',
     })
     expect(toolSpan.properties).toMatchObject({
-      $ai_trace_id: trace.properties.$ai_trace_id,
+      ai_trace_id: trace.properties.ai_trace_id,
       $ai_parent_id: trace.properties.$ai_span_id,
       $ai_span_name: 'weather',
       environment: 'test',
@@ -320,7 +320,7 @@ describe('createPostHogMiddleware', () => {
     const [failedGeneration, successfulGeneration, trace] = events
     expect(failedGeneration.properties).not.toHaveProperty('$ai_parent_id')
     expect(successfulGeneration.properties.$ai_parent_id).toBe(trace.properties.$ai_span_id)
-    expect(events.every(({ properties }) => properties.$ai_trace_id === trace.properties.$ai_trace_id)).toBe(true)
+    expect(events.every(({ properties }) => properties.ai_trace_id === trace.properties.ai_trace_id)).toBe(true)
   })
 
   it('keeps concurrent agent invocations on separate traces', async () => {
@@ -338,10 +338,10 @@ describe('createPostHogMiddleware', () => {
     const events = (mockPostHogClient.capture as jest.Mock).mock.calls.map(([event]) => event)
     const traceIds = events
       .filter(({ event }) => event === '$ai_trace')
-      .map(({ properties }) => properties.$ai_trace_id)
+      .map(({ properties }) => properties.ai_trace_id)
     const generationTraceIds = events
       .filter(({ event }) => event === '$ai_generation')
-      .map(({ properties }) => properties.$ai_trace_id)
+      .map(({ properties }) => properties.ai_trace_id)
 
     expect(new Set(traceIds).size).toBe(2)
     expect(new Set(generationTraceIds)).toEqual(new Set(traceIds))
@@ -364,7 +364,7 @@ describe('createPostHogMiddleware', () => {
     const generations = events.filter(({ event }) => event === '$ai_generation')
     expect(traces).toHaveLength(2)
     expect(new Set(traces.map(({ properties }) => properties.$ai_span_id)).size).toBe(2)
-    expect(events.every(({ properties }) => properties.$ai_trace_id === 'shared-trace')).toBe(true)
+    expect(events.every(({ properties }) => properties.ai_trace_id === 'shared-trace')).toBe(true)
     expect(new Set(generations.map(({ properties }) => properties.$ai_parent_id))).toEqual(
       new Set(traces.map(({ properties }) => properties.$ai_span_id))
     )

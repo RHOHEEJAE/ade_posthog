@@ -42,7 +42,7 @@ describe('group before identify bug', () => {
         mockURLGetter.mockReturnValue('https://example.com?utm_source=linkedin&utm_campaign=test')
     })
 
-    it('should include initial UTM params in $identify even when group() is called first', async () => {
+    it('should include initial UTM params in edp_identify even when group() is called first', async () => {
         const token = uuidv7()
         const beforeSendMock = jest.fn().mockImplementation((e) => e)
 
@@ -59,14 +59,14 @@ describe('group before identify bug', () => {
 
         // Find the events
         const calls = beforeSendMock.mock.calls
-        const identifyCall = calls.find((c: any) => c[0].event === '$identify')
+        const identifyCall = calls.find((c: any) => c[0].event === 'edp_identify')
 
-        // THE BUG: $identify should have $set_once with initial UTM params
+        // THE BUG: edp_identify should have edp_set_once with initial UTM params
         // but because group() was called first, _personProcessingSetOncePropertiesSent is already true
         expect(identifyCall).toBeDefined()
-        expect(identifyCall[0].$set_once).toBeDefined()
-        expect(identifyCall[0].$set_once.$initial_utm_source).toEqual('linkedin')
-        expect(identifyCall[0].$set_once.$initial_utm_campaign).toEqual('test')
+        expect(identifyCall[0].edp_set_once).toBeDefined()
+        expect(identifyCall[0].edp_set_once.$initial_utm_source).toEqual('linkedin')
+        expect(identifyCall[0].edp_set_once.$initial_utm_campaign).toEqual('test')
     })
 
     it('should include initial UTM params when identify() is called without group() first', async () => {
@@ -82,12 +82,12 @@ describe('group before identify bug', () => {
         posthog.identify('user_123')
 
         const calls = beforeSendMock.mock.calls
-        const identifyCall = calls.find((c: any) => c[0].event === '$identify')
+        const identifyCall = calls.find((c: any) => c[0].event === 'edp_identify')
 
         // This should work
         expect(identifyCall).toBeDefined()
-        expect(identifyCall[0].$set_once).toBeDefined()
-        expect(identifyCall[0].$set_once.$initial_utm_source).toEqual('linkedin')
-        expect(identifyCall[0].$set_once.$initial_utm_campaign).toEqual('test')
+        expect(identifyCall[0].edp_set_once).toBeDefined()
+        expect(identifyCall[0].edp_set_once.$initial_utm_source).toEqual('linkedin')
+        expect(identifyCall[0].edp_set_once.$initial_utm_campaign).toEqual('test')
     })
 })

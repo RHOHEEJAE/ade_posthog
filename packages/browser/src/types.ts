@@ -187,7 +187,7 @@ export type PostHogConfig = Omit<BasePostHogConfig, 'loaded'> & {
     loaded: (posthog: PostHogInterface) => void
 
     /**
-     * Disables capturing the `$device_model` super-property.
+     * Disables capturing the `device_model` super-property.
      *
      * When capturing is enabled (the default), PostHog resolves the hardware model once during init
      * via `navigator.userAgentData.getHighEntropyValues(['model'])` and registers it as the raw OEM
@@ -326,7 +326,7 @@ export interface FlagsResponse extends RemoteConfig {
     flags: Record<string, FeatureFlagDetail>
     evaluatedAt?: number
     /**
-     * Server-controlled gate for minimal `$feature_flag_called` events. `true` only when the
+     * Server-controlled gate for minimal `edp_feature_flag_called` events. `true` only when the
      * project opted in; omitted otherwise. Absence always means full events.
      */
     minimalFlagCalledEvents?: boolean

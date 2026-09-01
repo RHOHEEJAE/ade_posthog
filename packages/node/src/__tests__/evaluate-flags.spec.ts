@@ -117,15 +117,15 @@ describe('evaluateFlags', () => {
       expect(body.flag_keys_to_evaluate).toBeUndefined()
     })
 
-    it('does not fire $feature_flag_called events for flags that are not accessed', async () => {
+    it('does not fire edp_feature_flag_called events for flags that are not accessed', async () => {
       await posthog.evaluateFlags('user-1')
       await waitForPromises()
 
-      const flagCalled = captures.filter((m) => m.event === '$feature_flag_called')
+      const flagCalled = captures.filter((m) => m.event === 'edp_feature_flag_called')
       expect(flagCalled).toHaveLength(0)
     })
 
-    it('isEnabled returns true/false and fires $feature_flag_called on first access', async () => {
+    it('isEnabled returns true/false and fires edp_feature_flag_called on first access', async () => {
       const flags = await posthog.evaluateFlags('user-1')
 
       expect(flags.isEnabled('boolean-flag')).toBe(true)
@@ -133,9 +133,9 @@ describe('evaluateFlags', () => {
       expect(flags.isEnabled('variant-flag')).toBe(true)
 
       await waitForPromises()
-      const flagCalled = captures.filter((m) => m.event === '$feature_flag_called')
+      const flagCalled = captures.filter((m) => m.event === 'edp_feature_flag_called')
       expect(flagCalled).toHaveLength(3)
-      expect(flagCalled.map((m) => m.properties.$feature_flag).sort()).toEqual([
+      expect(flagCalled.map((m) => m.properties.feature_flag).sort()).toEqual([
         'boolean-flag',
         'disabled-flag',
         'variant-flag',
@@ -168,27 +168,27 @@ describe('evaluateFlags', () => {
       await waitForPromises()
       const byKey = Object.fromEntries(
         captures
-          .filter((m) => m.event === '$feature_flag_called')
-          .map((m) => [m.properties.$feature_flag, m.properties])
+          .filter((m) => m.event === 'edp_feature_flag_called')
+          .map((m) => [m.properties.feature_flag, m.properties])
       )
       expect(byKey['variant-flag']).toMatchObject({
-        $feature_flag: 'variant-flag',
-        $feature_flag_response: 'variant-value',
-        $feature_flag_id: 2,
-        $feature_flag_version: 23,
-        $feature_flag_reason: 'Matched condition set 3',
-        $feature_flag_request_id: 'request-id-1',
+        feature_flag: 'variant-flag',
+        feature_flag_response: 'variant-value',
+        feature_flag_id: 2,
+        feature_flag_version: 23,
+        feature_flag_reason: 'Matched condition set 3',
+        feature_flag_request_id: 'request-id-1',
         locally_evaluated: false,
       })
       expect(byKey['missing-flag']).toMatchObject({
-        $feature_flag: 'missing-flag',
-        $feature_flag_response: undefined,
-        $feature_flag_error: 'flag_missing',
+        feature_flag: 'missing-flag',
+        feature_flag_response: undefined,
+        feature_flag_error: 'flag_missing',
         locally_evaluated: false,
       })
     })
 
-    it('dedupes $feature_flag_called events across repeated access for the same distinctId+value', async () => {
+    it('dedupes edp_feature_flag_called events across repeated access for the same distinctId+value', async () => {
       const flags = await posthog.evaluateFlags('user-1')
       flags.isEnabled('boolean-flag')
       flags.isEnabled('boolean-flag')
@@ -196,12 +196,12 @@ describe('evaluateFlags', () => {
 
       await waitForPromises()
       const flagCalled = captures.filter(
-        (m) => m.event === '$feature_flag_called' && m.properties.$feature_flag === 'boolean-flag'
+        (m) => m.event === 'edp_feature_flag_called' && m.properties.feature_flag === 'boolean-flag'
       )
       expect(flagCalled).toHaveLength(1)
     })
 
-    it('fires separate $feature_flag_called events for the same flag+variant under different group contexts', async () => {
+    it('fires separate edp_feature_flag_called events for the same flag+variant under different group contexts', async () => {
       const flags1 = await posthog.evaluateFlags('user-1', { groups: { company: 'org-a' } })
       flags1.isEnabled('boolean-flag')
 
@@ -211,26 +211,26 @@ describe('evaluateFlags', () => {
       // Same user, same flag, same variant but different group — both must fire.
       await waitForPromises()
       const flagCalled = captures.filter(
-        (m) => m.event === '$feature_flag_called' && m.properties.$feature_flag === 'boolean-flag'
+        (m) => m.event === 'edp_feature_flag_called' && m.properties.feature_flag === 'boolean-flag'
       )
       expect(flagCalled).toHaveLength(2)
-      const groupsCaptured = flagCalled.map((m) => m.properties.$groups)
+      const groupsCaptured = flagCalled.map((m) => m.properties.groups)
       expect(groupsCaptured).toEqual(expect.arrayContaining([{ company: 'org-a' }, { company: 'org-b' }]))
     })
 
-    it('dedupes $feature_flag_called events across repeated access under the same group context', async () => {
+    it('dedupes edp_feature_flag_called events across repeated access under the same group context', async () => {
       const flags = await posthog.evaluateFlags('user-1', { groups: { company: 'org-a' } })
       flags.isEnabled('boolean-flag')
       flags.isEnabled('boolean-flag')
 
       await waitForPromises()
       const flagCalled = captures.filter(
-        (m) => m.event === '$feature_flag_called' && m.properties.$feature_flag === 'boolean-flag'
+        (m) => m.event === 'edp_feature_flag_called' && m.properties.feature_flag === 'boolean-flag'
       )
       expect(flagCalled).toHaveLength(1)
     })
 
-    it('dedupes $feature_flag_called events when the same groups are passed in different key order', async () => {
+    it('dedupes edp_feature_flag_called events when the same groups are passed in different key order', async () => {
       const flags1 = await posthog.evaluateFlags('user-1', { groups: { company: 'org-a', team: 'red' } })
       flags1.isEnabled('boolean-flag')
 
@@ -239,12 +239,12 @@ describe('evaluateFlags', () => {
 
       await waitForPromises()
       const flagCalled = captures.filter(
-        (m) => m.event === '$feature_flag_called' && m.properties.$feature_flag === 'boolean-flag'
+        (m) => m.event === 'edp_feature_flag_called' && m.properties.feature_flag === 'boolean-flag'
       )
       expect(flagCalled).toHaveLength(1)
     })
 
-    it('dedupes $feature_flag_called events when groups is undefined vs empty object', async () => {
+    it('dedupes edp_feature_flag_called events when groups is undefined vs empty object', async () => {
       const flags1 = await posthog.evaluateFlags('user-1')
       flags1.isEnabled('boolean-flag')
 
@@ -254,7 +254,7 @@ describe('evaluateFlags', () => {
       // Both produce no group suffix — must dedupe to a single event.
       await waitForPromises()
       const flagCalled = captures.filter(
-        (m) => m.event === '$feature_flag_called' && m.properties.$feature_flag === 'boolean-flag'
+        (m) => m.event === 'edp_feature_flag_called' && m.properties.feature_flag === 'boolean-flag'
       )
       expect(flagCalled).toHaveLength(1)
     })
@@ -265,7 +265,7 @@ describe('evaluateFlags', () => {
       expect(flags.getFlagPayload('missing-flag')).toBeUndefined()
 
       await waitForPromises()
-      expect(captures.filter((m) => m.event === '$feature_flag_called')).toHaveLength(0)
+      expect(captures.filter((m) => m.event === 'edp_feature_flag_called')).toHaveLength(0)
     })
 
     it('uses distinctId from context when not passed explicitly', async () => {
@@ -290,13 +290,13 @@ describe('evaluateFlags', () => {
       expect(flags.keys).toEqual([])
     })
 
-    it('does not fire $feature_flag_called events from an empty-distinctId snapshot', async () => {
+    it('does not fire edp_feature_flag_called events from an empty-distinctId snapshot', async () => {
       const flags = await posthog.evaluateFlags()
       flags.isEnabled('any-flag')
       flags.getFlag('any-flag')
 
       await waitForPromises()
-      expect(captures.filter((m) => m.event === '$feature_flag_called')).toHaveLength(0)
+      expect(captures.filter((m) => m.event === 'edp_feature_flag_called')).toHaveLength(0)
     })
   })
 
@@ -358,8 +358,8 @@ describe('evaluateFlags', () => {
 
     it('branching on a key excluded from a slice is a no-op (no flag_missing event)', async () => {
       // Filtered snapshots are intended for `capture()`. Calling `isEnabled()` on a slice
-      // for a key that was filtered out should not fire `$feature_flag_called` with
-      // `$feature_flag_error: flag_missing` — the flag wasn't missing, just sliced away.
+      // for a key that was filtered out should not fire `edp_feature_flag_called` with
+      // `feature_flag_error: flag_missing` — the flag wasn't missing, just sliced away.
       const flags = await posthog.evaluateFlags('user-1')
       const filtered = flags.only(['boolean-flag'])
 
@@ -368,9 +368,9 @@ describe('evaluateFlags', () => {
       await waitForPromises()
       const flagMissing = captures.filter(
         (m) =>
-          m.event === '$feature_flag_called' &&
-          m.properties.$feature_flag === 'variant-flag' &&
-          m.properties.$feature_flag_error === 'flag_missing'
+          m.event === 'edp_feature_flag_called' &&
+          m.properties.feature_flag === 'variant-flag' &&
+          m.properties.feature_flag_error === 'flag_missing'
       )
       expect(flagMissing).toHaveLength(0)
     })
@@ -382,7 +382,7 @@ describe('evaluateFlags', () => {
       setup()
     })
 
-    it('capture({ flags }) attaches $feature/* and $active_feature_flags from the snapshot', async () => {
+    it('capture({ flags }) attaches feature/* and active_feature_flags from the snapshot', async () => {
       const flags = await posthog.evaluateFlags('user-1')
       posthog.capture({ distinctId: 'user-1', event: 'page_viewed', flags })
       await waitForPromises()
@@ -390,10 +390,10 @@ describe('evaluateFlags', () => {
       const pageViewed = captures.find((m) => m.event === 'page_viewed')
       expect(pageViewed).toBeDefined()
       expect(pageViewed.properties).toMatchObject({
-        '$feature/variant-flag': 'variant-value',
-        '$feature/boolean-flag': true,
-        '$feature/disabled-flag': false,
-        $active_feature_flags: ['boolean-flag', 'variant-flag'],
+        'feature/variant-flag': 'variant-value',
+        'feature/boolean-flag': true,
+        'feature/disabled-flag': false,
+        active_feature_flags: ['boolean-flag', 'variant-flag'],
       })
     })
 
@@ -405,11 +405,11 @@ describe('evaluateFlags', () => {
 
       const pageViewed = captures.find((m) => m.event === 'page_viewed')
       expect(pageViewed.properties).toMatchObject({
-        '$feature/boolean-flag': true,
-        $active_feature_flags: ['boolean-flag'],
+        'feature/boolean-flag': true,
+        active_feature_flags: ['boolean-flag'],
       })
-      expect(pageViewed.properties['$feature/variant-flag']).toBeUndefined()
-      expect(pageViewed.properties['$feature/disabled-flag']).toBeUndefined()
+      expect(pageViewed.properties['feature/variant-flag']).toBeUndefined()
+      expect(pageViewed.properties['feature/disabled-flag']).toBeUndefined()
     })
 
     it('does not trigger an additional /flags request on capture', async () => {
@@ -446,17 +446,17 @@ describe('evaluateFlags', () => {
 
       const pageViewed = captures.find((m) => m.event === 'page_viewed')
       expect(pageViewed.properties).toMatchObject({
-        '$feature/boolean-flag': true,
-        $active_feature_flags: ['boolean-flag'],
+        'feature/boolean-flag': true,
+        active_feature_flags: ['boolean-flag'],
       })
-      expect(pageViewed.properties['$feature/variant-flag']).toBeUndefined()
+      expect(pageViewed.properties['feature/variant-flag']).toBeUndefined()
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining('Both `flags` and `sendFeatureFlags` were passed to capture()')
       )
       warnSpy.mockRestore()
     })
 
-    it('captureException forwards flags through to the $exception event', async () => {
+    it('captureException forwards flags through to the edp_exception event', async () => {
       const flags = await posthog.evaluateFlags('user-1')
       flags.isEnabled('boolean-flag')
 
@@ -470,13 +470,13 @@ describe('evaluateFlags', () => {
       await waitForPromises()
       await waitForPromises()
 
-      const exception = captures.find((m) => m.event === '$exception')
+      const exception = captures.find((m) => m.event === 'edp_exception')
       expect(exception).toBeDefined()
       expect(exception.properties).toMatchObject({
-        '$feature/boolean-flag': true,
-        $active_feature_flags: ['boolean-flag'],
+        'feature/boolean-flag': true,
+        active_feature_flags: ['boolean-flag'],
       })
-      expect(exception.properties['$feature/variant-flag']).toBeUndefined()
+      expect(exception.properties['feature/variant-flag']).toBeUndefined()
     })
 
     it('captureExceptionImmediate forwards the flags snapshot to captureImmediate', async () => {
@@ -492,7 +492,7 @@ describe('evaluateFlags', () => {
       expect(spy).toHaveBeenCalledTimes(1)
       const arg = spy.mock.calls[0][0] as EventMessage
       expect(arg.flags).toBe(filtered)
-      expect(arg.event).toBe('$exception')
+      expect(arg.event).toBe('edp_exception')
 
       spy.mockRestore()
     })
@@ -515,14 +515,14 @@ describe('evaluateFlags', () => {
       await waitForPromises()
       const byKey = Object.fromEntries(
         captures
-          .filter((m) => m.event === '$feature_flag_called')
-          .map((m) => [m.properties.$feature_flag, m.properties])
+          .filter((m) => m.event === 'edp_feature_flag_called')
+          .map((m) => [m.properties.feature_flag, m.properties])
       )
-      expect(byKey['boolean-flag'].$feature_flag_error).toEqual('errors_while_computing_flags')
-      expect(byKey['missing-flag'].$feature_flag_error).toEqual('errors_while_computing_flags,flag_missing')
+      expect(byKey['boolean-flag'].feature_flag_error).toEqual('errors_while_computing_flags')
+      expect(byKey['missing-flag'].feature_flag_error).toEqual('errors_while_computing_flags,flag_missing')
     })
 
-    it('attaches $feature_flag_has_experiment from the response metadata, omitting it when absent', async () => {
+    it('attaches feature_flag_has_experiment from the response metadata, omitting it when absent', async () => {
       const response = flagsResponseFixture()
       response.flags['variant-flag'].metadata!.has_experiment = true
       response.flags['boolean-flag'].metadata!.has_experiment = false
@@ -537,15 +537,15 @@ describe('evaluateFlags', () => {
       await waitForPromises()
       const byKey = Object.fromEntries(
         captures
-          .filter((m) => m.event === '$feature_flag_called')
-          .map((m) => [m.properties.$feature_flag, m.properties])
+          .filter((m) => m.event === 'edp_feature_flag_called')
+          .map((m) => [m.properties.feature_flag, m.properties])
       )
-      expect(byKey['variant-flag'].$feature_flag_has_experiment).toBe(true)
-      expect(byKey['boolean-flag'].$feature_flag_has_experiment).toBe(false)
-      expect(byKey['disabled-flag']).not.toHaveProperty('$feature_flag_has_experiment')
+      expect(byKey['variant-flag'].feature_flag_has_experiment).toBe(true)
+      expect(byKey['boolean-flag'].feature_flag_has_experiment).toBe(false)
+      expect(byKey['disabled-flag']).not.toHaveProperty('feature_flag_has_experiment')
     })
 
-    it('sends minimal $feature_flag_called events when gated, except for experiment-linked flags', async () => {
+    it('sends minimal edp_feature_flag_called events when gated, except for experiment-linked flags', async () => {
       const response = flagsResponseFixture()
       response.minimalFlagCalledEvents = true
       response.flags['boolean-flag'].metadata!.has_experiment = false
@@ -560,33 +560,33 @@ describe('evaluateFlags', () => {
       await waitForPromises()
       const byKey = Object.fromEntries(
         captures
-          .filter((m) => m.event === '$feature_flag_called')
-          .map((m) => [m.properties.$feature_flag, m.properties])
+          .filter((m) => m.event === 'edp_feature_flag_called')
+          .map((m) => [m.properties.feature_flag, m.properties])
       )
       // Gated + no experiment: strict allowlist
       expect(Object.keys(byKey['boolean-flag']).sort()).toEqual(
         [
-          '$feature_flag',
-          '$feature_flag_response',
-          '$feature_flag_has_experiment',
-          '$feature_flag_id',
-          '$feature_flag_version',
-          '$feature_flag_reason',
-          '$feature_flag_request_id',
-          '$feature_flag_evaluated_at',
+          'feature_flag',
+          'feature_flag_response',
+          'feature_flag_has_experiment',
+          'feature_flag_id',
+          'feature_flag_version',
+          'feature_flag_reason',
+          'feature_flag_request_id',
+          'feature_flag_evaluated_at',
           'locally_evaluated',
-          '$lib',
-          '$lib_version',
-          '$is_server',
-          '$geoip_disable',
+          'lib',
+          'lib_version',
+          'is_server',
+          'geoip_disable',
         ].sort()
       )
-      expect(byKey['boolean-flag'].$is_server).toBe(true)
+      expect(byKey['boolean-flag'].is_server).toBe(true)
       // Gated + experiment: full envelope
       expect(byKey['variant-flag']).toMatchObject({
         super_prop: 'super_value',
-        '$feature/variant-flag': 'variant-value',
-        $feature_flag_has_experiment: true,
+        'feature/variant-flag': 'variant-value',
+        feature_flag_has_experiment: true,
       })
     })
 
@@ -599,10 +599,10 @@ describe('evaluateFlags', () => {
       flags.isEnabled('boolean-flag')
 
       await waitForPromises()
-      const flagCalled = captures.find((m) => m.event === '$feature_flag_called')
+      const flagCalled = captures.find((m) => m.event === 'edp_feature_flag_called')
       // Quota-limited responses strip flag data; the access becomes a missing-flag lookup
       // against the empty snapshot, so the combined error string surfaces both.
-      expect(flagCalled.properties.$feature_flag_error).toEqual('quota_limited,flag_missing')
+      expect(flagCalled.properties.feature_flag_error).toEqual('quota_limited,flag_missing')
     })
   })
 
@@ -695,12 +695,12 @@ describe('evaluateFlags', () => {
       expect(flags.isEnabled('local-flag')).toBe(true)
 
       await waitForPromises()
-      const flagCalled = captures.find((m) => m.event === '$feature_flag_called')
+      const flagCalled = captures.find((m) => m.event === 'edp_feature_flag_called')
       expect(flagCalled).toBeDefined()
       expect(flagCalled.properties).toMatchObject({
-        $feature_flag: 'local-flag',
-        $feature_flag_id: 42,
-        $feature_flag_reason: 'Evaluated locally',
+        feature_flag: 'local-flag',
+        feature_flag_id: 42,
+        feature_flag_reason: 'Evaluated locally',
         locally_evaluated: true,
       })
 
@@ -814,16 +814,16 @@ describe('evaluateFlags', () => {
       expect(remoteFlagCalls).toHaveLength(0)
     })
 
-    it('attaches $feature_flag_definitions_loaded_at on locally-evaluated $feature_flag_called events', async () => {
+    it('attaches feature_flag_definitions_loaded_at on locally-evaluated edp_feature_flag_called events', async () => {
       const flags = await posthog.evaluateFlags('user-1')
       flags.isEnabled('local-flag')
 
       await waitForPromises()
-      const flagCalled = captures.find((m) => m.event === '$feature_flag_called')
-      expect(flagCalled.properties.$feature_flag_definitions_loaded_at).toEqual(expect.any(Number))
+      const flagCalled = captures.find((m) => m.event === 'edp_feature_flag_called')
+      expect(flagCalled.properties.feature_flag_definitions_loaded_at).toEqual(expect.any(Number))
     })
 
-    it('attaches $feature_flag_has_experiment from the local definition', async () => {
+    it('attaches feature_flag_has_experiment from the local definition', async () => {
       // The beforeEach client already loaded the fixture definitions; build a fresh
       // client against definitions that carry has_experiment.
       await posthog.shutdown()
@@ -836,17 +836,17 @@ describe('evaluateFlags', () => {
       flags.isEnabled('local-flag')
 
       await waitForPromises()
-      const flagCalled = captures.find((m) => m.event === '$feature_flag_called')
-      expect(flagCalled.properties.$feature_flag_has_experiment).toBe(true)
+      const flagCalled = captures.find((m) => m.event === 'edp_feature_flag_called')
+      expect(flagCalled.properties.feature_flag_has_experiment).toBe(true)
     })
 
-    it('omits $feature_flag_has_experiment when the local definition omits it', async () => {
+    it('omits feature_flag_has_experiment when the local definition omits it', async () => {
       const flags = await posthog.evaluateFlags('user-1')
       flags.isEnabled('local-flag')
 
       await waitForPromises()
-      const flagCalled = captures.find((m) => m.event === '$feature_flag_called')
-      expect(flagCalled.properties).not.toHaveProperty('$feature_flag_has_experiment')
+      const flagCalled = captures.find((m) => m.event === 'edp_feature_flag_called')
+      expect(flagCalled.properties).not.toHaveProperty('feature_flag_has_experiment')
     })
   })
 

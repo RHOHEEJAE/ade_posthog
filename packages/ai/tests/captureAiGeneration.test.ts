@@ -71,14 +71,14 @@ describe('captureAiGeneration', () => {
       $ai_output_tokens: 15,
       $ai_latency: 1.5,
       $ai_time_to_first_token: 0.4,
-      $ai_trace_id: 'trace-abc',
+      ai_trace_id: 'trace-abc',
       $ai_base_url: 'https://api.example.com',
       $ai_stop_reason: 'stop',
       $ai_tokens_source: 'sdk',
       feature: 'transcript-toc',
     })
     expect(event.properties.$ai_tools).toEqual([{ type: 'function', function: { name: 'foo', parameters: {} } }])
-    expect(event.properties.$process_person_profile).toBeUndefined()
+    expect(event.properties.process_person_profile).toBeUndefined()
   })
 
   it('auto-generates a traceId and uses it as distinctId when missing', async () => {
@@ -87,11 +87,11 @@ describe('captureAiGeneration', () => {
     await captureAiGeneration(client, baseRequiredOptions)
 
     const event = (client.capture as jest.Mock).mock.calls[0][0]
-    expect(event.properties.$ai_trace_id).toEqual(expect.any(String))
+    expect(event.properties.ai_trace_id).toEqual(expect.any(String))
     expect(event.properties).not.toHaveProperty('$ai_latency')
-    expect(event.distinctId).toBe(event.properties.$ai_trace_id)
+    expect(event.distinctId).toBe(event.properties.ai_trace_id)
     // Anonymous events disable person processing
-    expect(event.properties.$process_person_profile).toBe(false)
+    expect(event.properties.process_person_profile).toBe(false)
   })
 
   it('honours captureImmediate by awaiting captureImmediate instead of capture', async () => {
@@ -309,7 +309,7 @@ describe('captureAiGeneration', () => {
       httpStatus: 429,
       expected: 429,
     },
-  ])('error path: $name', async ({ error, httpStatus, expected }) => {
+  ])('error path: name', async ({ error, httpStatus, expected }) => {
     const client = buildClient()
 
     await captureAiGeneration(client, { ...baseRequiredOptions, error, httpStatus })
@@ -364,10 +364,10 @@ describe('captureAiGeneration', () => {
     expect(client.captureException).toHaveBeenCalledTimes(1)
     const [capturedError, , properties, exceptionId] = (client.captureException as jest.Mock).mock.calls[0]
     expect(capturedError).toBe(error)
-    expect(properties).toEqual({ $ai_trace_id: expect.any(String) })
+    expect(properties).toEqual({ ai_trace_id: expect.any(String) })
     expect(typeof exceptionId).toBe('string')
 
-    expect(lastCaptureProperties(client).$exception_event_id).toBe(exceptionId)
+    expect(lastCaptureProperties(client).edp_exception_event_id).toBe(exceptionId)
     expect((error as any).__posthog_previously_captured_error).toBe(true)
   })
 
@@ -387,7 +387,7 @@ describe('captureAiGeneration', () => {
       expectedProvider: 'override-provider',
     },
   ])(
-    'model/provider resolution: $name',
+    'model/provider resolution: name',
     async ({ modelOverride, providerOverride, expectedModel, expectedProvider }) => {
       const client = buildClient()
 
@@ -426,7 +426,7 @@ describe('captureAiGeneration', () => {
   it.each([
     { name: 'null', error: null },
     { name: 'undefined', error: undefined },
-  ])('does not emit error metadata when error is $name', async ({ error }) => {
+  ])('does not emit error metadata when error is name', async ({ error }) => {
     const client = buildClient()
 
     await captureAiGeneration(client, { ...baseRequiredOptions, error })

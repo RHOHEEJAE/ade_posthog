@@ -110,8 +110,8 @@ describe('utils', () => {
         it('properties', () => {
             const properties = getEventProperties()
 
-            expect(properties['$lib']).toEqual('web')
-            expect(properties['$device_type']).toEqual('Desktop')
+            expect(properties['lib']).toEqual('web')
+            expect(properties['device_type']).toEqual('Desktop')
         })
     })
 

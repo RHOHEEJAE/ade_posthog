@@ -23,7 +23,7 @@ const RETRYABLE_STATUSES = new Set([408, 500, 502, 503, 504])
 export interface V1CaptureSenderConfig {
   host: string
   apiKey: string
-  /** Canonical `$lib` identity, materialized by the server from `PostHog-Sdk-Info`. */
+  /** Canonical `lib` identity, materialized by the server from `PostHog-Sdk-Info`. */
   libraryId: string
   libraryVersion: string
   /** Value for the `User-Agent` header, if the runtime allows setting it. */

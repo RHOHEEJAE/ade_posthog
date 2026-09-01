@@ -10,7 +10,7 @@ import { resetTodos, setupTestServerAndClient } from './test-utils/client-server
 
 /**
  * The conversation handle as the session anchor: when a tool call carries a
- * `conversation_id`, `$session_id` derives from it instead of from the transport.
+ * `conversation_id`, `session_id` derives from it instead of from the transport.
  * This is what lets calls correlate across reconnects, restarts, and the
  * per-request server instances the MCP 2026-07-28 revision introduces.
  */
@@ -58,7 +58,7 @@ describe('conversation_id as the session anchor', () => {
     return (
       capture
         .getEvents()
-        // `resourceName` alone is not enough: a `$identify` published during a tool
+        // `resourceName` alone is not enough: a `edp_identify` published during a tool
         // call carries the same resource name, so it would be counted as a call.
         .filter((e) => e.eventType === MCPAnalyticsEventType.mcpToolsCall && e.resourceName === 'add_todo')
         .map((e) => e.sessionId)
@@ -117,14 +117,14 @@ describe('conversation_id as the session anchor', () => {
   })
 
   describe('identity', () => {
-    it('still announces $identify for a handle-anchored session on a token deployment', async () => {
+    it('still announces edp_identify for a handle-anchored session on a token deployment', async () => {
       instrument(server, fakePostHog(), {
         enableConversationId: true,
         identify: async () => ({ distinctId: 'user-1' }),
       })
 
       // A replayed token leaves data.sessionSource === 'token', which is what
-      // suppresses a second $identify. A handle-anchored session is a brand new
+      // suppresses a second edp_identify. A handle-anchored session is a brand new
       // session nobody announced, so suppressing it would lose the event entirely
       // on exactly the stateless deployments this feature targets.
       const lowLevel = server.server as MCPServerLike
@@ -144,7 +144,7 @@ describe('conversation_id as the session anchor', () => {
       }
       await new Promise((r) => setTimeout(r, 60))
 
-      expect(capture.findCapturesByEvent('$identify')).toHaveLength(2)
+      expect(capture.findCapturesByEvent('edp_identify')).toHaveLength(2)
     })
   })
 
@@ -153,7 +153,7 @@ describe('conversation_id as the session anchor', () => {
       // A stateless instance that never processed `initialize`: the client replays
       // our token and the agent echoes a handle. The handle must decide the
       // session *without* costing us the only client attribution the request
-      // carries — otherwise every tool call and $identify on that deployment goes
+      // carries — otherwise every tool call and edp_identify on that deployment goes
       // out unattributed.
       instrument(server, fakePostHog(), { enableConversationId: true })
       const lowLevel = server.server as MCPServerLike
@@ -227,7 +227,7 @@ describe('conversation_id as the session anchor', () => {
         )
         await new Promise((r) => setTimeout(r, 60))
 
-        const sessions = new Set(capture.getCaptures().map((c: any) => c.properties.$session_id))
+        const sessions = new Set(capture.getCaptures().map((c: any) => c.properties.session_id))
         expect(sessions.size).toBe(2)
         expect(sessions).not.toContain(deriveSessionIdFromConversation(invented))
       } finally {
@@ -264,16 +264,16 @@ describe('conversation_id as the session anchor', () => {
       expect(toolCallSessionIds()).toEqual([deriveSessionIdFromConversation(a), deriveSessionIdFromConversation(b)])
     })
 
-    it('stamps both $session_id and $mcp_conversation_id on the payload', async () => {
+    it('stamps both session_id and $mcp_conversation_id on the payload', async () => {
       instrument(server, fakePostHog(), { enableConversationId: true })
 
       await callTool('first', CONVERSATION_HANDLE)
 
       const [payload] = capture.findCapturesByEvent('$mcp_tool_call')
-      expect(payload.properties.$session_id).toBe(deriveSessionIdFromConversation(CONVERSATION_HANDLE))
+      expect(payload.properties.session_id).toBe(deriveSessionIdFromConversation(CONVERSATION_HANDLE))
       expect(payload.properties.$mcp_conversation_id).toBe(CONVERSATION_HANDLE)
       // Deliberately distinct values: one is the grouping key, the other the raw handle.
-      expect(payload.properties.$session_id).not.toBe(payload.properties.$mcp_conversation_id)
+      expect(payload.properties.session_id).not.toBe(payload.properties.$mcp_conversation_id)
     })
 
     it('keeps the transport session when the feature is off', async () => {
@@ -315,8 +315,8 @@ describe('conversation_id as the session anchor', () => {
           .map((e) => e.conversationId)
           .filter(Boolean)
       ).toEqual([])
-      // Nothing amplified: one session means one $identify, not one per call.
-      expect(capture.findCapturesByEvent('$identify')).toHaveLength(1)
+      // Nothing amplified: one session means one edp_identify, not one per call.
+      expect(capture.findCapturesByEvent('edp_identify')).toHaveLength(1)
     })
 
     it('reuses the minted handle across calls once the agent echoes it back', async () => {

@@ -594,9 +594,9 @@
           "title": "get_property",
           "examples": [
             {
-              "id": "grab_value_for_'$user_id'_after_the_posthog_library_has_loaded",
-              "name": "grab value for '$user_id' after the posthog library has loaded",
-              "code": "\n\n// grab value for '$user_id' after the posthog library has loaded\nposthog.init('<YOUR PROJECT TOKEN>', {\n    loaded: function(posthog) {\n        user_id = posthog.get_property('$user_id');\n    }\n});\n\n\n\n"
+              "id": "grab_value_for_'user_id'_after_the_posthog_library_has_loaded",
+              "name": "grab value for 'user_id' after the posthog library has loaded",
+              "code": "\n\n// grab value for 'user_id' after the posthog library has loaded\nposthog.init('<YOUR PROJECT TOKEN>', {\n    loaded: function(posthog) {\n        user_id = posthog.get_property('user_id');\n    }\n});\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -712,7 +712,7 @@
         },
         {
           "category": "",
-          "description": "Returns all currently cached feature flags as `FeatureFlagResult`s. This is a synchronous read of the flags from the last load (no network request); call `reloadFeatureFlags()` first to refresh. Unlike `getFeatureFlag()`, it does not send a `$feature_flag_called` event.",
+          "description": "Returns all currently cached feature flags as `FeatureFlagResult`s. This is a synchronous read of the flags from the last load (no network request); call `reloadFeatureFlags()` first to refresh. Unlike `getFeatureFlag()`, it does not send a `edp_feature_flag_called` event.",
           "details": null,
           "id": "getAllFeatureFlags",
           "showDocs": true,
@@ -801,7 +801,7 @@
               "name": "key"
             },
             {
-              "description": "Optional lookup settings. If `{ send_event: false }`, we won't send a `$feature_flag_called` event to PostHog. If `{ fresh: true }`, we won't return cached values from localStorage - only values loaded from the server.",
+              "description": "Optional lookup settings. If `{ send_event: false }`, we won't send a `edp_feature_flag_called` event to PostHog. If `{ fresh: true }`, we won't return cached values from localStorage - only values loaded from the server.",
               "isOptional": true,
               "type": "FeatureFlagOptions",
               "name": "options"
@@ -844,7 +844,7 @@
         },
         {
           "category": "Feature flags",
-          "description": "Get a feature flag evaluation result including both the flag value and payload.\nBy default, this method emits the `$feature_flag_called` event.",
+          "description": "Get a feature flag evaluation result including both the flag value and payload.\nBy default, this method emits the `edp_feature_flag_called` event.",
           "details": null,
           "id": "getFeatureFlagResult",
           "showDocs": true,
@@ -1215,7 +1215,7 @@
             {
               "id": "disable_event_tracking",
               "name": "disable event tracking",
-              "code": "\n\n// disable event tracking\nif (posthog.isFeatureEnabled('feature', { send_event: false })) {\n    // flag checked without sending $feature_flag_called event\n}\n\n\n\n"
+              "code": "\n\n// disable event tracking\nif (posthog.isFeatureEnabled('feature', { send_event: false })) {\n    // flag checked without sending edp_feature_flag_called event\n}\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -1227,7 +1227,7 @@
               "name": "key"
             },
             {
-              "description": "Optional lookup settings. If `{ send_event: false }`, we won't send a `$feature_flag_called` event to PostHog. If `{ fresh: true }`, we won't return cached values from localStorage - only values loaded from the server. If `{ defaultValue: false }`, we return that value instead of undefined when the flag has no value.",
+              "description": "Optional lookup settings. If `{ send_event: false }`, we won't send a `edp_feature_flag_called` event to PostHog. If `{ fresh: true }`, we won't return cached values from localStorage - only values loaded from the server. If `{ defaultValue: false }`, we return that value instead of undefined when the flag has no value.",
               "isOptional": false,
               "type": "IsFeatureEnabledOptions & {\n        defaultValue: boolean;\n    }",
               "name": "options"
@@ -1398,7 +1398,7 @@
         {
           "category": "Privacy",
           "description": "Opts the user into data capturing and persistence.",
-          "details": "Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance. By default, captures an `$opt_in` event unless disabled.",
+          "details": "Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance. By default, captures an `edp_opt_in` event unless disabled.",
           "id": "opt_in_capturing",
           "showDocs": true,
           "title": "opt_in_capturing",
@@ -1914,7 +1914,7 @@
         },
         {
           "category": "Identification",
-          "description": "Marks the current user as a test user by setting the `$internal_or_test_user` person property to `true`. This also enables person processing for the current user.\nThis is useful for using in a cohort your internal/test filters for your posthog org.",
+          "description": "Marks the current user as a test user by setting the `internal_or_test_user` person property to `true`. This also enables person processing for the current user.\nThis is useful for using in a cohort your internal/test filters for your posthog org.",
           "details": null,
           "id": "setInternalOrTestUser",
           "showDocs": true,
@@ -1950,7 +1950,7 @@
             {
               "id": "set_properties",
               "name": "set properties",
-              "code": "\n\n// set properties\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // $set properties\n    { initial_url: '/blog' }   // $set_once properties\n)\n\n\n\n"
+              "code": "\n\n// set properties\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // edp_set properties\n    { initial_url: '/blog' }   // edp_set_once properties\n)\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -2216,7 +2216,7 @@
         {
           "category": "Identification",
           "description": "Removes properties from the person profile associated with the current `distinct_id`. Learn more about [identifying users](/docs/product-analytics/identify)",
-          "details": "Deletes the given person properties from the person profile in PostHog. This is the counterpart to  — instead of hand-passing `$unset` inside a `capture()` call, you can remove properties with a dedicated method. If `person_profiles` is set to `never`, this call is ignored.",
+          "details": "Deletes the given person properties from the person profile in PostHog. This is the counterpart to  — instead of hand-passing `unset` inside a `capture()` call, you can remove properties with a dedicated method. If `person_profiles` is set to `never`, this call is ignored.",
           "id": "unsetPersonProperties",
           "showDocs": true,
           "title": "unsetPersonProperties",
@@ -2363,7 +2363,7 @@
           "name": "properties"
         },
         {
-          "description": "pre-compiled regex pattern for matching selector against $elements_chain",
+          "description": "pre-compiled regex pattern for matching selector against elements_chain",
           "type": "string | null",
           "name": "selector_regex"
         },
@@ -2572,7 +2572,7 @@
       "name": "ErrorTrackingSuppressionRuleValue",
       "properties": [
         {
-          "type": "'$exception_types' | '$exception_values'",
+          "type": "'exception_types' | 'exception_values'",
           "name": "key"
         },
         {
@@ -2622,7 +2622,7 @@
           "name": "flags"
         },
         {
-          "description": "Server-controlled gate for minimal `$feature_flag_called` events. `true` only when the project opted in; omitted otherwise. Absence always means full events.",
+          "description": "Server-controlled gate for minimal `edp_feature_flag_called` events. `true` only when the project opted in; omitted otherwise. Absence always means full events.",
           "type": "boolean",
           "name": "minimalFlagCalledEvents"
         },
@@ -3006,7 +3006,7 @@
           "name": "cookie_persisted_properties"
         },
         {
-          "description": "Determines whether PostHog should strip URL fragments (`#...`) from automatically captured URL fields.\nDisabled by default for backwards compatibility, and enabled automatically when `config.defaults` is\n`'2026-06-25'` or later. Set to `true` to strip hashes from:\n\n- `$current_url` on automatically captured browser events, including `$pageview`\n- `$initial_current_url`\n- `$session_entry_url`\n- `$elements[*].attr__href` and `$external_click_url` for autocapture and dead-click autocapture\n- Next.js Pages Router `$pageview` `$current_url`\n- web vitals `$current_url`\n- logs `url.full`\n- conversations `current_url` and `request_url`\n- session replay rrweb meta/custom-event `href` URLs\n- heatmap data URLs\n\nIf your SPA relies on hash-based routes for analytics, enabling this is a breaking behavior change.\nIf you want to capture hashes selectively, leave this disabled and use `before_send` to remove\nsensitive hash values before events are sent.",
+          "description": "Determines whether PostHog should strip URL fragments (`#...`) from automatically captured URL fields.\nDisabled by default for backwards compatibility, and enabled automatically when `config.defaults` is\n`'2026-06-25'` or later. Set to `true` to strip hashes from:\n\n- `current_url` on automatically captured browser events, including `edp_pageview`\n- `initial_current_url`\n- `session_entry_url`\n- `elements[*].attr__href` and `external_click_url` for autocapture and dead-click autocapture\n- Next.js Pages Router `edp_pageview` `current_url`\n- web vitals `current_url`\n- logs `url.full`\n- conversations `current_url` and `request_url`\n- session replay rrweb meta/custom-event `href` URLs\n- heatmap data URLs\n\nIf your SPA relies on hash-based routes for analytics, enabling this is a breaking behavior change.\nIf you want to capture hashes selectively, leave this disabled and use `before_send` to remove\nsensitive hash values before events are sent.",
           "type": "boolean",
           "name": "disable_capture_url_hashes"
         },
@@ -3094,7 +3094,7 @@
           "name": "split_storage"
         },
         {
-          "description": "Detect the Google Search App (GSA) as its own `$browser` value instead of\nthe underlying webview it embeds — Mobile Safari on iOS, Chrome on Android.\nDetection keys off the `GSA/` marker present in the UA on every platform.\n\nOff by default for backwards-compatibility: enabling it reattributes\nexisting GSA traffic away from Mobile Safari / Chrome, which would\notherwise look like those browsers suddenly losing share. The `2026-05-30`\nconfig default opts in.",
+          "description": "Detect the Google Search App (GSA) as its own `browser` value instead of\nthe underlying webview it embeds — Mobile Safari on iOS, Chrome on Android.\nDetection keys off the `GSA/` marker present in the UA on every platform.\n\nOff by default for backwards-compatibility: enabling it reattributes\nexisting GSA traffic away from Mobile Safari / Chrome, which would\notherwise look like those browsers suddenly losing share. The `2026-05-30`\nconfig default opts in.",
           "type": "boolean",
           "name": "detect_google_search_app"
         },
@@ -3204,7 +3204,7 @@
           "name": "opt_out_persistence_by_default"
         },
         {
-          "description": "Determines if users should be opted out of user agent filtering such as googlebot or other bots.\nIf this is set to `true`, PostHog will set `$browser_type` to either `bot` or `browser` for all events,\nbut will process all events as if they were from a browser.",
+          "description": "Determines if users should be opted out of user agent filtering such as googlebot or other bots.\nIf this is set to `true`, PostHog will set `browser_type` to either `bot` or `browser` for all events,\nbut will process all events as if they were from a browser.",
           "type": "boolean",
           "name": "opt_out_useragent_filter"
         },
@@ -3288,7 +3288,7 @@
           "name": "error_tracking"
         },
         {
-          "description": "Determines the session idle timeout in seconds.\n\nIf no events are captured for this many seconds, the next event starts a\nnew session with a new `$session_id` (and `$window_id`). The SDK may also proactively reset the stored session\nafter the timeout while the page is idle, so the next event creates a new session.\n\nSession recording has a separate idle threshold: `session_recording.session_idle_threshold_ms`. That setting\nonly controls when the user is considered idle, it does not rotate `$session_id`.\n\nMust be between 60 seconds and 10 hours. Values outside this range are clamped.",
+          "description": "Determines the session idle timeout in seconds.\n\nIf no events are captured for this many seconds, the next event starts a\nnew session with a new `session_id` (and `window_id`). The SDK may also proactively reset the stored session\nafter the timeout while the page is idle, so the next event creates a new session.\n\nSession recording has a separate idle threshold: `session_recording.session_idle_threshold_ms`. That setting\nonly controls when the user is considered idle, it does not rotate `session_id`.\n\nMust be between 60 seconds and 10 hours. Values outside this range are clamped.",
           "type": "number",
           "name": "session_idle_timeout_seconds"
         },
@@ -3370,12 +3370,12 @@
           "name": "feature_flag_request_timeout_ms"
         },
         {
-          "description": "Sets the maximum age (in milliseconds) for cached feature flag values.\nWhen the cache is older than this value:\n- `getFeatureFlag()` will return `undefined` instead of stale cached values\n- `$feature/` properties will not be attached to events\n- A background refresh will be triggered automatically\n\nThis prevents stale feature flag values from being used when the `/flags` request\nfails (e.g., due to ad blockers or network issues).\n\nWhen not set or set to `0`, cache expiration is disabled (cached values never expire).",
+          "description": "Sets the maximum age (in milliseconds) for cached feature flag values.\nWhen the cache is older than this value:\n- `getFeatureFlag()` will return `undefined` instead of stale cached values\n- `feature/` properties will not be attached to events\n- A background refresh will be triggered automatically\n\nThis prevents stale feature flag values from being used when the `/flags` request\nfails (e.g., due to ad blockers or network issues).\n\nWhen not set or set to `0`, cache expiration is disabled (cached values never expire).",
           "type": "number",
           "name": "feature_flag_cache_ttl_ms"
         },
         {
-          "description": "When enabled, `$feature_flag_called` event deduplication is scoped to the current session.\n\nBy default, the SDK deduplicates `$feature_flag_called` events globally and only re-emits\nthem when `identify` (with a new distinct ID) or `reset` is called. This can be problematic\nfor experiments: if a flag is checked before an experiment starts, the event is cached and\nwon't fire again for that user until identify/reset, meaning the experiment never sees the event.\n\nWhen this option is `true`, the deduplication cache is keyed on the session ID, so each new\nsession will re-emit `$feature_flag_called` for every flag that is checked.",
+          "description": "When enabled, `edp_feature_flag_called` event deduplication is scoped to the current session.\n\nBy default, the SDK deduplicates `edp_feature_flag_called` events globally and only re-emits\nthem when `identify` (with a new distinct ID) or `reset` is called. This can be problematic\nfor experiments: if a flag is checked before an experiment starts, the event is cached and\nwon't fire again for that user until identify/reset, meaning the experiment never sees the event.\n\nWhen this option is `true`, the deduplication cache is keyed on the session ID, so each new\nsession will re-emit `edp_feature_flag_called` for every flag that is checked.",
           "type": "boolean",
           "name": "advanced_feature_flags_dedup_per_session"
         },
@@ -3400,7 +3400,7 @@
           "name": "before_send"
         },
         {
-          "description": "Overrides the URL used for client-side URL targeting: session replay URL triggers, the\nsession replay URL blocklist, survey URL display conditions, product tour URL conditions,\nweb experiment URL conditions, and autocapture URL allow/ignore lists.\n\nThese features match against `window.location.href` directly, which does not reflect\nany `$current_url` you rewrite in `before_send`. In environments where the browser URL\nis not meaningful for targeting — e.g. Electron/desktop apps served from a generated\nhost — return the logical URL you want these features to match against. This does not\nchange the `$current_url` property captured on events (use `before_send` for that).",
+          "description": "Overrides the URL used for client-side URL targeting: session replay URL triggers, the\nsession replay URL blocklist, survey URL display conditions, product tour URL conditions,\nweb experiment URL conditions, and autocapture URL allow/ignore lists.\n\nThese features match against `window.location.href` directly, which does not reflect\nany `current_url` you rewrite in `before_send`. In environments where the browser URL\nis not meaningful for targeting — e.g. Electron/desktop apps served from a generated\nhost — return the logical URL you want these features to match against. This does not\nchange the `current_url` property captured on events (use `before_send` for that).",
           "type": "(defaultUrl: string) => string",
           "name": "get_current_url"
         },
@@ -3468,7 +3468,7 @@
           "name": "scroll_root_selector"
         },
         {
-          "description": "You can control whether events from PostHog-js have person processing enabled with the `person_profiles` config setting.\nThere are three options:\n- `person_profiles: 'always'` - we will process persons data for all events\n- `person_profiles: 'never'` - we won't process persons for any event. This means that anonymous users will not be merged once they sign up or login, so you lose the ability to create funnels that track users from anonymous to identified. All events (including `$identify`) will be sent with `$process_person_profile: False`.\n- `person_profiles: 'identified_only'` _(default)_ - we will only process persons when you call `posthog.identify`, `posthog.alias`, `posthog.setPersonProperties`, `posthog.unsetPersonProperties`, `posthog.group`, `posthog.setPersonPropertiesForFlags` or `posthog.setGroupPropertiesForFlags` Anonymous users won't get person profiles.",
+          "description": "You can control whether events from PostHog-js have person processing enabled with the `person_profiles` config setting.\nThere are three options:\n- `person_profiles: 'always'` - we will process persons data for all events\n- `person_profiles: 'never'` - we won't process persons for any event. This means that anonymous users will not be merged once they sign up or login, so you lose the ability to create funnels that track users from anonymous to identified. All events (including `edp_identify`) will be sent with `process_person_profile: False`.\n- `person_profiles: 'identified_only'` _(default)_ - we will only process persons when you call `posthog.identify`, `posthog.alias`, `posthog.setPersonProperties`, `posthog.unsetPersonProperties`, `posthog.group`, `posthog.setPersonPropertiesForFlags` or `posthog.setGroupPropertiesForFlags` Anonymous users won't get person profiles.",
           "type": "\"always\" | \"never\" | \"identified_only\"",
           "name": "person_profiles"
         },
@@ -3499,12 +3499,12 @@
           "name": "integrations"
         },
         {
-          "description": "Enables cookieless mode. In this mode, PostHog will not set any cookies, or use session or local storage. User\nidentity is handled by generating a privacy-preserving hash on PostHog's servers.\n\nWeb Vitals (`capture_performance.web_vitals`) are supported: metrics are sent without client session IDs;\ningestion assigns `$session_id` when cookieless mode is enabled for the project.\n\n- 'always' - enable cookieless mode immediately on startup, use this if you do not intend to show a cookie banner\n- 'on_reject' - enable cookieless mode only if the user rejects cookies, use this if you want to show a cookie banner. If the user accepts cookies, cookieless mode will not be used, and PostHog will use cookies and local storage as usual.\n\nNote that you MUST enable cookieless mode in your PostHog project's settings, otherwise all your cookieless events will be ignored. We plan to remove this requirement in the future.",
+          "description": "Enables cookieless mode. In this mode, PostHog will not set any cookies, or use session or local storage. User\nidentity is handled by generating a privacy-preserving hash on PostHog's servers.\n\nWeb Vitals (`capture_performance.web_vitals`) are supported: metrics are sent without client session IDs;\ningestion assigns `session_id` when cookieless mode is enabled for the project.\n\n- 'always' - enable cookieless mode immediately on startup, use this if you do not intend to show a cookie banner\n- 'on_reject' - enable cookieless mode only if the user rejects cookies, use this if you want to show a cookie banner. If the user accepts cookies, cookieless mode will not be used, and PostHog will use cookies and local storage as usual.\n\nNote that you MUST enable cookieless mode in your PostHog project's settings, otherwise all your cookieless events will be ignored. We plan to remove this requirement in the future.",
           "type": "\"always\" | \"on_reject\"",
           "name": "cookieless_mode"
         },
         {
-          "description": "A hostname pattern to match test environments. When the current hostname matches,\n`setInternalOrTestUser()` is called automatically on startup, enabling person processing\nand setting `$internal_or_test_user: true`.\n\nCan be a string (exact match) or RegExp (pattern match).\nSet to `null` to explicitly disable (useful when using `defaults: '2026-01-30'`).",
+          "description": "A hostname pattern to match test environments. When the current hostname matches,\n`setInternalOrTestUser()` is called automatically on startup, enabling person processing\nand setting `internal_or_test_user: true`.\n\nCan be a string (exact match) or RegExp (pattern match).\nSet to `null` to explicitly disable (useful when using `defaults: '2026-01-30'`).",
           "type": "string | RegExp",
           "name": "internal_or_test_user_hostname"
         },
@@ -3543,7 +3543,7 @@
           "releaseTag": "deprecated"
         },
         {
-          "description": "Prevents posthog-js from using the `navigator.sendBeacon` API to send events.\nEnabling this option may hurt the reliability of sending $pageleave events.",
+          "description": "Prevents posthog-js from using the `navigator.sendBeacon` API to send events.\nEnabling this option may hurt the reliability of sending edp_pageleave events.",
           "type": "boolean",
           "name": "disable_beacon"
         },
@@ -3600,7 +3600,7 @@
           "name": "loaded"
         },
         {
-          "description": "Disables capturing the `$device_model` super-property.\n\nWhen capturing is enabled (the default), PostHog resolves the hardware model once during init\nvia `navigator.userAgentData.getHighEntropyValues(['model'])` and registers it as the raw OEM\ncode (e.g. `Pixel 7`). This is Chromium-only and only meaningful on Android — it resolves to\n`undefined` on Safari/Firefox and to an empty string on desktop, in which cases nothing is\nregistered.\n\nThis opt-out is offered because `getHighEntropyValues` is still experimental and Chromium-only\n(not yet a cross-browser standard); set it to `true` to skip the call entirely.",
+          "description": "Disables capturing the `device_model` super-property.\n\nWhen capturing is enabled (the default), PostHog resolves the hardware model once during init\nvia `navigator.userAgentData.getHighEntropyValues(['model'])` and registers it as the raw OEM\ncode (e.g. `Pixel 7`). This is Chromium-only and only meaningful on Android — it resolves to\n`undefined` on Safari/Firefox and to an empty string on desktop, in which cases nothing is\nregistered.\n\nThis opt-out is offered because `getHighEntropyValues` is still experimental and Chromium-only\n(not yet a cross-browser standard); set it to `true` to skip the call entirely.",
           "type": "boolean",
           "name": "disableDeviceModel"
         }
@@ -3637,7 +3637,7 @@
           "name": "captureException"
         },
         {
-          "description": "Adds a breadcrumb-like step that will be attached to the next captured exception as `$exception_steps`.",
+          "description": "Adds a breadcrumb-like step that will be attached to the next captured exception as `exception_steps`.",
           "type": "(message: string, properties?: Properties) => void",
           "name": "addExceptionStep"
         },
@@ -3702,7 +3702,7 @@
           "name": "createPersonProfile"
         },
         {
-          "description": "Marks the current user as a test user by setting the `$internal_or_test_user` person property to `true`.\nThis also enables person processing for the current user.\n\nThis is useful for using in a cohort your internal/test filters for your posthog org.",
+          "description": "Marks the current user as a test user by setting the `internal_or_test_user` person property to `true`.\nThis also enables person processing for the current user.\n\nThis is useful for using in a cohort your internal/test filters for your posthog org.",
           "type": "() => void",
           "name": "setInternalOrTestUser"
         },
@@ -3738,7 +3738,7 @@
           "releaseTag": "deprecated"
         },
         {
-          "description": "Get a feature flag evaluation result including both the flag value and payload.\n\nBy default, this method emits the `$feature_flag_called` event.",
+          "description": "Get a feature flag evaluation result including both the flag value and payload.\n\nBy default, this method emits the `edp_feature_flag_called` event.",
           "type": "(key: string, options?: FeatureFlagOptions) => FeatureFlagResult | undefined",
           "name": "getFeatureFlagResult"
         },
@@ -4559,7 +4559,7 @@
           "releaseTag": "deprecated"
         },
         {
-          "description": "Whether the `$elements_chain` property should be sent as a string or as an array\nfalse",
+          "description": "Whether the `elements_chain` property should be sent as a string or as an array\nfalse",
           "type": "boolean",
           "name": "elementsChainAsString"
         },
@@ -5417,7 +5417,7 @@
       "properties": [
         {
           "type": "string",
-          "name": "$el_text"
+          "name": "el_text"
         },
         {
           "type": "string[]",

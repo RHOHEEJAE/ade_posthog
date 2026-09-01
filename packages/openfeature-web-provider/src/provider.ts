@@ -20,7 +20,7 @@ import {
 
 export interface PostHogWebProviderOptions {
   /**
-   * Forwarded to `getFeatureFlagResult` to control `$feature_flag_called`
+   * Forwarded to `getFeatureFlagResult` to control `edp_feature_flag_called`
    * capture. Defaults to `true` so PostHog flag analytics (and experiments)
    * keep working.
    */
@@ -50,7 +50,7 @@ export interface PostHogWebProviderOptions {
  *   - every other attribute       -> `posthog.setPersonPropertiesForFlags(...)`
  *
  * Note that `group()` and `setPersonPropertiesForFlags()` persist on the client
- * and may emit a `$groupidentify` event — the standard `posthog-js` behaviour.
+ * and may emit a `edp_groupidentify` event — the standard `posthog-js` behaviour.
  *
  * Flag-type mapping mirrors the server provider (boolean -> `enabled`, string
  * -> `variant`, number -> parsed `variant`, object -> `payload`).
@@ -77,7 +77,7 @@ export class PostHogWebProvider implements Provider {
     // The web SDK runs this handler on every setContext() call with no equality
     // check, so a host that re-sets an equivalent context (e.g. a React
     // integration passing a fresh object each render) would otherwise trigger a
-    // $groupidentify and a flag reload every time. Skip when nothing changed.
+    // edp_groupidentify and a flag reload every time. Skip when nothing changed.
     if (deepEqual(oldContext, newContext)) {
       return
     }

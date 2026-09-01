@@ -134,7 +134,7 @@ describe('tracing headers', () => {
                 },
                 expected: [],
             },
-        ])('$name', ({ config, expected }) => {
+        ])('name', ({ config, expected }) => {
             expect(getConfiguredHostnames(config)).toEqual(expected)
         })
 
@@ -364,7 +364,7 @@ describe('tracing headers', () => {
                 ],
                 absentHeaders: [['X-POSTHOG-DISTINCT-ID', 'distinct-id']],
             },
-        ])('$name', ({ url, distinctId, expectedHeaders, absentHeaders }) => {
+        ])('name', ({ url, distinctId, expectedHeaders, absentHeaders }) => {
             const setRequestHeaderSpy = jest
                 .spyOn(XMLHttpRequest.prototype, 'setRequestHeader')
                 .mockImplementation(() => {})

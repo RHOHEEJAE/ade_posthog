@@ -19,26 +19,26 @@ test.describe('Web Vitals', () => {
         await start(startOptions, page, context)
 
         // Wait for web vitals events to be captured
-        await pollUntilEventCaptured(page, '$web_vitals')
+        await pollUntilEventCaptured(page, 'edp_web_vitals')
 
-        const webVitalsEvents = (await page.capturedEvents()).filter((event) => event.event === '$web_vitals')
+        const webVitalsEvents = (await page.capturedEvents()).filter((event) => event.event === 'edp_web_vitals')
         expect(webVitalsEvents.length).toBeGreaterThan(0)
 
         const webVitalsEvent = webVitalsEvents[0]
         // will always get the FCP event on this bot browser but not necessarily the others
         expect(webVitalsEvent.properties).toMatchObject({
-            $current_url: expect.any(String),
-            $session_id: expect.any(String),
-            $window_id: expect.any(String),
-            $web_vitals_FCP_value: expect.any(Number),
+            current_url: expect.any(String),
+            session_id: expect.any(String),
+            window_id: expect.any(String),
+            edp_web_vitals_FCP_value: expect.any(Number),
         })
 
-        expect(webVitalsEvent.properties.$web_vitals_FCP_event).toMatchObject({
+        expect(webVitalsEvent.properties.edp_web_vitals_FCP_event).toMatchObject({
             name: 'FCP',
             value: expect.any(Number),
-            $current_url: expect.any(String),
-            $session_id: expect.any(String),
-            $window_id: expect.any(String),
+            current_url: expect.any(String),
+            session_id: expect.any(String),
+            window_id: expect.any(String),
             timestamp: expect.any(Number),
         })
     })
@@ -60,7 +60,7 @@ test.describe('Web Vitals', () => {
         // Wait a bit to ensure no web vitals events are captured
         await page.waitForTimeout(5000)
 
-        const webVitalsEvents = (await page.capturedEvents()).filter((event) => event.event === '$web_vitals')
+        const webVitalsEvents = (await page.capturedEvents()).filter((event) => event.event === 'edp_web_vitals')
         expect(webVitalsEvents.length).toBe(0)
     })
     ;[
@@ -86,12 +86,12 @@ test.describe('Web Vitals', () => {
                 context
             )
 
-            await pollUntilEventCaptured(page, '$web_vitals')
+            await pollUntilEventCaptured(page, 'edp_web_vitals')
 
-            const webVitalsEvents = (await page.capturedEvents()).filter((event) => event.event === '$web_vitals')
+            const webVitalsEvents = (await page.capturedEvents()).filter((event) => event.event === 'edp_web_vitals')
             expect(webVitalsEvents.length).toBeGreaterThan(0)
 
-            const fcpEvent = webVitalsEvents[0].properties.$web_vitals_FCP_event
+            const fcpEvent = webVitalsEvents[0].properties.edp_web_vitals_FCP_event
             expect(fcpEvent).toBeDefined()
 
             if (shouldHaveAttribution) {

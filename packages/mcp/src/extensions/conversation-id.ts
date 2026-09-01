@@ -98,7 +98,7 @@ export type ConversationIdResolution =
  *   - agent echoed a handle we could have minted → use it
  *   - anything else → mint a fresh one
  *
- * The shape check matters because this value becomes `$session_id`, and the
+ * The shape check matters because this value becomes `session_id`, and the
  * derivation is deterministic so that two pods agree — which also means two
  * *callers* sending the same string land in the same session. The strings agents
  * invent are not random (`conv-1`, `1`, `session`), so trusting them verbatim
@@ -113,7 +113,7 @@ export function resolveConversationId(enabled: boolean, args: unknown): Conversa
   const supplied = extractConversationId(args)
   if (supplied && MINTED_CONVERSATION_ID.test(supplied)) {
     // Lowercased: the shape test is case-insensitive but the hash behind
-    // `$session_id` is not, so an uppercased echo (some hosts normalise uuids)
+    // `session_id` is not, so an uppercased echo (some hosts normalise uuids)
     // would land in a different session than the call that minted it.
     return { minted: false, conversationId: supplied.toLowerCase() }
   }

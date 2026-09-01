@@ -658,14 +658,14 @@ describe('sendSurveyEvent', () => {
         const mockPostHog = { capture: mockCapture, reloadFeatureFlags: jest.fn() } as unknown as PostHog
 
         sendSurveyEvent({
-            responses: { $survey_response_q1: 'Great!' },
+            responses: { survey_response_q1: 'Great!' },
             survey: baseSurvey,
             surveySubmissionId: 'submission-123',
             isSurveyCompleted: true,
             posthog: mockPostHog,
             properties: {
                 $ai_generation_id: 'gen-456',
-                $ai_trace_id: 'trace-789',
+                ai_trace_id: 'trace-789',
                 custom_field: 'custom_value',
             },
         })
@@ -676,7 +676,7 @@ describe('sendSurveyEvent', () => {
 
         const eventProperties = capturedEvent[1]
         expect(eventProperties.$ai_generation_id).toBe('gen-456')
-        expect(eventProperties.$ai_trace_id).toBe('trace-789')
+        expect(eventProperties.ai_trace_id).toBe('trace-789')
         expect(eventProperties.custom_field).toBe('custom_value')
     })
 
@@ -685,7 +685,7 @@ describe('sendSurveyEvent', () => {
         const mockPostHog = { capture: mockCapture, reloadFeatureFlags: jest.fn() } as unknown as PostHog
 
         sendSurveyEvent({
-            responses: { $survey_response_q1: 'Great!' },
+            responses: { survey_response_q1: 'Great!' },
             survey: baseSurvey,
             surveySubmissionId: 'submission-123',
             isSurveyCompleted: true,
@@ -694,7 +694,7 @@ describe('sendSurveyEvent', () => {
 
         expect(mockCapture).toHaveBeenCalledTimes(1)
         const eventProperties = mockCapture.mock.calls[0][1]
-        expect(eventProperties.$survey_id).toBe('test-survey-id')
+        expect(eventProperties.survey_id).toBe('test-survey-id')
         expect(eventProperties.$ai_generation_id).toBeUndefined()
     })
 
@@ -703,7 +703,7 @@ describe('sendSurveyEvent', () => {
         const mockPostHog = { capture: jest.fn(), reloadFeatureFlags: mockReload } as unknown as PostHog
 
         sendSurveyEvent({
-            responses: { $survey_response_q1: 'Great!' },
+            responses: { survey_response_q1: 'Great!' },
             survey: baseSurvey,
             surveySubmissionId: 'submission-123',
             isSurveyCompleted: true,
@@ -718,7 +718,7 @@ describe('sendSurveyEvent', () => {
         const mockPostHog = { capture: jest.fn(), reloadFeatureFlags: mockReload } as unknown as PostHog
 
         sendSurveyEvent({
-            responses: { $survey_response_q1: 'Great!' },
+            responses: { survey_response_q1: 'Great!' },
             survey: baseSurvey,
             surveySubmissionId: 'submission-123',
             isSurveyCompleted: false,

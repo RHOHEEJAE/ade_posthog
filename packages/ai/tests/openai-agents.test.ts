@@ -111,7 +111,7 @@ describe('PostHogTracingProcessor', () => {
 
       expect(call.event).toBe('$ai_trace')
       expect(call.distinctId).toBe('test-user')
-      expect(call.properties.$ai_trace_id).toBe('trace_123456789')
+      expect(call.properties.ai_trace_id).toBe('trace_123456789')
       expect(call.properties.$ai_trace_name).toBe('Test Workflow')
       expect(call.properties.$ai_provider).toBe('openai')
       expect(call.properties.$ai_framework).toBe('openai-agents')
@@ -140,7 +140,7 @@ describe('PostHogTracingProcessor', () => {
 
       expect(call.event).toBe('$ai_trace')
       expect(call.distinctId).toBe('test-user')
-      expect(call.properties.$ai_trace_id).toBe('trace_123456789')
+      expect(call.properties.ai_trace_id).toBe('trace_123456789')
       expect(call.properties.$ai_trace_name).toBe('Test Workflow')
       expect(call.properties.$ai_provider).toBe('openai')
       expect(call.properties.$ai_framework).toBe('openai-agents')
@@ -186,7 +186,7 @@ describe('PostHogTracingProcessor', () => {
       await proc.onTraceEnd(trace as any)
 
       const call = mockClient.capture.mock.calls[0][0]
-      expect(call.properties.$process_person_profile).toBe(false)
+      expect(call.properties.process_person_profile).toBe(false)
       expect(call.distinctId).toBe(trace.traceId)
     })
 
@@ -204,7 +204,7 @@ describe('PostHogTracingProcessor', () => {
       await proc.onSpanEnd(span as any)
 
       const call = mockClient.capture.mock.calls[0][0]
-      expect(call.properties.$process_person_profile).toBe(false)
+      expect(call.properties.process_person_profile).toBe(false)
       expect(call.distinctId).toBe(trace.traceId)
     })
 
@@ -225,17 +225,17 @@ describe('PostHogTracingProcessor', () => {
       await proc.onSpanEnd(span as any)
 
       const call = mockClient.capture.mock.calls[0][0]
-      expect(call.properties.$process_person_profile).toBe(false)
+      expect(call.properties.process_person_profile).toBe(false)
       expect(call.distinctId).toBe(trace.traceId)
     })
 
-    it('does not set $process_person_profile when distinct_id is provided', async () => {
+    it('does not set process_person_profile when distinct_id is provided', async () => {
       const trace = createMockTrace()
       await processor.onTraceStart(trace as any)
       await processor.onTraceEnd(trace as any)
 
       const call = mockClient.capture.mock.calls[0][0]
-      expect(call.properties.$process_person_profile).toBeUndefined()
+      expect(call.properties.process_person_profile).toBeUndefined()
     })
   })
 
@@ -295,7 +295,7 @@ describe('PostHogTracingProcessor', () => {
 
       expect(call.event).toBe('$ai_generation')
       expect(call.properties.$ai_base_url).toBe('https://gateway.posthog.com/v1')
-      expect(call.properties.$ai_trace_id).toBe('trace_123456789')
+      expect(call.properties.ai_trace_id).toBe('trace_123456789')
       expect(call.properties.$ai_span_id).toBe('span_987654321')
       expect(call.properties.$ai_provider).toBe('openai')
       expect(call.properties.$ai_framework).toBe('openai-agents')

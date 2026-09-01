@@ -1510,7 +1510,7 @@ describe('PostHogLogs', () => {
       },
     ]
 
-    it.each(cases)('$name', ({ beforeSend, input, expectedQueueLen, expectedBody }) => {
+    it.each(cases)('name', ({ beforeSend, input, expectedQueueLen, expectedBody }) => {
       const logs = makeLogs(beforeSend)
       logs.captureLog({ body: input })
 
@@ -1590,7 +1590,7 @@ describe('PostHogLogs', () => {
       },
     ]
 
-    it.each(capCases)('$name', ({ maxLogsPerInterval, capturesInWindow, expectedQueueLen }) => {
+    it.each(capCases)('name', ({ maxLogsPerInterval, capturesInWindow, expectedQueueLen }) => {
       const logs = new PostHogLogs(
         mockInstance,
         resolveForTest({ maxLogsPerInterval, rateCapWindowMs: 1000 }),

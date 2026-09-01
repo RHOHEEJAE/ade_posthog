@@ -202,7 +202,7 @@ describe('exception autocapture', () => {
       worker.postMessage({ action: 'throw_error', data: exceptionMessage })
       const [message] = await once(worker, 'message')
       expect(message.method).toBe('capture')
-      const firstException = message.event.properties.$exception_list[0]
+      const firstException = message.event.properties.exception_list[0]
       checkException(firstException, {
         exceptionType: 'Error',
         exceptionMessage,
@@ -230,7 +230,7 @@ describe('exception autocapture', () => {
       const [exitCode] = await exitPromise
       expect(exitCode).toBe(1)
       expect(message.method).toBe('capture')
-      const firstException = message.event.properties.$exception_list[0]
+      const firstException = message.event.properties.exception_list[0]
       checkException(firstException, {
         exceptionType: 'Error',
         exceptionMessage,
@@ -372,9 +372,9 @@ describe('exception autocapture', () => {
 
   it('should rate limit when more than 10 of the same exception are caught', async () => {
     jest.spyOn(ErrorTracking, 'buildEventMessage').mockResolvedValue({
-      event: '$exception',
+      event: 'edp_exception',
       distinctId: 'distinct-id',
-      properties: { $exception_list: [{ type: 'Error' }] },
+      properties: { exception_list: [{ type: 'Error' }] },
     })
 
     const ph = new PostHog('TEST_API_KEY', {
@@ -398,9 +398,9 @@ describe('exception autocapture', () => {
 
   it('should honour the configured rate limiter bucket size', async () => {
     jest.spyOn(ErrorTracking, 'buildEventMessage').mockResolvedValue({
-      event: '$exception',
+      event: 'edp_exception',
       distinctId: 'distinct-id',
-      properties: { $exception_list: [{ type: 'Error' }] },
+      properties: { exception_list: [{ type: 'Error' }] },
     })
 
     const ph = new PostHog('TEST_API_KEY', {

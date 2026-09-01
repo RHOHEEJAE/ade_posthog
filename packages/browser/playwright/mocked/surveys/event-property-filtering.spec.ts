@@ -611,8 +611,8 @@ test.describe('surveys - event property filtering', () => {
             .then((events) => events.find((e) => e.event === 'survey sent'))
 
         expect(surveySentEvent).toBeDefined()
-        expect(surveySentEvent?.properties?.['$survey_id']).toBe('event-capture-survey')
-        expect(surveySentEvent?.properties?.['$survey_response_open_text_1']).toContain(
+        expect(surveySentEvent?.properties?.['survey_id']).toBe('event-capture-survey')
+        expect(surveySentEvent?.properties?.['survey_response_open_text_1']).toContain(
             'Property filtering works great!'
         )
     })

@@ -7,7 +7,7 @@ test.describe('ErrorTracking stackparser', () => {
     test('should parse frames in all browsers', async ({ posthog, page, events }) => {
         await posthog.init()
         await page.click('[data-cy-exception-button]')
-        const exception = await events.waitForEvent('$exception')
-        expect(exception.properties.$exception_list[0].stacktrace.frames).toHaveLength(1)
+        const exception = await events.waitForEvent('edp_exception')
+        expect(exception.properties.exception_list[0].stacktrace.frames).toHaveLength(1)
     })
 })

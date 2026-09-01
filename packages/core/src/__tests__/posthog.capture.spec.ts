@@ -47,11 +47,11 @@ describe('PostHog Core', () => {
             event: 'custom-event',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $lib: 'posthog-core-tests',
-              $lib_version: '2.0.0-alpha',
-              $session_id: expect.any(String),
-              $process_person_profile: false, // Default is 'identified_only' and user is not identified
-              $is_identified: false,
+              lib: 'posthog-core-tests',
+              lib_version: '2.0.0-alpha',
+              session_id: expect.any(String),
+              process_person_profile: false, // Default is 'identified_only' and user is not identified
+              is_identified: false,
             },
             timestamp: '2022-01-01T00:00:00.000Z',
             uuid: expect.any(String),
@@ -128,7 +128,7 @@ describe('PostHog Core', () => {
       }
     )
 
-    it('should use legacy queued top-level library fields as $lib fallbacks without sending them', async () => {
+    it('should use legacy queued top-level library fields as lib fallbacks without sending them', async () => {
       ;[posthog, mocks] = createTestClient('TEST_API_KEY', { flushAt: 10 })
       posthog.setPersistedProperty(PostHogPersistedProperty.Queue, [
         {
@@ -153,8 +153,8 @@ describe('PostHog Core', () => {
       expect(body.batch[0]).not.toHaveProperty('library_version')
       expect(body.batch[0].properties).toMatchObject({
         foo: 'bar',
-        $lib: 'legacy-lib',
-        $lib_version: '1.2.3',
+        lib: 'legacy-lib',
+        lib_version: '1.2.3',
       })
     })
   })
@@ -392,31 +392,31 @@ describe('PostHog Core', () => {
       }
     )
 
-    it('should expose $set and $set_once from identify events', async () => {
+    it('should expose edp_set and edp_set_once from identify events', async () => {
       const beforeSend = jest.fn((event: CaptureEvent | null) => event)
       ;[posthog, mocks] = createTestClient('TEST_API_KEY', {
         flushAt: 1,
         before_send: beforeSend,
       })
 
-      posthog.identify('user-123', { $set: { name: 'John' }, $set_once: { created_at: '2023-01-01' } })
+      posthog.identify('user-123', { edp_set: { name: 'John' }, edp_set_once: { created_at: '2023-01-01' } })
       await waitForPromises()
 
       expect(beforeSend).toHaveBeenCalledWith(
         expect.objectContaining({
-          event: '$identify',
-          $set: expect.objectContaining({ name: 'John' }),
-          $set_once: expect.objectContaining({ created_at: '2023-01-01' }),
+          event: 'edp_identify',
+          edp_set: expect.objectContaining({ name: 'John' }),
+          edp_set_once: expect.objectContaining({ created_at: '2023-01-01' }),
         })
       )
     })
 
-    it('should allow modifying $set in before_send for identify events', async () => {
+    it('should allow modifying edp_set in before_send for identify events', async () => {
       const beforeSend = jest.fn((event: CaptureEvent | null) => {
         if (event) {
           return {
             ...event,
-            $set: { ...event.$set, modified: true },
+            edp_set: { ...event.edp_set, modified: true },
           }
         }
         return event
@@ -426,7 +426,7 @@ describe('PostHog Core', () => {
         before_send: beforeSend,
       })
 
-      posthog.identify('user-123', { $set: { name: 'John' } })
+      posthog.identify('user-123', { edp_set: { name: 'John' } })
       await waitForPromises()
 
       // Find the batch call (identify may trigger feature flag reload)
@@ -434,18 +434,18 @@ describe('PostHog Core', () => {
       expect(batchCall).toBeDefined()
       const body = parseBody(batchCall!)
 
-      expect(body.batch[0].properties.$set).toMatchObject({
+      expect(body.batch[0].properties.edp_set).toMatchObject({
         name: 'John',
         modified: true,
       })
     })
 
-    it('should allow removing $set_once in before_send', async () => {
+    it('should allow removing edp_set_once in before_send', async () => {
       const beforeSend = jest.fn((event: CaptureEvent | null) => {
         if (event) {
           return {
             ...event,
-            $set_once: undefined,
+            edp_set_once: undefined,
           }
         }
         return event
@@ -455,7 +455,7 @@ describe('PostHog Core', () => {
         before_send: beforeSend,
       })
 
-      posthog.identify('user-123', { $set: { name: 'John' }, $set_once: { created_at: '2023-01-01' } })
+      posthog.identify('user-123', { edp_set: { name: 'John' }, edp_set_once: { created_at: '2023-01-01' } })
       await waitForPromises()
 
       // Find the batch call (identify may trigger feature flag reload)
@@ -463,8 +463,8 @@ describe('PostHog Core', () => {
       expect(batchCall).toBeDefined()
       const body = parseBody(batchCall!)
 
-      expect(body.batch[0].properties.$set).toBeDefined()
-      expect(body.batch[0].properties.$set_once).toBeUndefined()
+      expect(body.batch[0].properties.edp_set).toBeDefined()
+      expect(body.batch[0].properties.edp_set_once).toBeUndefined()
     })
   })
 })

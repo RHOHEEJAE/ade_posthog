@@ -384,22 +384,22 @@ describe('LazyLoadedDeadClicksAutocapture - dead swipes', () => {
 
             expect(lazyLoadedDeadClicksAutocapture['_clicks']).toHaveLength(0)
             expect(fakeInstance.capture).toHaveBeenCalledWith(
-                '$dead_swipe',
+                'edp_dead_swipe',
                 expect.objectContaining({
-                    $dead_swipe_absolute_delay_ms: -900,
-                    $dead_swipe_absolute_timeout: false,
-                    $dead_swipe_event_timestamp: 900,
-                    $dead_swipe_mutation_delay_ms: undefined,
-                    $dead_swipe_mutation_timeout: false,
-                    $dead_swipe_scroll_delay_ms: 2501,
-                    $dead_swipe_scroll_timeout: true,
-                    $dead_swipe_selection_changed_delay_ms: undefined,
-                    $dead_swipe_selection_changed_timeout: false,
-                    $dead_swipe_visibility_changed_delay_ms: undefined,
-                    $dead_swipe_visibility_changed_timeout: false,
-                    $dead_swipe_direction: 'up',
-                    $dead_swipe_distance_px: 160,
-                    $event_type: 'touchend',
+                    edp_dead_swipe_absolute_delay_ms: -900,
+                    edp_dead_swipe_absolute_timeout: false,
+                    edp_dead_swipe_event_timestamp: 900,
+                    edp_dead_swipe_mutation_delay_ms: undefined,
+                    edp_dead_swipe_mutation_timeout: false,
+                    edp_dead_swipe_scroll_delay_ms: 2501,
+                    edp_dead_swipe_scroll_timeout: true,
+                    edp_dead_swipe_selection_changed_delay_ms: undefined,
+                    edp_dead_swipe_selection_changed_timeout: false,
+                    edp_dead_swipe_visibility_changed_delay_ms: undefined,
+                    edp_dead_swipe_visibility_changed_timeout: false,
+                    dead_swipe_direction: 'up',
+                    dead_swipe_distance_px: 160,
+                    event_type: 'touchend',
                 }),
                 { timestamp: new Date(900) }
             )
@@ -413,24 +413,24 @@ describe('LazyLoadedDeadClicksAutocapture - dead swipes', () => {
 
             expect(lazyLoadedDeadClicksAutocapture['_clicks']).toHaveLength(0)
             expect(fakeInstance.capture).toHaveBeenCalledWith(
-                '$dead_swipe',
+                'edp_dead_swipe',
                 expect.objectContaining({
-                    $dead_swipe_absolute_delay_ms: 3001,
-                    $dead_swipe_absolute_timeout: true,
-                    $dead_swipe_direction: 'left',
-                    $dead_swipe_distance_px: 120,
+                    edp_dead_swipe_absolute_delay_ms: 3001,
+                    edp_dead_swipe_absolute_timeout: true,
+                    dead_swipe_direction: 'left',
+                    dead_swipe_distance_px: 120,
                 }),
                 { timestamp: new Date(900) }
             )
         })
 
-        it('a swipe never captures a $dead_click event', () => {
+        it('a swipe never captures a edp_dead_click event', () => {
             pushSwipeCandidate({ scrollDelayMs: 2501 })
 
             lazyLoadedDeadClicksAutocapture['_checkClicks']()
 
             expect(fakeInstance.capture).toHaveBeenCalledTimes(1)
-            expect(fakeInstance.capture).not.toHaveBeenCalledWith('$dead_click', expect.anything(), expect.anything())
+            expect(fakeInstance.capture).not.toHaveBeenCalledWith('edp_dead_click', expect.anything(), expect.anything())
         })
     })
 
@@ -488,7 +488,7 @@ describe('LazyLoadedDeadClicksAutocapture - dead swipes', () => {
             lazyLoadedDeadClicksAutocapture['_checkClicks']()
 
             expect(fakeInstance.capture).toHaveBeenCalledTimes(1)
-            expect(fakeInstance.capture).toHaveBeenCalledWith('$dead_click', expect.anything(), expect.anything())
+            expect(fakeInstance.capture).toHaveBeenCalledWith('edp_dead_click', expect.anything(), expect.anything())
         })
     })
 })

@@ -62,16 +62,16 @@ describe('ErrorTracking filters PostHog internal network errors', () => {
     expect(mockPostHog.captureException).toHaveBeenCalledTimes(1)
   })
 
-  it('tags a fatal uncaught exception with $exception_level so captureException flushes to disk', () => {
+  it('tags a fatal uncaught exception with exception_level so captureException flushes to disk', () => {
     new ErrorTracking(mockPostHog, { autocapture: true }, mockLogger as any)
     const handler = (trackUncaughtExceptions as jest.Mock).mock.calls[0][0]
 
     handler(new Error('boom'), true)
 
     // captureException drains storage to disk when the exception is fatal, so
-    // the handler must mark fatal crashes via $exception_level.
+    // the handler must mark fatal crashes via exception_level.
     const [, additionalProperties] = (mockPostHog.captureException as jest.Mock).mock.calls[0]
-    expect(additionalProperties.$exception_level).toBe('fatal')
+    expect(additionalProperties.exception_level).toBe('fatal')
   })
 
   it('does not tag a non-fatal uncaught exception as fatal', () => {
@@ -81,7 +81,7 @@ describe('ErrorTracking filters PostHog internal network errors', () => {
     handler(new Error('boom'), false)
 
     const [, additionalProperties] = (mockPostHog.captureException as jest.Mock).mock.calls[0]
-    expect(additionalProperties.$exception_level).toBeUndefined()
+    expect(additionalProperties.exception_level).toBeUndefined()
   })
 
   it('does not filter the console handler (console is left untouched)', () => {

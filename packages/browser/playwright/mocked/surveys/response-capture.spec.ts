@@ -50,11 +50,11 @@ test.describe('surveys - feedback widget', () => {
             .then((events) => events.find((e) => e.event === 'survey sent'))
         expect(surveySentEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
+                survey_id: '123',
                 [getSurveyResponseKey('open_text_1')]: 'experiments is awesome!',
-                $survey_completed: true,
-                $survey_submission_id: surveySentEvent!.properties['$survey_submission_id'],
-                $survey_questions: [
+                survey_completed: true,
+                survey_submission_id: surveySentEvent!.properties['survey_submission_id'],
+                survey_questions: [
                     {
                         id: 'open_text_1',
                         question: 'What feedback do you have for us?',
@@ -93,9 +93,9 @@ test.describe('surveys - feedback widget', () => {
             .then((events) => events.find((e) => e.event === 'survey shown'))
         expect(surveyShownEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
-                $survey_iteration: 2,
-                $survey_iteration_start_date: '12-12-2004',
+                survey_id: '123',
+                survey_iteration: 2,
+                survey_iteration_start_date: '12-12-2004',
             })
         )
 
@@ -108,13 +108,13 @@ test.describe('surveys - feedback widget', () => {
             .then((events) => events.find((e) => e.event === 'survey sent'))
         expect(surveySentEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
+                survey_id: '123',
                 [getSurveyResponseKey('open_text_1')]: 'experiments is awesome!',
-                $survey_iteration: 2,
-                $survey_iteration_start_date: '12-12-2004',
-                $survey_completed: true,
-                $survey_submission_id: surveySentEvent!.properties['$survey_submission_id'],
-                $survey_questions: [
+                survey_iteration: 2,
+                survey_iteration_start_date: '12-12-2004',
+                survey_completed: true,
+                survey_submission_id: surveySentEvent!.properties['survey_submission_id'],
+                survey_questions: [
                     {
                         id: 'open_text_1',
                         question: 'What feedback do you have for us?',
@@ -152,8 +152,8 @@ test.describe('surveys - feedback widget', () => {
             .then((events) => events.find((e) => e.event === 'survey dismissed'))
         expect(surveyDismissedEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
-                $survey_partially_completed: false,
+                survey_id: '123',
+                survey_partially_completed: false,
             })
         )
     })
@@ -187,10 +187,10 @@ test.describe('surveys - feedback widget', () => {
             .then((events) => events.find((e) => e.event === 'survey dismissed'))
         expect(surveyDismissedEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
-                $survey_iteration: 2,
-                $survey_iteration_start_date: '12-12-2004',
-                $survey_partially_completed: false,
+                survey_id: '123',
+                survey_iteration: 2,
+                survey_iteration_start_date: '12-12-2004',
+                survey_partially_completed: false,
             })
         )
     })
@@ -239,10 +239,10 @@ test.describe('surveys - feedback widget', () => {
             .then((events) => events.find((e) => e.event === 'survey sent'))
         expect(surveySentEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
+                survey_id: '123',
                 [getSurveyResponseKey('open_text_1')]: 'experiments is awesome!',
-                $survey_completed: false,
-                $survey_submission_id: surveySentEvent!.properties['$survey_submission_id'],
+                survey_completed: false,
+                survey_submission_id: surveySentEvent!.properties['survey_submission_id'],
             })
         )
 
@@ -252,11 +252,11 @@ test.describe('surveys - feedback widget', () => {
         const surveySentEvent2 = await page.capturedEvents().then((events) => getLastSurveySentEvent(events))
         expect(surveySentEvent2!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
-                $survey_submission_id: surveySentEvent!.properties['$survey_submission_id'], // same submission id as before
+                survey_id: '123',
+                survey_submission_id: surveySentEvent!.properties['survey_submission_id'], // same submission id as before
                 [getSurveyResponseKey('open_text_1')]: 'experiments is awesome!',
                 [getSurveyResponseKey('open_text_2')]: 'partial responses!',
-                $survey_completed: false,
+                survey_completed: false,
             })
         )
 
@@ -266,12 +266,12 @@ test.describe('surveys - feedback widget', () => {
         const surveySentEvent3 = await page.capturedEvents().then((events) => getLastSurveySentEvent(events))
         expect(surveySentEvent3!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
-                $survey_submission_id: surveySentEvent!.properties['$survey_submission_id'], // same submission id as before
+                survey_id: '123',
+                survey_submission_id: surveySentEvent!.properties['survey_submission_id'], // same submission id as before
                 [getSurveyResponseKey('open_text_1')]: 'experiments is awesome!',
                 [getSurveyResponseKey('open_text_2')]: 'partial responses!',
                 [getSurveyResponseKey('open_text_3')]: 'partial responses is finished!',
-                $survey_completed: true,
+                survey_completed: true,
             })
         )
     })
@@ -320,10 +320,10 @@ test.describe('surveys - feedback widget', () => {
             .then((events) => events.find((e) => e.event === 'survey sent'))
         expect(surveySentEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
+                survey_id: '123',
                 [getSurveyResponseKey('open_text_1')]: 'experiments is awesome!',
-                $survey_completed: false,
-                $survey_submission_id: surveySentEvent!.properties['$survey_submission_id'],
+                survey_completed: false,
+                survey_submission_id: surveySentEvent!.properties['survey_submission_id'],
             })
         )
 
@@ -333,11 +333,11 @@ test.describe('surveys - feedback widget', () => {
         const surveySentEvent2 = await page.capturedEvents().then((events) => getLastSurveySentEvent(events))
         expect(surveySentEvent2!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
-                $survey_submission_id: surveySentEvent!.properties['$survey_submission_id'], // same submission id as before
+                survey_id: '123',
+                survey_submission_id: surveySentEvent!.properties['survey_submission_id'], // same submission id as before
                 [getSurveyResponseKey('open_text_1')]: 'experiments is awesome!',
                 [getSurveyResponseKey('open_text_2')]: 'partial responses!',
-                $survey_completed: false,
+                survey_completed: false,
             })
         )
 
@@ -348,8 +348,8 @@ test.describe('surveys - feedback widget', () => {
             .then((events) => events.find((e) => e.event === 'survey dismissed'))
         expect(surveyDismissedEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: '123',
-                $survey_partially_completed: true,
+                survey_id: '123',
+                survey_partially_completed: true,
                 [getSurveyResponseKey('open_text_1')]: 'experiments is awesome!',
                 [getSurveyResponseKey('open_text_2')]: 'partial responses!',
             })
@@ -392,7 +392,7 @@ test.describe('surveys - displaySurvey with custom properties', () => {
                     ignoreDelay: true,
                     properties: {
                         $ai_generation_id: 'gen-123',
-                        $ai_trace_id: 'trace-456',
+                        ai_trace_id: 'trace-456',
                         custom_field: 'custom_value',
                     },
                 })
@@ -409,9 +409,9 @@ test.describe('surveys - displaySurvey with custom properties', () => {
 
         expect(surveySentEvent!.properties).toEqual(
             expect.objectContaining({
-                $survey_id: 'custom-props-survey',
+                survey_id: 'custom-props-survey',
                 $ai_generation_id: 'gen-123',
-                $ai_trace_id: 'trace-456',
+                ai_trace_id: 'trace-456',
                 custom_field: 'custom_value',
             })
         )

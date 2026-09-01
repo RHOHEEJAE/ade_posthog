@@ -484,7 +484,7 @@
         },
         {
           "category": "Feature flags",
-          "description": "Evaluate all feature flags for a user in a single call and return a  snapshot. Branch on `.isEnabled()` / `.getFlag()`, then pass the same snapshot to `capture()` via the `flags` option so the captured event carries the exact flag values the code branched on.\nPrefer this over repeated `isFeatureEnabled()` / `getFeatureFlag()` calls and over `capture({ sendFeatureFlags: true })` — it consolidates flag evaluation into a single `/flags` request per incoming request.\n**Local evaluation is transparent.** When the poller can resolve a flag from cached definitions, no network call is made and the snapshot's `$feature_flag_called` events are tagged `locally_evaluated: true`. A requested key missing from local definitions is included in a `/flags` fallback unless `onlyEvaluateLocally` is true. Locally resolved values remain authoritative when remote results are merged.\n**Trim the request.** Pass `flagKeys` to scope local evaluation, the underlying `/flags` request, and the returned snapshot to a subset of flags. Remote evaluation responses are not cached, so a key missing both locally and remotely costs one `/flags` request per `evaluateFlags()` call.\n**Trim the event payload.** Use `flags.only([...])` or `flags.onlyAccessed()` to filter which flags get attached to a captured event without re-fetching.",
+          "description": "Evaluate all feature flags for a user in a single call and return a  snapshot. Branch on `.isEnabled()` / `.getFlag()`, then pass the same snapshot to `capture()` via the `flags` option so the captured event carries the exact flag values the code branched on.\nPrefer this over repeated `isFeatureEnabled()` / `getFeatureFlag()` calls and over `capture({ sendFeatureFlags: true })` — it consolidates flag evaluation into a single `/flags` request per incoming request.\n**Local evaluation is transparent.** When the poller can resolve a flag from cached definitions, no network call is made and the snapshot's `edp_feature_flag_called` events are tagged `locally_evaluated: true`. A requested key missing from local definitions is included in a `/flags` fallback unless `onlyEvaluateLocally` is true. Locally resolved values remain authoritative when remote results are merged.\n**Trim the request.** Pass `flagKeys` to scope local evaluation, the underlying `/flags` request, and the returned snapshot to a subset of flags. Remote evaluation responses are not cached, so a key missing both locally and remotely costs one `/flags` request per `evaluateFlags()` call.\n**Trim the event payload.** Use `flags.only([...])` or `flags.onlyAccessed()` to filter which flags get attached to a captured event without re-fetching.",
           "details": null,
           "id": "evaluateFlags",
           "showDocs": true,
@@ -991,9 +991,9 @@
               "code": "\n\n// Basic identify with properties\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    name: 'John Doe',\n    email: 'john@example.com',\n    plan: 'premium'\n  }\n})\n\n\n"
             },
             {
-              "id": "using_$set_and_$set_once",
-              "name": "Using $set and $set_once",
-              "code": "\n\n// Using $set and $set_once\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    $set: { name: 'John Doe', email: 'john@example.com' },\n    $set_once: { first_login: new Date().toISOString() }\n    $anon_distinct_id: 'anonymous_user_456'\n  }\n})\n\n\n\n"
+              "id": "using_edp_set_and_edp_set_once",
+              "name": "Using edp_set and edp_set_once",
+              "code": "\n\n// Using edp_set and edp_set_once\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    edp_set: { name: 'John Doe', email: 'john@example.com' },\n    edp_set_once: { first_login: new Date().toISOString() }\n    anon_distinct_id: 'anonymous_user_456'\n  }\n})\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -1863,12 +1863,12 @@
         {
           "description": "Properties to set on the person (overrides existing values)",
           "type": "PostHogEventProperties",
-          "name": "$set"
+          "name": "edp_set"
         },
         {
           "description": "Properties to set on the person only once (does not override existing values)",
           "type": "PostHogEventProperties",
-          "name": "$set_once"
+          "name": "edp_set_once"
         },
         {
           "description": "Timestamp for the event",
@@ -1990,11 +1990,11 @@
       "properties": [
         {
           "type": "SeverityLevel",
-          "name": "$exception_level"
+          "name": "exception_level"
         },
         {
           "type": "Exception[]",
-          "name": "$exception_list"
+          "name": "exception_list"
         }
       ],
       "path": "../core/src/error-tracking/types.ts"
@@ -2154,11 +2154,11 @@
       "properties": [
         {
           "type": "string",
-          "name": "$message"
+          "name": "message"
         },
         {
           "type": "string | number",
-          "name": "$timestamp"
+          "name": "timestamp"
         }
       ],
       "path": "../core/src/error-tracking/exception-steps.ts"
@@ -2325,7 +2325,7 @@
           "name": "groupTypeMapping"
         },
         {
-          "description": "Server-controlled gate for minimal `$feature_flag_called` events, from the top-level `minimal_flag_called_events` field of the flag-definitions payload. Absent (e.g. cached data written by an older SDK version) means full events.",
+          "description": "Server-controlled gate for minimal `edp_feature_flag_called` events, from the top-level `minimal_flag_called_events` field of the flag-definitions payload. Absent (e.g. cached data written by an older SDK version) means full events.",
           "type": "boolean",
           "name": "minimalFlagCalledEvents"
         }
@@ -2864,7 +2864,7 @@
           "name": "defaultOptIn"
         },
         {
-          "description": "Whether to strip URL fragments (`#...`) from automatically captured URL fields.\nDisabled by default for backwards compatibility. Set to `true` to strip hashes from:\n\n- `$current_url` on automatically captured browser events, including `$pageview`\n- `$initial_current_url`\n- `$session_entry_url`\n- `$elements[*].attr__href` and `$external_click_url` for autocapture and dead-click autocapture\n- Next.js Pages Router `$pageview` `$current_url`\n- web vitals `$current_url`\n- logs `url.full`\n- conversations `current_url` and `request_url`\n- session replay rrweb meta/custom-event `href` URLs\n- heatmap data URLs\n\nIf your SPA relies on hash-based routes for analytics, enabling this is a breaking behavior change.\nIf you want to capture hashes selectively, leave this as `false` and use `before_send` to remove\nsensitive hash values before events are sent.",
+          "description": "Whether to strip URL fragments (`#...`) from automatically captured URL fields.\nDisabled by default for backwards compatibility. Set to `true` to strip hashes from:\n\n- `current_url` on automatically captured browser events, including `edp_pageview`\n- `initial_current_url`\n- `session_entry_url`\n- `elements[*].attr__href` and `external_click_url` for autocapture and dead-click autocapture\n- Next.js Pages Router `edp_pageview` `current_url`\n- web vitals `current_url`\n- logs `url.full`\n- conversations `current_url` and `request_url`\n- session replay rrweb meta/custom-event `href` URLs\n- heatmap data URLs\n\nIf your SPA relies on hash-based routes for analytics, enabling this is a breaking behavior change.\nIf you want to capture hashes selectively, leave this as `false` and use `before_send` to remove\nsensitive hash values before events are sent.",
           "type": "boolean",
           "name": "disable_capture_url_hashes"
         },
@@ -3330,7 +3330,7 @@
           "name": "evaluatedAt"
         },
         {
-          "description": "Server-controlled gate for minimal `$feature_flag_called` events. `true` only when the\nproject opted in; omitted otherwise. Absence always means full events.",
+          "description": "Server-controlled gate for minimal `edp_feature_flag_called` events. `true` only when the\nproject opted in; omitted otherwise. Absence always means full events.",
           "type": "boolean",
           "name": "minimalFlagCalledEvents"
         }
@@ -3372,7 +3372,7 @@
           "name": "defaultOptIn"
         },
         {
-          "description": "Whether to strip URL fragments (`#...`) from automatically captured URL fields.\nDisabled by default for backwards compatibility. Set to `true` to strip hashes from:\n\n- `$current_url` on automatically captured browser events, including `$pageview`\n- `$initial_current_url`\n- `$session_entry_url`\n- `$elements[*].attr__href` and `$external_click_url` for autocapture and dead-click autocapture\n- Next.js Pages Router `$pageview` `$current_url`\n- web vitals `$current_url`\n- logs `url.full`\n- conversations `current_url` and `request_url`\n- session replay rrweb meta/custom-event `href` URLs\n- heatmap data URLs\n\nIf your SPA relies on hash-based routes for analytics, enabling this is a breaking behavior change.\nIf you want to capture hashes selectively, leave this as `false` and use `before_send` to remove\nsensitive hash values before events are sent.",
+          "description": "Whether to strip URL fragments (`#...`) from automatically captured URL fields.\nDisabled by default for backwards compatibility. Set to `true` to strip hashes from:\n\n- `current_url` on automatically captured browser events, including `edp_pageview`\n- `initial_current_url`\n- `session_entry_url`\n- `elements[*].attr__href` and `external_click_url` for autocapture and dead-click autocapture\n- Next.js Pages Router `edp_pageview` `current_url`\n- web vitals `current_url`\n- logs `url.full`\n- conversations `current_url` and `request_url`\n- session replay rrweb meta/custom-event `href` URLs\n- heatmap data URLs\n\nIf your SPA relies on hash-based routes for analytics, enabling this is a breaking behavior change.\nIf you want to capture hashes selectively, leave this as `false` and use `before_send` to remove\nsensitive hash values before events are sent.",
           "type": "boolean",
           "name": "disable_capture_url_hashes"
         },
@@ -3568,7 +3568,7 @@
           "name": "waitUntilMaxWaitMs"
         },
         {
-          "description": "Whether to attach the `$is_server: true` property to every captured event.",
+          "description": "Whether to attach the `is_server: true` property to every captured event.",
           "type": "boolean",
           "name": "isServer"
         },

@@ -798,9 +798,9 @@
               "code": "\n\n// Basic identify with properties\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    name: 'John Doe',\n    email: 'john@example.com',\n    plan: 'premium'\n  }\n})\n\n\n"
             },
             {
-              "id": "using_$set_and_$set_once",
-              "name": "Using $set and $set_once",
-              "code": "\n\n// Using $set and $set_once\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    $set: { name: 'John Doe', email: 'john@example.com' },\n    $set_once: { first_login: new Date().toISOString() }\n    $anon_distinct_id: 'anonymous_user_456'\n  }\n})\n\n\n\n"
+              "id": "using_edp_set_and_edp_set_once",
+              "name": "Using edp_set and edp_set_once",
+              "code": "\n\n// Using edp_set and edp_set_once\nclient.identify({\n  distinctId: 'user_123',\n  properties: {\n    edp_set: { name: 'John Doe', email: 'john@example.com' },\n    edp_set_once: { first_login: new Date().toISOString() }\n    anon_distinct_id: 'anonymous_user_456'\n  }\n})\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -1468,7 +1468,7 @@
       "name": "CaptureEvent",
       "properties": [],
       "path": "../core/src/types.ts",
-      "example": "{\n    uuid?: string;\n    event: string;\n    properties?: PostHogEventProperties;\n    $set?: PostHogEventProperties;\n    $set_once?: PostHogEventProperties;\n    timestamp?: Date;\n}"
+      "example": "{\n    uuid?: string;\n    event: string;\n    properties?: PostHogEventProperties;\n    edp_set?: PostHogEventProperties;\n    edp_set_once?: PostHogEventProperties;\n    timestamp?: Date;\n}"
     },
     {
       "id": "ChunkIdMapType",
@@ -1557,11 +1557,11 @@
       "properties": [
         {
           "type": "SeverityLevel",
-          "name": "$exception_level"
+          "name": "exception_level"
         },
         {
           "type": "Exception[]",
-          "name": "$exception_list"
+          "name": "exception_list"
         }
       ],
       "path": "../core/src/error-tracking/types.ts"

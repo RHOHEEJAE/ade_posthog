@@ -26,7 +26,7 @@ const NODE_TYPE_EXAMPLES = {
     userId: 'user123',
     timestamp: new Date().toISOString(),
     distinct_id: 'user123',
-    $set: {
+    edp_set: {
         email: 'user@example.com',
         name: 'John Doe'
     }

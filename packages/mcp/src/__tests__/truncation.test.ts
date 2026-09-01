@@ -258,7 +258,7 @@ describe('truncateEvent - error field limits', () => {
     }))
 
   const makeError = (value: string, frames?: StackFrame[]): Event['error'] => ({
-    $exception_list: [
+    exception_list: [
       {
         type: 'Error',
         value,
@@ -266,10 +266,10 @@ describe('truncateEvent - error field limits', () => {
         ...(frames ? { stacktrace: { type: 'raw' as const, frames } } : {}),
       },
     ],
-    $exception_level: 'error',
+    exception_level: 'error',
   })
 
-  const firstException = (event: Event) => event.error!.$exception_list[0]
+  const firstException = (event: Event) => event.error!.exception_list[0]
 
   it('should truncate exception value exceeding 2048 chars', () => {
     const result = truncateEvent(makeEvent({ error: makeError('e'.repeat(3000)) }))
@@ -404,7 +404,7 @@ describe('truncateEvent - non-mutation', () => {
       userIntent: longIntent,
       parameters: { deep: { nested: { data: 'y'.repeat(40_000) } } },
       error: {
-        $exception_list: [
+        exception_list: [
           {
             type: 'Error',
             value: 'e'.repeat(3000),
@@ -420,7 +420,7 @@ describe('truncateEvent - non-mutation', () => {
             },
           },
         ],
-        $exception_level: 'error',
+        exception_level: 'error',
       },
     })
 

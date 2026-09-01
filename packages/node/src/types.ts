@@ -60,9 +60,9 @@ export type EventMessage = Omit<IdentifyMessage, 'distinctId'> & {
   /** If provided overrides the auto-generated event UUID. Must be a valid UUID. */
   uuid?: string
   /**
-   * Internal flag set by captureException() to indicate this $exception
+   * Internal flag set by captureException() to indicate this edp_exception
    * event originated from the proper exception capture path. Used to warn users who call
-   * capture() with '$exception' directly.
+   * capture() with 'edp_exception' directly.
    */
   _originatedFromCaptureException?: boolean
 }
@@ -203,7 +203,7 @@ export type PostHogOptions = Omit<PostHogCoreOptions, 'before_send' | 'flushInte
   enableExceptionAutocapture?: boolean
   // The interval in milliseconds between polls for refreshing feature flag definitions. Defaults to 30 seconds.
   featureFlagsPollingInterval?: number
-  // Maximum size of cache that deduplicates $feature_flag_called calls per user.
+  // Maximum size of cache that deduplicates edp_feature_flag_called calls per user.
   maxCacheSize?: number
   fetch?: (url: string, options: PostHogFetchOptions) => Promise<PostHogFetchResponse>
   // Whether to enable feature flag polling for local evaluation by default. Defaults to true when secretKey is provided.
@@ -264,17 +264,17 @@ export type PostHogOptions = Omit<PostHogCoreOptions, 'before_send' | 'flushInte
   custom_blocked_useragents?: string[]
   /**
    * PREVIEW - MAY CHANGE WITHOUT WARNING - DO NOT USE IN PRODUCTION
-   * Enables collection of bot traffic as $bot_pageview events instead of dropping them.
-   * When enabled, events with a $raw_user_agent property that matches the bot detection list
-   * will have their $pageview event renamed to $bot_pageview.
+   * Enables collection of bot traffic as edp_bot_pageview events instead of dropping them.
+   * When enabled, events with a raw_user_agent property that matches the bot detection list
+   * will have their edp_pageview event renamed to edp_bot_pageview.
    *
    * To use this feature, pass the user agent in event properties:
    * ```ts
    * client.capture({
    *   distinctId: 'user_123',
-   *   event: '$pageview',
+   *   event: 'edp_pageview',
    *   properties: {
-   *     $raw_user_agent: req.headers['user-agent']
+   *     raw_user_agent: req.headers['user-agent']
    *   }
    * })
    * ```
@@ -329,14 +329,14 @@ export type PostHogOptions = Omit<PostHogCoreOptions, 'before_send' | 'flushInte
    */
   waitUntilMaxWaitMs?: number
   /**
-   * Whether to attach the `$is_server: true` property to every captured event.
+   * Whether to attach the `is_server: true` property to every captured event.
    *
    * @remarks
    * Defaults to `true` because this SDK is intended for server-side use, where
    * the property lets PostHog distinguish server events from browser and
    * react-native events. Set this to `false` when running the SDK as a
    * client/CLI so the event is attributed to the device OS normally instead of
-   * being marked as a server event. When `false`, the `$is_server` property is
+   * being marked as a server event. When `false`, the `is_server` property is
    * omitted entirely.
    *
    * @default true
@@ -396,7 +396,7 @@ export type PostHogFeatureFlag = {
 }
 
 /**
- * Error type constants for the $feature_flag_error property.
+ * Error type constants for the feature_flag_error property.
  *
  * These values are sent in analytics events to track flag evaluation failures.
  * They should not be changed without considering impact on existing dashboards

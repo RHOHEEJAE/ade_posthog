@@ -251,7 +251,7 @@ export class PostHogTracingProcessor implements TracingProcessor {
     const properties: Record<string, any> = {
       $ai_lib: 'posthog-ai',
       $ai_lib_version: version,
-      $ai_trace_id: traceId,
+      ai_trace_id: traceId,
       $ai_span_id: spanId,
       $ai_parent_id: parentId,
       $ai_provider: 'openai',
@@ -336,7 +336,7 @@ export class PostHogTracingProcessor implements TracingProcessor {
       const properties: Record<string, any> = {
         $ai_lib: 'posthog-ai',
         $ai_lib_version: version,
-        $ai_trace_id: traceId,
+        ai_trace_id: traceId,
         $ai_trace_name: traceName,
         $ai_provider: 'openai',
         $ai_framework: 'openai-agents',
@@ -359,7 +359,7 @@ export class PostHogTracingProcessor implements TracingProcessor {
       }
 
       if (distinctId == null) {
-        properties.$process_person_profile = false
+        properties.process_person_profile = false
       }
 
       this._captureEvent('$ai_trace', properties, distinctId ?? traceId)
@@ -408,7 +408,7 @@ export class PostHogTracingProcessor implements TracingProcessor {
 
       // Personless mode: no user-provided distinct_id, fallback to trace_id
       if (userDistinctId == null) {
-        errorProperties.$process_person_profile = false
+        errorProperties.process_person_profile = false
       }
       const distinctId: string = userDistinctId ?? traceId
 

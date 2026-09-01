@@ -38,7 +38,7 @@ The example uses `runtimeContext`, `telemetry.includeRuntimeContext`, and
 - `posthog.distinct_id` for per-user attribution
 - `$ai_session_id` for AI session correlation
 - `$ai_trace_name` for a stable PostHog trace name
-- `$groups` as a JSON string that PostHog ingestion converts to native groups
+- `groups` as a JSON string that PostHog ingestion converts to native groups
 - custom properties
 
 Reserved PostHog attribution fields cannot be overridden through the custom

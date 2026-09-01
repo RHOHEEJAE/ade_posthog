@@ -143,13 +143,13 @@ type SuccessfulWriteResponseHandling = {
 export const maybeAdd = (key: string, value: JsonType | undefined): Record<string, JsonType> =>
   value !== undefined ? { [key]: value } : {}
 
-// Caller-supplied `$feature/*` and `$active_feature_flags` win over the SDK's cached flag values.
+// Caller-supplied `feature/*` and `active_feature_flags` win over the SDK's cached flag values.
 export const applyCallerFeatureFlagOverrides = (
   target: PostHogEventProperties,
   callerProperties: PostHogEventProperties
 ): void => {
   for (const key of Object.keys(callerProperties)) {
-    if (key.startsWith('$feature/') || key === '$active_feature_flags') {
+    if (key.startsWith('feature/') || key === 'active_feature_flags') {
       target[key] = callerProperties[key]
     }
   }
@@ -300,7 +300,7 @@ export abstract class PostHogCoreStateless {
 
   /**
    * Returns the builder used by `captureException` to coerce arbitrary inputs into a
-   * structured `$exception_list` (with parsed stack frames).
+   * structured `exception_list` (with parsed stack frames).
    *
    * @internal Exposed for cross-package use within this SDK; not part of the stable public API.
    */
@@ -404,8 +404,8 @@ export abstract class PostHogCoreStateless {
 
   protected getCommonEventProperties(): PostHogEventProperties {
     return {
-      $lib: this.getLibraryId(),
-      $lib_version: this.getLibraryVersion(),
+      lib: this.getLibraryId(),
+      lib_version: this.getLibraryVersion(),
     }
   }
 
@@ -488,8 +488,8 @@ export abstract class PostHogCoreStateless {
     // Customer hooks (before_send) run after this filter and may deliberately re-add stripped
     // properties; the SDK itself must not enrich beyond allowlisted keys past this point.
     if (
-      payload.event === '$feature_flag_called' &&
-      properties.$feature_flag_has_experiment === false &&
+      payload.event === 'edp_feature_flag_called' &&
+      properties.feature_flag_has_experiment === false &&
       this.isMinimalFlagCalledEventsEnabled()
     ) {
       properties = minimizeFlagCalledEventProperties(properties)
@@ -502,7 +502,7 @@ export abstract class PostHogCoreStateless {
   }
 
   /**
-   * Whether the server has gated this project into minimal `$feature_flag_called` events.
+   * Whether the server has gated this project into minimal `edp_feature_flag_called` events.
    * Overridden by clients that persist the gate from the v2 `/flags` response
    * (`minimalFlagCalledEvents`). The base implementation fails safe to full events.
    */
@@ -527,12 +527,12 @@ export abstract class PostHogCoreStateless {
   ): void {
     this.wrap(() => {
       // The properties passed to identifyStateless are event properties.
-      // To add person properties, pass in all person properties to the `$set` and `$set_once` keys.
+      // To add person properties, pass in all person properties to the `edp_set` and `edp_set_once` keys.
 
       const payload = {
         ...this.buildPayload({
           distinct_id: distinctId,
-          event: '$identify',
+          event: 'edp_identify',
           properties,
         }),
       }
@@ -549,7 +549,7 @@ export abstract class PostHogCoreStateless {
     const payload = {
       ...this.buildPayload({
         distinct_id: distinctId,
-        event: '$identify',
+        event: 'edp_identify',
         properties,
       }),
     }
@@ -587,7 +587,7 @@ export abstract class PostHogCoreStateless {
   ): void {
     this.wrap(() => {
       const payload = this.buildPayload({
-        event: '$create_alias',
+        event: 'edp_create_alias',
         distinct_id: distinctId,
         properties: {
           ...(properties || {}),
@@ -607,7 +607,7 @@ export abstract class PostHogCoreStateless {
     options?: PostHogCaptureOptions
   ): Promise<void> {
     const payload = this.buildPayload({
-      event: '$create_alias',
+      event: 'edp_create_alias',
       distinct_id: distinctId,
       properties: {
         ...(properties || {}),
@@ -633,11 +633,11 @@ export abstract class PostHogCoreStateless {
     this.wrap(() => {
       const payload = this.buildPayload({
         distinct_id: distinctId || `$${groupType}_${groupKey}`,
-        event: '$groupidentify',
+        event: 'edp_groupidentify',
         properties: {
-          $group_type: groupType,
-          $group_key: groupKey,
-          $group_set: groupProperties || {},
+          group_type: groupType,
+          group_key: groupKey,
+          group_set: groupProperties || {},
           ...(eventProperties || {}),
         },
       })
@@ -656,11 +656,11 @@ export abstract class PostHogCoreStateless {
   ): Promise<void> {
     const payload = this.buildPayload({
       distinct_id: distinctId || `$${groupType}_${groupKey}`,
-      event: '$groupidentify',
+      event: 'edp_groupidentify',
       properties: {
-        $group_type: groupType,
-        $group_key: groupKey,
-        $group_set: groupProperties || {},
+        group_type: groupType,
+        group_key: groupKey,
+        group_set: groupProperties || {},
         ...(eventProperties || {}),
       },
     })
@@ -723,10 +723,10 @@ export abstract class PostHogCoreStateless {
       ...extraPayload,
     }
 
-    // Extract $device_id from personProperties and send it as a top-level field so the
+    // Extract device_id from personProperties and send it as a top-level field so the
     // feature flags service can use it for device-based bucketing during remote evaluation.
-    if (personProperties.$device_id) {
-      requestData.$device_id = personProperties.$device_id
+    if (personProperties.device_id) {
+      requestData.device_id = personProperties.device_id
     }
 
     // Add evaluation contexts if configured
@@ -1250,18 +1250,18 @@ export abstract class PostHogCoreStateless {
 
   private normalizeMessage(message: PostHogEventProperties): PostHogEventProperties {
     // Top-level `type` is deprecated and a no-op for batch ingestion.
-    // Top-level `library` and `library_version` are deprecated; `$lib` and
-    // `$lib_version` in properties are the canonical SDK metadata fields.
+    // Top-level `library` and `library_version` are deprecated; `lib` and
+    // `lib_version` in properties are the canonical SDK metadata fields.
     // Keep these as fallbacks for legacy persisted queue entries.
     const { type: _type, library, library_version, ...sanitizedMessage } = message
     let properties = isPostHogEventProperties(sanitizedMessage.properties) ? sanitizedMessage.properties : undefined
 
-    if (library !== undefined && properties?.$lib === undefined) {
-      properties = { ...(properties || {}), $lib: library }
+    if (library !== undefined && properties?.lib === undefined) {
+      properties = { ...(properties || {}), lib: library }
     }
 
-    if (library_version !== undefined && properties?.$lib_version === undefined) {
-      properties = { ...(properties || {}), $lib_version: library_version }
+    if (library_version !== undefined && properties?.lib_version === undefined) {
+      properties = { ...(properties || {}), lib_version: library_version }
     }
 
     if (properties) {
@@ -1300,7 +1300,7 @@ export abstract class PostHogCoreStateless {
       if (!isPostHogEventProperties(message.properties)) {
         message.properties = {}
       }
-      message.properties['$geoip_disable'] = true
+      message.properties['geoip_disable'] = true
     }
 
     if (message.distinctId) {

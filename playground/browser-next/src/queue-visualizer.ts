@@ -198,8 +198,8 @@ export class EventQueueVisualizer {
             state: 'buffered',
             attempts: 0,
             distinctId: stringValue(properties.distinct_id),
-            sessionId: stringValue(properties.$session_id),
-            windowId: stringValue(properties.$window_id),
+            sessionId: stringValue(properties.session_id),
+            windowId: stringValue(properties.window_id),
         })
         if (this.events.length > 200) {
             const removed = this.events.shift()

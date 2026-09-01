@@ -168,8 +168,8 @@ describe('ConversationsManager', () => {
             get_session_replay_url: jest.fn().mockReturnValue('https://app.posthog.com/replay/test-session?t=100'),
             persistence: {
                 props: {
-                    $name: 'Test User',
-                    $email: 'test@example.com',
+                    name: 'Test User',
+                    email: 'test@example.com',
                 },
                 get_property: jest.fn(),
                 register: jest.fn(),
@@ -217,11 +217,11 @@ describe('ConversationsManager', () => {
             expect(container).not.toBeInTheDocument()
         })
 
-        it('should capture $conversations_loaded event always', () => {
+        it('should capture edp_conversations_loaded event always', () => {
             manager = new ConversationsManager(mockConfig, mockPosthog)
 
             expect(mockPosthog.capture).toHaveBeenCalledWith(
-                '$conversations_loaded',
+                'edp_conversations_loaded',
                 expect.objectContaining({
                     hasExistingTicket: expect.any(Boolean),
                     widgetEnabled: true,
@@ -230,12 +230,12 @@ describe('ConversationsManager', () => {
             )
         })
 
-        it('should capture $conversations_widget_loaded event when widget is rendered', async () => {
+        it('should capture edp_conversations_widget_loaded event when widget is rendered', async () => {
             manager = new ConversationsManager(mockConfig, mockPosthog)
             await flushPromises()
 
             expect(mockPosthog.capture).toHaveBeenCalledWith(
-                '$conversations_widget_loaded',
+                'edp_conversations_widget_loaded',
                 expect.objectContaining({
                     hasExistingTicket: expect.any(Boolean),
                     initialState: expect.any(String),
@@ -243,21 +243,21 @@ describe('ConversationsManager', () => {
             )
         })
 
-        it('should NOT capture $conversations_widget_loaded when widgetEnabled is false', () => {
+        it('should NOT capture edp_conversations_widget_loaded when widgetEnabled is false', () => {
             const configWithWidgetDisabled = {
                 ...mockConfig,
                 widgetEnabled: false,
             }
             manager = new ConversationsManager(configWithWidgetDisabled, mockPosthog)
 
-            // Should capture $conversations_loaded but NOT $conversations_widget_loaded
+            // Should capture edp_conversations_loaded but NOT edp_conversations_widget_loaded
             expect(mockPosthog.capture).toHaveBeenCalledWith(
-                '$conversations_loaded',
+                'edp_conversations_loaded',
                 expect.objectContaining({
                     widgetEnabled: false,
                 })
             )
-            expect(mockPosthog.capture).not.toHaveBeenCalledWith('$conversations_widget_loaded', expect.anything())
+            expect(mockPosthog.capture).not.toHaveBeenCalledWith('edp_conversations_widget_loaded', expect.anything())
         })
 
         it('should get user traits from PostHog persistence', () => {
@@ -436,7 +436,7 @@ describe('ConversationsManager', () => {
                 expectInDocument: false,
                 expectVisible: false,
             },
-        ])('should handle reattach correctly when $description', ({ setup, expectInDocument, expectVisible }) => {
+        ])('should handle reattach correctly when description', ({ setup, expectInDocument, expectVisible }) => {
             expect(document.getElementById('ph-conversations-widget-container')).toBeInTheDocument()
 
             act(() => {
@@ -500,7 +500,7 @@ describe('ConversationsManager', () => {
             expect(manager.isVisible()).toBe(true)
         })
 
-        it('should capture $conversations_widget_loaded when show() triggers widget rendering', async () => {
+        it('should capture edp_conversations_widget_loaded when show() triggers widget rendering', async () => {
             const configWithWidgetDisabled = {
                 ...mockConfig,
                 widgetEnabled: false,
@@ -515,7 +515,7 @@ describe('ConversationsManager', () => {
             await flushPromises()
 
             expect(mockPosthog.capture).toHaveBeenCalledWith(
-                '$conversations_widget_loaded',
+                'edp_conversations_widget_loaded',
                 expect.objectContaining({
                     hasExistingTicket: expect.any(Boolean),
                 })
@@ -804,7 +804,7 @@ describe('ConversationsManager', () => {
             })
 
             expect(mockPosthog.capture).toHaveBeenCalledWith(
-                '$conversations_message_sent',
+                'edp_conversations_message_sent',
                 expect.objectContaining({
                     ticketId: 'ticket-123',
                     isNewTicket: true,

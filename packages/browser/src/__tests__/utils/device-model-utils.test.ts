@@ -65,7 +65,7 @@ describe('device-model-utils', () => {
     })
 
     describe('init wiring', () => {
-        it('registers $device_model under the default config (disableDeviceModel omitted)', async () => {
+        it('registers device_model under the default config (disableDeviceModel omitted)', async () => {
             const getHighEntropyValues = jest.fn().mockResolvedValue({ model: 'Pixel 7' })
             setUserAgentData({ getHighEntropyValues })
 
@@ -73,7 +73,7 @@ describe('device-model-utils', () => {
             await flushPromises()
 
             expect(getHighEntropyValues).toHaveBeenCalledWith(['model'])
-            expect(posthog.get_property('$device_model')).toBe('Pixel 7')
+            expect(posthog.get_property('device_model')).toBe('Pixel 7')
         })
 
         it('does not call the API or register anything when disableDeviceModel is true', async () => {
@@ -84,7 +84,7 @@ describe('device-model-utils', () => {
             await flushPromises()
 
             expect(getHighEntropyValues).not.toHaveBeenCalled()
-            expect(posthog.get_property('$device_model')).toBeUndefined()
+            expect(posthog.get_property('device_model')).toBeUndefined()
         })
 
         it('does not register an empty-string model', async () => {
@@ -93,7 +93,7 @@ describe('device-model-utils', () => {
             const posthog = await createPosthogInstance(undefined, {})
             await flushPromises()
 
-            expect(posthog.get_property('$device_model')).toBeUndefined()
+            expect(posthog.get_property('device_model')).toBeUndefined()
         })
     })
 
@@ -102,24 +102,24 @@ describe('device-model-utils', () => {
             setUserAgentData({ getHighEntropyValues: jest.fn().mockResolvedValue({ model: 'Pixel 7' }) })
             const posthog = await createPosthogInstance(undefined, {})
             await flushPromises()
-            expect(posthog.get_property('$device_model')).toBe('Pixel 7')
+            expect(posthog.get_property('device_model')).toBe('Pixel 7')
             return posthog
         }
 
-        it('preserves $device_model across reset() (device-stable, like $device_id)', async () => {
+        it('preserves device_model across reset() (device-stable, like device_id)', async () => {
             const posthog = await initWithModel()
 
             posthog.reset()
 
-            expect(posthog.get_property('$device_model')).toBe('Pixel 7')
+            expect(posthog.get_property('device_model')).toBe('Pixel 7')
         })
 
-        it('drops $device_model on reset(true) (full device reset)', async () => {
+        it('drops device_model on reset(true) (full device reset)', async () => {
             const posthog = await initWithModel()
 
             posthog.reset(true)
 
-            expect(posthog.get_property('$device_model')).toBeUndefined()
+            expect(posthog.get_property('device_model')).toBeUndefined()
         })
     })
 })

@@ -23,16 +23,16 @@ export async function pollUntilEventCaptured(
 export async function assertThatRecordingStarted(page: Page) {
     const captures = await page.capturedEvents()
 
-    expect(captures.map((c) => c.event)).toEqual(['$snapshot'])
+    expect(captures.map((c) => c.event)).toEqual(['edp_snapshot'])
     const capturedSnapshot = captures[0]
 
     expect(capturedSnapshot).toBeDefined()
 
-    expect(capturedSnapshot!['properties']['$snapshot_data'].length).toBeGreaterThan(2)
+    expect(capturedSnapshot!['properties']['snapshot_data'].length).toBeGreaterThan(2)
 
     // a meta and then a full snapshot
-    expect(capturedSnapshot!['properties']['$snapshot_data'][0].type).toEqual(4) // meta
-    expect(capturedSnapshot!['properties']['$snapshot_data'][1].type).toEqual(2) // full_snapshot
+    expect(capturedSnapshot!['properties']['snapshot_data'][0].type).toEqual(4) // meta
+    expect(capturedSnapshot!['properties']['snapshot_data'][1].type).toEqual(2) // full_snapshot
 }
 
 export async function pollUntilCondition(

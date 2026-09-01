@@ -99,7 +99,7 @@ function buildExceptionProperties(
 
     const path = normalizeRequestPath(request, shouldStripUrlHash)
     if (path) {
-        properties.$pathname = path
+        properties.pathname = path
     }
 
     const digest = getErrorDigest(error)

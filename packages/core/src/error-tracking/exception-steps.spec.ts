@@ -63,7 +63,7 @@ describe('exception steps', () => {
       {
         desc: 'skips malformed steps that cannot be normalized',
         config: { max_bytes: 10000 },
-        steps: [{ $message: '', $timestamp: '2026-01-01T00:00:00.000Z' } as ExceptionStep, makeStep('valid')],
+        steps: [{ message: '', timestamp: '2026-01-01T00:00:00.000Z' } as ExceptionStep, makeStep('valid')],
         expected: ['valid'],
       },
       {
@@ -72,12 +72,12 @@ describe('exception steps', () => {
         steps: [makeStep('this message is way too long for the tiny budget')],
         expected: [],
       },
-    ])('$desc', ({ config, steps, expected }) => {
+    ])('desc', ({ config, steps, expected }) => {
       const buffer = new ExceptionStepsBuffer(config)
       for (const step of steps) {
         buffer.add(step)
       }
-      expect(buffer.getAttachable().map((s) => s.$message)).toEqual(expected)
+      expect(buffer.getAttachable().map((s) => s.message)).toEqual(expected)
     })
 
     it('clears all steps', () => {

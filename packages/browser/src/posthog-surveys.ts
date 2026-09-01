@@ -408,7 +408,7 @@ export class PostHogSurveys implements Extension {
     }
 
     /**
-     * Whether the cached `$surveys` definitions have aged past their TTL. Returns false when no
+     * Whether the cached `surveys` definitions have aged past their TTL. Returns false when no
      * timestamp is recorded (e.g. surveys injected directly in tests) so the cache stays valid.
      */
     private _isSurveyCacheStale(): boolean {

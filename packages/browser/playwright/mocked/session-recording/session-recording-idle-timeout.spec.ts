@@ -20,7 +20,7 @@ async function ensureActivitySendsSnapshots(page: Page) {
     await responsePromise
 
     const capturedEvents = await page.capturedEvents()
-    const capturedSnapshot = capturedEvents?.find((e) => e.event === '$snapshot')
+    const capturedSnapshot = capturedEvents?.find((e) => e.event === 'edp_snapshot')
     expect(capturedSnapshot).toBeDefined()
 }
 
@@ -47,7 +47,7 @@ async function triggerForcedIdleTimeout(page: Page) {
 }
 
 function getSnapshotTimestamp(snapshot: any, position: 'first' | 'last'): number {
-    const snapshotData = snapshot['properties']['$snapshot_data']
+    const snapshotData = snapshot['properties']['snapshot_data']
     const index = position === 'first' ? 0 : snapshotData.length - 1
     return snapshotData[index]?.timestamp || snapshotData[index]?.data?.timestamp
 }
@@ -89,7 +89,7 @@ test.describe('Session recording - idle timeout behavior', () => {
             },
         })
         await waitForSessionRecordingToStart(page)
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['edp_pageview'])
         await page.resetCapturedEvents()
     })
 
@@ -105,7 +105,7 @@ test.describe('Session recording - idle timeout behavior', () => {
         await page.resetCapturedEvents()
         await page.locator('[data-cy-input]').type('verify recording active')
         await page.waitForResponse('**/ses/*')
-        const verifyEvents = (await page.capturedEvents()).filter((e) => e.event === '$snapshot')
+        const verifyEvents = (await page.capturedEvents()).filter((e) => e.event === 'edp_snapshot')
         expect(verifyEvents.length).toBeGreaterThan(0)
 
         const timestampBeforeIdle = await page.evaluate(() => Date.now())
@@ -148,25 +148,25 @@ test.describe('Session recording - idle timeout behavior', () => {
         })
 
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'edp_snapshot')
         const testEvent = capturedEvents.find((e) => e.event === 'test_after_idle_restart')
 
         // Should have at least 2 snapshots (old session final, new session data)
         expect(snapshots.length).toBeGreaterThanOrEqual(2)
 
         // First snapshot should be old session final data
-        const oldSessionSnapshots = snapshots.filter((s) => s['properties']['$session_id'] === initialSessionId)
+        const oldSessionSnapshots = snapshots.filter((s) => s['properties']['session_id'] === initialSessionId)
         expect(oldSessionSnapshots.length).toBeGreaterThanOrEqual(1)
         expect(getSnapshotTimestamp(oldSessionSnapshots[0], 'last')).toBeLessThan(timestampAfterRestart)
 
         // New session snapshots should exist
-        const newSessionSnapshots = snapshots.filter((s) => s['properties']['$session_id'] === newSessionId)
+        const newSessionSnapshots = snapshots.filter((s) => s['properties']['session_id'] === newSessionId)
         expect(newSessionSnapshots.length).toBeGreaterThanOrEqual(1)
         expect(getSnapshotTimestamp(newSessionSnapshots[0], 'first')).toBeGreaterThan(timestampBeforeIdle)
 
         // Test event should be on new session with correct start reason
-        expect(testEvent?.['properties']['$session_id']).toEqual(newSessionId)
-        expect(testEvent?.['properties']['$session_recording_start_reason']).toEqual('session_id_changed')
+        expect(testEvent?.['properties']['session_id']).toEqual(newSessionId)
+        expect(testEvent?.['properties']['session_recording_start_reason']).toEqual('session_id_changed')
     })
 
     test('rotates session when event timestamp shows idle timeout exceeded (frozen tab scenario)', async ({ page }) => {
@@ -205,7 +205,7 @@ test.describe('Session recording - idle timeout behavior', () => {
             }
 
             // Get current session data (stored as [lastActivityTimestamp, sessionId, sessionStartTimestamp])
-            const sessionIdKey = '$sesid'
+            const sessionIdKey = 'sesid'
             const currentSessionData = persistence.props[sessionIdKey]
 
             if (!currentSessionData) {
@@ -249,13 +249,13 @@ test.describe('Session recording - idle timeout behavior', () => {
 
         // Capture all snapshot data to see exactly what happened
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'edp_snapshot')
 
         // Collapse to essential fields: session_id, type, tag (for custom events)
         // We don't assert on timestamps as they vary, but we assert on the exact sequence
         const snapshotSummary = snapshots.flatMap((snapshot) => {
-            const sessionId = snapshot['properties']['$session_id']
-            const snapshotData = snapshot['properties']['$snapshot_data'] as any[]
+            const sessionId = snapshot['properties']['session_id']
+            const snapshotData = snapshot['properties']['snapshot_data'] as any[]
             return snapshotData.map((event) => ({
                 sessionId: sessionId === initialSessionId ? 'initial' : sessionId === newSessionId ? 'new' : 'unknown',
                 type: event.type,
@@ -270,15 +270,15 @@ test.describe('Session recording - idle timeout behavior', () => {
 
         // Assert on the exact expected sequence of events
         // This is a solid record of what we expect to happen:
-        // 1. Old session gets final flush (type 6 = Plugin data) AND the $session_ending event
+        // 1. Old session gets final flush (type 6 = Plugin data) AND the session_ending event
         // 2. New session gets rrweb bootup events, then config and lifecycle custom events
         expect(significantEvents).toEqual([
             // Final flush from old session before rotation
             { sessionId: 'initial', type: 6, tag: null }, // Plugin data (network timing etc)
 
-            // $session_ending is emitted during the callback, before new session starts
+            // session_ending is emitted during the callback, before new session starts
             // It MUST go to the initial/old session, not the new one
-            { sessionId: 'initial', type: 5, tag: '$session_ending' }, // CustomEvent: marks end of old session
+            { sessionId: 'initial', type: 5, tag: 'session_ending' }, // CustomEvent: marks end of old session
 
             // New session bootup sequence - rrweb emits these immediately on start()
             // CRITICAL: these MUST be on new session, not initial (the bug we're fixing)
@@ -287,13 +287,13 @@ test.describe('Session recording - idle timeout behavior', () => {
             { sessionId: 'new', type: 6, tag: null }, // Plugin data
 
             // Config custom events emitted during bootup
-            { sessionId: 'new', type: 5, tag: '$remote_config_received' }, // CustomEvent: config
-            { sessionId: 'new', type: 5, tag: '$session_options' }, // CustomEvent: recording options
-            { sessionId: 'new', type: 5, tag: '$posthog_config' }, // CustomEvent: posthog config
+            { sessionId: 'new', type: 5, tag: 'edp_remote_config_received' }, // CustomEvent: config
+            { sessionId: 'new', type: 5, tag: 'session_options' }, // CustomEvent: recording options
+            { sessionId: 'new', type: 5, tag: 'posthog_config' }, // CustomEvent: posthog config
 
             // Session lifecycle events
-            { sessionId: 'new', type: 5, tag: '$session_id_change' }, // CustomEvent: session rotation marker
-            { sessionId: 'new', type: 5, tag: '$session_starting' }, // CustomEvent: marks start of new session
+            { sessionId: 'new', type: 5, tag: 'session_id_change' }, // CustomEvent: session rotation marker
+            { sessionId: 'new', type: 5, tag: 'session_starting' }, // CustomEvent: marks start of new session
         ])
     })
 })
@@ -358,8 +358,8 @@ test.describe('Session recording - recording idle (activity timeout) within one 
         const collectSnapshotData = async (): Promise<any[]> => {
             const capturedEvents = await page.capturedEvents()
             return capturedEvents
-                .filter((e) => e.event === '$snapshot')
-                .flatMap((e) => e['properties']['$snapshot_data'] as any[])
+                .filter((e) => e.event === 'edp_snapshot')
+                .flatMap((e) => e['properties']['snapshot_data'] as any[])
         }
 
         // poll until the post-wake flush has shipped the wake marker and a full snapshot
@@ -418,7 +418,7 @@ test.describe('Session recording - idle timeout with sampling', () => {
                 await start(sampleZeroStartOptions, page, context)
             },
         })
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['edp_pageview'])
         await page.resetCapturedEvents()
     })
 
@@ -480,6 +480,6 @@ test.describe('Session recording - idle timeout with sampling', () => {
 
         const finalEvents = await page.capturedEvents()
         const testEvent = finalEvents.find((e) => e.event === 'test_after_sampling_override')
-        expect(testEvent?.properties['$session_recording_start_reason']).toEqual('sampling_overridden')
+        expect(testEvent?.properties['session_recording_start_reason']).toEqual('sampling_overridden')
     })
 })

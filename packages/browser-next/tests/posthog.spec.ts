@@ -224,15 +224,15 @@ describe('@posthog/browser core', () => {
                     properties: {
                         dynamic: 'yes',
                         plan: 'pro',
-                        $device_id: posthog.deviceId,
-                        $set: { email: 'person@example.com' },
-                        $set_once: { source: 'docs' },
+                        device_id: posthog.deviceId,
+                        edp_set: { email: 'person@example.com' },
+                        edp_set_once: { source: 'docs' },
                     },
                 },
             ],
         })
         expect(requests[0]?.body?.batch).not.toMatchObject([
-            { properties: { token: expect.anything(), distinct_id: expect.anything(), $lib: expect.anything() } },
+            { properties: { token: expect.anything(), distinct_id: expect.anything(), lib: expect.anything() } },
         ])
         expect(observed).toHaveLength(1)
     })
@@ -420,7 +420,7 @@ describe('@posthog/browser core', () => {
 
         expect(captureEvent(requests[0])).toMatchObject({
             distinct_id: 'user-before-consent',
-            properties: { $groups: { organization: 'group-before-consent' } },
+            properties: { groups: { organization: 'group-before-consent' } },
         })
     })
 
@@ -1050,7 +1050,7 @@ describe('@posthog/browser core', () => {
         expect(events).toEqual(['event'])
     })
 
-    it.each(['', '   ', '\t', '$posthog_cookieless', 'distinct_id', 'DISTINCTID', 'undefined', 'NULL'])(
+    it.each(['', '   ', '\t', 'posthog_cookieless', 'distinct_id', 'DISTINCTID', 'undefined', 'NULL'])(
         'rejects invalid distinct ID %j without state or delivery changes',
         async (distinctId) => {
             const requests: SentRequest[] = []
@@ -1134,9 +1134,9 @@ describe('@posthog/browser core', () => {
 
         expect(requests).toHaveLength(1)
         expect(captureEvent(requests[0])).toMatchObject({
-            event: '$set',
+            event: 'edp_set',
             distinct_id: anonymousId,
-            properties: { $set: {}, $set_once: {} },
+            properties: { edp_set: {}, edp_set_once: {} },
         })
         expect(posthog.distinctId).toBe('later-user')
     })
@@ -1156,9 +1156,9 @@ describe('@posthog/browser core', () => {
 
         await posthog.flush()
         const events = requests.flatMap((request) => request.body?.batch as Record<string, unknown>[])
-        expect(events.map((event) => event.event)).toEqual(['$groupidentify', '$groupidentify'])
-        expect(events[0]?.properties).not.toHaveProperty('$group_set')
-        expect(events[1]?.properties).toMatchObject({ $group_set: { name: 'Acme' } })
+        expect(events.map((event) => event.event)).toEqual(['edp_groupidentify', 'edp_groupidentify'])
+        expect(events[0]?.properties).not.toHaveProperty('group_set')
+        expect(events[1]?.properties).toMatchObject({ group_set: { name: 'Acme' } })
     })
 
     it('does not merge a second identified user with the anonymous id', async () => {
@@ -1175,7 +1175,7 @@ describe('@posthog/browser core', () => {
 
         expect(requests).toHaveLength(1)
         expect(captureEvent(requests[0])).toMatchObject({
-            event: '$identify',
+            event: 'edp_identify',
             distinct_id: 'user-one',
         })
         expect(posthog.distinctId).toBe('user-two')

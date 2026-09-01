@@ -35,7 +35,7 @@ describe('identify option', () => {
     await cleanup()
   })
 
-  it('runs identify on the first tool call, stores the identity, and publishes an $identify event', async () => {
+  it('runs identify on the first tool call, stores the identity, and publishes an edp_identify event', async () => {
     const capture = new EventCapture()
     await capture.start()
 
@@ -82,7 +82,7 @@ describe('identify option', () => {
     await capture.stop()
   })
 
-  it('republishes $identify when the identity materially changes mid-session, then dedupes again', async () => {
+  it('republishes edp_identify when the identity materially changes mid-session, then dedupes again', async () => {
     const capture = new EventCapture()
     await capture.start()
     // Same distinctId, but the plan changes on the second call and then holds.
@@ -175,8 +175,8 @@ describe('identify option', () => {
     const toolCalls = capture.findCapturesByEvent('$mcp_tool_call')
     expect(toolCalls).toHaveLength(2)
     for (const toolCall of toolCalls) {
-      expect(toolCall.properties.$process_person_profile).toBe(false)
-      expect(toolCall.distinct_id).toBe(toolCall.properties.$session_id)
+      expect(toolCall.properties.process_person_profile).toBe(false)
+      expect(toolCall.distinct_id).toBe(toolCall.properties.session_id)
     }
 
     await capture.stop()
@@ -197,7 +197,7 @@ describe('identify option', () => {
     expect(sessionInfo?.identifyActorData).toEqual({})
   })
 
-  it('stamps $groups on events when identify returns groups', async () => {
+  it('stamps groups on events when identify returns groups', async () => {
     const capture = new EventCapture()
     await capture.start()
     instrument(server, fakePostHog(), {
@@ -211,7 +211,7 @@ describe('identify option', () => {
     await new Promise((r) => setTimeout(r, 50))
 
     const toolCall = capture.findCapturesByEvent('$mcp_tool_call')[0]
-    expect(toolCall.properties.$groups).toEqual({ organization: 'org_123', project: 'proj_9' })
+    expect(toolCall.properties.groups).toEqual({ organization: 'org_123', project: 'proj_9' })
 
     await capture.stop()
   })
@@ -232,10 +232,10 @@ describe('identify option', () => {
     const toolCall = capture.findCapturesByEvent('$mcp_tool_call')[0]
     expect(toolCall).toBeDefined()
     // Identity resolved → real person, so we do NOT opt out of person processing.
-    expect(toolCall.properties.$process_person_profile).toBeUndefined()
+    expect(toolCall.properties.process_person_profile).toBeUndefined()
     expect(toolCall.distinct_id).toBe('session-user')
-    // properties go straight to $set.
-    expect(toolCall.properties.$set).toMatchObject({ name: 'Session Alice', role: 'admin' })
+    // properties go straight to edp_set.
+    expect(toolCall.properties.edp_set).toMatchObject({ name: 'Session Alice', role: 'admin' })
 
     await capture.stop()
   })
@@ -258,13 +258,13 @@ describe('identify option', () => {
     const listing = capture.findCapturesByEvent('$mcp_tools_list')[0]
     expect(listing).toBeDefined()
     expect(listing.distinct_id).toBe('list-user')
-    expect(listing.properties.$process_person_profile).toBeUndefined()
-    expect(listing.properties.$set).toMatchObject({ name: 'List Alice' })
+    expect(listing.properties.process_person_profile).toBeUndefined()
+    expect(listing.properties.edp_set).toMatchObject({ name: 'List Alice' })
 
     await capture.stop()
   })
 
-  it('awaits async identify callbacks and records a non-zero duration on the $identify event', async () => {
+  it('awaits async identify callbacks and records a non-zero duration on the edp_identify event', async () => {
     const capture = new EventCapture()
     await capture.start()
     instrument(server, fakePostHog(), {

@@ -430,18 +430,18 @@ describe('Low-level Server tracing (e2e)', () => {
       expect(props.$mcp_resource_name).toBe('echo')
       expect(props.$mcp_is_error).toBe(false)
       expect(props.$mcp_duration_ms).toEqual(expect.any(Number))
-      expect(props.$session_id).toBeDefined()
+      expect(props.session_id).toBeDefined()
       // No identify configured → distinct_id falls back to the session id.
-      expect(toolCalls[0].distinct_id).toBe(props.$session_id)
+      expect(toolCalls[0].distinct_id).toBe(props.session_id)
 
       // No exception sibling for a successful call.
-      expect(eventCapture.findCapturesByEvent('$exception')).toHaveLength(0)
+      expect(eventCapture.findCapturesByEvent('edp_exception')).toHaveLength(0)
     } finally {
       await cleanup()
     }
   })
 
-  it('emits $mcp_tool_call + a single $exception sibling when a tool throws', async () => {
+  it('emits $mcp_tool_call + a single edp_exception sibling when a tool throws', async () => {
     const { server, client, connect, cleanup } = await setupLowLevelServer()
     try {
       instrument(server, fakePostHog())
@@ -456,15 +456,15 @@ describe('Low-level Server tracing (e2e)', () => {
       expect(toolCalls).toHaveLength(1)
       expect(toolCalls[0].properties.$mcp_is_error).toBe(true)
 
-      const exceptions = eventCapture.findCapturesByEvent('$exception')
+      const exceptions = eventCapture.findCapturesByEvent('edp_exception')
       expect(exceptions).toHaveLength(1)
-      expect(exceptions[0].properties.$exception_list).toBeDefined()
+      expect(exceptions[0].properties.exception_list).toBeDefined()
     } finally {
       await cleanup()
     }
   })
 
-  it('treats an isError result as a failure (tool_call + $exception)', async () => {
+  it('treats an isError result as a failure (tool_call + edp_exception)', async () => {
     const { server, client, connect, cleanup } = await setupLowLevelServer()
     try {
       instrument(server, fakePostHog())
@@ -476,13 +476,13 @@ describe('Low-level Server tracing (e2e)', () => {
       const toolCalls = eventCapture.findCapturesByEvent('$mcp_tool_call')
       expect(toolCalls).toHaveLength(1)
       expect(toolCalls[0].properties.$mcp_is_error).toBe(true)
-      expect(eventCapture.findCapturesByEvent('$exception')).toHaveLength(1)
+      expect(eventCapture.findCapturesByEvent('edp_exception')).toHaveLength(1)
     } finally {
       await cleanup()
     }
   })
 
-  it('respects enableExceptionAutocapture: false (no $exception sibling)', async () => {
+  it('respects enableExceptionAutocapture: false (no edp_exception sibling)', async () => {
     const { server, client, connect, cleanup } = await setupLowLevelServer()
     try {
       instrument(server, fakePostHog(), { enableExceptionAutocapture: false })
@@ -494,7 +494,7 @@ describe('Low-level Server tracing (e2e)', () => {
       await new Promise((r) => setTimeout(r, 50))
 
       expect(eventCapture.findCapturesByEvent('$mcp_tool_call')).toHaveLength(1)
-      expect(eventCapture.findCapturesByEvent('$exception')).toHaveLength(0)
+      expect(eventCapture.findCapturesByEvent('edp_exception')).toHaveLength(0)
     } finally {
       await cleanup()
     }
@@ -884,7 +884,7 @@ describe('Low-level Server — synthetic tools/call fallback', () => {
     expect(toolCalls).toHaveLength(1)
     expect(toolCalls[0].properties.$mcp_resource_name).toBe('nope')
     expect(toolCalls[0].properties.$mcp_is_error).toBe(true)
-    expect(eventCapture.findCapturesByEvent('$exception')).toHaveLength(1)
+    expect(eventCapture.findCapturesByEvent('edp_exception')).toHaveLength(1)
   })
 
   it('does not displace a tools/call handler that already exists', async () => {

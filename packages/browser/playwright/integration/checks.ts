@@ -4,13 +4,13 @@ export async function assertCustomEventsWorkAndAreAccessibleViaApi(events: any[]
     // chromium might send a pageleave event
     expect(events.length).toBeGreaterThanOrEqual(3)
     expect(events.filter(({ event }) => event === 'custom-event').length).toEqual(1)
-    expect(events.filter(({ event }) => event === '$pageview').length).toEqual(1)
-    expect(events.filter(({ event }) => event === '$autocapture').length).toEqual(1)
+    expect(events.filter(({ event }) => event === 'edp_pageview').length).toEqual(1)
+    expect(events.filter(({ event }) => event === 'edp_autocapture').length).toEqual(1)
 }
 
 export async function assertAutocapturedEventsWorkAndAreAccessibleViaApi(events: any[]) {
-    expect(events.filter(({ event }) => event === '$pageview').length).toEqual(1)
-    const autocapturedEvents = events.filter((e) => e.event === '$autocapture')
+    expect(events.filter(({ event }) => event === 'edp_pageview').length).toEqual(1)
+    const autocapturedEvents = events.filter((e) => e.event === 'edp_autocapture')
 
     expect(autocapturedEvents.length).toEqual(2)
 
@@ -38,14 +38,14 @@ export async function assertAutocapturedEventsWorkAndAreAccessibleViaApi(events:
 }
 
 export async function assertConfigOptionsChangeAutocaptureBehaviourAccordingly(events: any[]) {
-    const autocapturedEvents = events.filter((e) => e.event === '$autocapture')
+    const autocapturedEvents = events.filter((e) => e.event === 'edp_autocapture')
     expect(autocapturedEvents.length).toEqual(2)
 
     const autocapturedLinkElement = autocapturedEvents.filter((e) => e.elements[0].tag_name === 'a')[0].elements[0]
     const autocapturedButtonElement = autocapturedEvents.filter((e) => e.elements[0].tag_name === 'button')[0]
         .elements[0]
 
-    // mask_all_text does not set $el_text
+    // mask_all_text does not set el_text
     expect(autocapturedLinkElement['text']).toEqual(null)
 
     // mask_all_element_attributes does not capture any attributes at all from all elements

@@ -36,8 +36,8 @@ test('Custom events work and are accessible via /api/event', async (t) => {
         .wait(10000)
         .expect(capturesMap())
         .contains({
-            $pageview: 1,
-            $autocapture: 1,
+            edp_pageview: 1,
+            edp_autocapture: 1,
             'custom-event': 1,
         })
         .expect(captureLogger.count(() => true))
@@ -52,8 +52,8 @@ test('Custom events work and are accessible via /api/event', async (t) => {
 async function validateCustomEventsWorkAndAreAccessibleViaApi(results) {
     expect(results.length).toEqual(3)
     expect(results.filter(({ event }) => event === 'custom-event').length).toEqual(1)
-    expect(results.filter(({ event }) => event === '$pageview').length).toEqual(1)
-    expect(results.filter(({ event }) => event === '$autocapture').length).toEqual(1)
+    expect(results.filter(({ event }) => event === 'edp_pageview').length).toEqual(1)
+    expect(results.filter(({ event }) => event === 'edp_autocapture').length).toEqual(1)
 }
 
 export async function assertCustomEventsWorkAndAreAccessibleViaApi(testSessionId, deadline) {
@@ -74,8 +74,8 @@ test('Autocaptured events work and are accessible via /api/event', async (t) => 
         .wait(10000)
         .expect(capturesMap())
         .contains({
-            $pageview: 1,
-            $autocapture: 2,
+            edp_pageview: 1,
+            edp_autocapture: 2,
         })
         .expect(captureLogger.count(() => true))
         .gte(2)
@@ -87,8 +87,8 @@ test('Autocaptured events work and are accessible via /api/event', async (t) => 
 })
 
 async function validateAutocapturedEventsWorkAndAreAccessibleViaApi(results) {
-    expect(results.filter(({ event }) => event === '$pageview').length).toEqual(1)
-    const autocapturedEvents = results.filter((e) => e.event === '$autocapture')
+    expect(results.filter(({ event }) => event === 'edp_pageview').length).toEqual(1)
+    const autocapturedEvents = results.filter((e) => e.event === 'edp_autocapture')
 
     await expect(autocapturedEvents.length).toEqual(2)
 
@@ -137,8 +137,8 @@ test('Config options change autocapture behavior accordingly', async (t) => {
         .wait(10000)
         .expect(capturesMap())
         .contains({
-            $pageview: 1,
-            $autocapture: 2,
+            edp_pageview: 1,
+            edp_autocapture: 2,
         })
         .expect(captureLogger.count(() => true))
         .gte(2)
@@ -150,14 +150,14 @@ test('Config options change autocapture behavior accordingly', async (t) => {
 })
 
 async function validateConfigOptionsChangeAutocaptureBehaviourAccordingly(results) {
-    const autocapturedEvents = results.filter((e) => e.event === '$autocapture')
+    const autocapturedEvents = results.filter((e) => e.event === 'edp_autocapture')
     await expect(autocapturedEvents.length).toEqual(2)
 
     const autocapturedLinkElement = autocapturedEvents.filter((e) => e.elements[0].tag_name === 'a')[0].elements[0]
     const autocapturedButtonElement = autocapturedEvents.filter((e) => e.elements[0].tag_name === 'button')[0]
         .elements[0]
 
-    // mask_all_text does not set $el_text
+    // mask_all_text does not set el_text
     await expect(autocapturedLinkElement['text']).toEqual(null)
 
     // mask_all_element_attributes does not capture any attributes at all from all elements

@@ -15,19 +15,19 @@ test.describe('Dead clicks', () => {
 
         await page.locator('[data-cy-not-an-order-button]').click()
 
-        await pollUntilEventCaptured(page, '$dead_click')
+        await pollUntilEventCaptured(page, 'edp_dead_click')
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks.length).toBe(1)
         const deadClick = deadClicks[0]
 
-        // this assertion flakes, sometimes there is no $dead_click_last_mutation_timestamp
-        //expect(deadClick.properties.$dead_click_last_mutation_timestamp).toBeGreaterThan(0)
-        expect(deadClick.properties.$dead_click_event_timestamp).toBeGreaterThan(0)
-        expect(deadClick.properties.$dead_click_absolute_delay_ms).toBeGreaterThan(0)
-        expect(deadClick.properties.$dead_click_scroll_timeout).toBe(false)
-        expect(deadClick.properties.$dead_click_mutation_timeout).toBe(false)
-        expect(deadClick.properties.$dead_click_absolute_timeout).toBe(true)
+        // this assertion flakes, sometimes there is no edp_dead_click_last_mutation_timestamp
+        //expect(deadClick.properties.edp_dead_click_last_mutation_timestamp).toBeGreaterThan(0)
+        expect(deadClick.properties.edp_dead_click_event_timestamp).toBeGreaterThan(0)
+        expect(deadClick.properties.edp_dead_click_absolute_delay_ms).toBeGreaterThan(0)
+        expect(deadClick.properties.edp_dead_click_scroll_timeout).toBe(false)
+        expect(deadClick.properties.edp_dead_click_mutation_timeout).toBe(false)
+        expect(deadClick.properties.edp_dead_click_absolute_timeout).toBe(true)
     })
 
     test('does not capture a dead click when a fallback observer sees a DOM update', async ({ page, context }) => {
@@ -73,7 +73,7 @@ test.describe('Dead clicks', () => {
         await expect(page.locator('#mutating-label')).toHaveText('Day 2')
         await page.waitForTimeout(1500)
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks).toHaveLength(0)
     })
 
@@ -98,13 +98,13 @@ test.describe('Dead clicks', () => {
             dispatchTouch('touchend', end)
         })
 
-        await pollUntilEventCaptured(page, '$dead_swipe')
+        await pollUntilEventCaptured(page, 'edp_dead_swipe')
 
-        const deadSwipes = (await page.capturedEvents()).filter((event) => event.event === '$dead_swipe')
+        const deadSwipes = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_swipe')
         expect(deadSwipes).toHaveLength(1)
-        expect(deadSwipes[0].properties.$dead_swipe_direction).toBe('down')
-        expect(deadSwipes[0].properties.$dead_swipe_distance_px).toBe(100)
-        expect(deadSwipes[0].properties.$dead_swipe_absolute_timeout).toBe(true)
+        expect(deadSwipes[0].properties.dead_swipe_direction).toBe('down')
+        expect(deadSwipes[0].properties.dead_swipe_distance_px).toBe(100)
+        expect(deadSwipes[0].properties.edp_dead_swipe_absolute_timeout).toBe(true)
     })
 
     test('does not capture dead click when ctrl key is held', async ({ page, context }) => {
@@ -117,7 +117,7 @@ test.describe('Dead clicks', () => {
         // wait long enough for a dead click to be detected if it was going to be
         await page.waitForTimeout(3500)
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks.length).toBe(0)
     })
 
@@ -130,7 +130,7 @@ test.describe('Dead clicks', () => {
 
         await page.waitForTimeout(3500)
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks.length).toBe(0)
     })
 
@@ -143,7 +143,7 @@ test.describe('Dead clicks', () => {
 
         await page.waitForTimeout(3500)
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks.length).toBe(0)
     })
 
@@ -156,7 +156,7 @@ test.describe('Dead clicks', () => {
 
         await page.waitForTimeout(3500)
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks.length).toBe(0)
     })
 
@@ -191,9 +191,9 @@ test.describe('Dead clicks', () => {
         // Use Shift modifier since Ctrl+Click triggers contextmenu instead of click in some browsers
         await page.locator('[data-cy-not-an-order-button]').click({ modifiers: ['Shift'] })
 
-        await pollUntilEventCaptured(page, '$dead_click')
+        await pollUntilEventCaptured(page, 'edp_dead_click')
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks.length).toBe(1)
     })
 
@@ -211,7 +211,7 @@ test.describe('Dead clicks', () => {
 
         await page.waitForTimeout(3500)
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks.length).toBe(0)
     })
 
@@ -232,7 +232,7 @@ test.describe('Dead clicks', () => {
 
         await page.waitForTimeout(3500)
 
-        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === '$dead_click')
+        const deadClicks = (await page.capturedEvents()).filter((event) => event.event === 'edp_dead_click')
         expect(deadClicks.length).toBe(0)
     })
 

@@ -34,12 +34,12 @@ test.describe('event capture', () => {
 
         await page.click('[data-cy-custom-event-button]')
         await pollUntilEventCaptured(page, 'custom-event')
-        await page.expectCapturedEventsToBe(['$pageview', '$autocapture', 'custom-event'])
+        await page.expectCapturedEventsToBe(['edp_pageview', 'edp_autocapture', 'custom-event'])
 
         await start({ ...startOptions, type: 'reload' }, page, context)
-        // we can't capture $pageleave because we're storing it on the page and reloading wipes that :/
+        // we can't capture edp_pageleave because we're storing it on the page and reloading wipes that :/
         // TODO is there a way to catch and store between page loads
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['edp_pageview'])
     })
 
     test('contains the correct payload after an event', async ({ page, context, browserName }) => {
@@ -54,7 +54,7 @@ test.describe('event capture', () => {
         await start({}, page, context)
 
         // Pageview will be sent immediately
-        await pollUntilEventCaptured(page, '$pageview')
+        await pollUntilEventCaptured(page, 'edp_pageview')
         await pollUntilCondition(page, () => captureRequests.length > 0)
         expect(captureRequests.length).toEqual(1)
         const captureRequest = captureRequests[0]
@@ -71,33 +71,33 @@ test.describe('event capture', () => {
                 process.env.COMPAT_VERSION !== undefined && satisfies(process.env.COMPAT_VERSION, '<1.407.3')
 
             if (usesLegacyCapturePayload) {
-                expect(payload.event).toEqual('$pageview')
+                expect(payload.event).toEqual('edp_pageview')
                 expect(payload.properties.token).toEqual('test token')
                 expect(Object.keys(payload.properties).length).toBeGreaterThan(0)
             } else {
                 expect(payload.api_key).toEqual('test token')
                 expect(payload.sent_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
                 expect(payload.batch).toHaveLength(1)
-                expect(payload.batch[0].event).toEqual('$pageview')
+                expect(payload.batch[0].event).toEqual('edp_pageview')
                 expect(Object.keys(payload.batch[0].properties).length).toBeGreaterThan(0)
             }
         }
     })
 
-    test('captures $feature_flag_called event', async ({ page, context }) => {
+    test('captures edp_feature_flag_called event', async ({ page, context }) => {
         await start(startOptions, page, context)
         await page.click('[data-cy-feature-flag-button]')
-        await pollUntilEventCaptured(page, '$feature_flag_called')
+        await pollUntilEventCaptured(page, 'edp_feature_flag_called')
         const featureFlagCalledEvent = await page
             .capturedEvents()
-            .then((events) => events.find((e) => e.event === '$feature_flag_called'))
+            .then((events) => events.find((e) => e.event === 'edp_feature_flag_called'))
         expect(featureFlagCalledEvent).toBeTruthy()
-        expect(featureFlagCalledEvent?.properties.$feature_flag_bootstrapped_response).toBeNull()
-        expect(featureFlagCalledEvent?.properties.$feature_flag_bootstrapped_payload).toBeNull()
-        expect(featureFlagCalledEvent?.properties.$used_bootstrap_value).toEqual(false)
+        expect(featureFlagCalledEvent?.properties.feature_flag_bootstrapped_response).toBeNull()
+        expect(featureFlagCalledEvent?.properties.feature_flag_bootstrapped_payload).toBeNull()
+        expect(featureFlagCalledEvent?.properties.used_bootstrap_value).toEqual(false)
     })
 
-    test('captures $feature_flag_called with bootstrapped value properties', async ({ page, context }) => {
+    test('captures edp_feature_flag_called with bootstrapped value properties', async ({ page, context }) => {
         await start(
             {
                 ...startOptions,
@@ -120,14 +120,14 @@ test.describe('event capture', () => {
         )
 
         await page.locator('[data-cy-feature-flag-button]').click()
-        await pollUntilEventCaptured(page, '$feature_flag_called')
+        await pollUntilEventCaptured(page, 'edp_feature_flag_called')
         const featureFlagCalledEvent = await page
             .capturedEvents()
-            .then((events) => events.find((e) => e.event === '$feature_flag_called'))
+            .then((events) => events.find((e) => e.event === 'edp_feature_flag_called'))
         expect(featureFlagCalledEvent).toBeTruthy()
-        expect(featureFlagCalledEvent?.properties.$feature_flag_bootstrapped_response).toEqual('some-value')
-        expect(featureFlagCalledEvent?.properties.$feature_flag_bootstrapped_payload).toEqual('some-payload')
-        expect(featureFlagCalledEvent?.properties.$used_bootstrap_value).toEqual(true)
+        expect(featureFlagCalledEvent?.properties.feature_flag_bootstrapped_response).toEqual('some-value')
+        expect(featureFlagCalledEvent?.properties.feature_flag_bootstrapped_payload).toEqual('some-payload')
+        expect(featureFlagCalledEvent?.properties.used_bootstrap_value).toEqual(true)
     })
 
     test('captures rage clicks', async ({ page, context }) => {
@@ -148,7 +148,7 @@ test.describe('event capture', () => {
         await button.click()
         await button.click()
 
-        await pollUntilEventCaptured(page, '$rageclick')
+        await pollUntilEventCaptured(page, 'edp_rageclick')
     })
 
     test('does not capture rage clicks when autocapture is disabled', async ({ page, context }) => {
@@ -172,7 +172,7 @@ test.describe('event capture', () => {
 
         // no rageclick event to wait for so just wait a little
         await page.waitForTimeout(250)
-        await page.expectCapturedEventsToBe(['$pageview', 'custom-event', 'custom-event', 'custom-event'])
+        await page.expectCapturedEventsToBe(['edp_pageview', 'custom-event', 'custom-event', 'custom-event'])
     })
 
     test('captures pageviews and custom events when autocapture disabled', async ({ page, context }) => {
@@ -190,7 +190,7 @@ test.describe('event capture', () => {
 
         await page.click('[data-cy-custom-event-button]')
         await pollUntilEventCaptured(page, 'custom-event')
-        await page.expectCapturedEventsToBe(['$pageview', 'custom-event'])
+        await page.expectCapturedEventsToBe(['edp_pageview', 'custom-event'])
     })
 
     test('captures autocapture, custom events, when pageviews is disabled', async ({ page, context }) => {
@@ -208,7 +208,7 @@ test.describe('event capture', () => {
 
         await page.click('[data-cy-custom-event-button]')
         await pollUntilEventCaptured(page, 'custom-event')
-        await page.expectCapturedEventsToBe(['$autocapture', 'custom-event'])
+        await page.expectCapturedEventsToBe(['edp_autocapture', 'custom-event'])
     })
 
     test('can capture custom events when auto events is disabled', async ({ page, context }) => {

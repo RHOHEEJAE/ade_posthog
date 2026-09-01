@@ -22,7 +22,7 @@ export type EvaluatedFlagRecord = {
 }
 
 /**
- * Parameters passed to the host when a `$feature_flag_called` event should be captured.
+ * Parameters passed to the host when a `edp_feature_flag_called` event should be captured.
  *
  * @internal
  */
@@ -115,7 +115,7 @@ export class FeatureFlagEvaluations {
   }
 
   /**
-   * Check whether a feature flag is enabled. Fires a `$feature_flag_called` event
+   * Check whether a feature flag is enabled. Fires a `edp_feature_flag_called` event
    * on the first access per (distinctId, flag, value) tuple, deduped via the SDK's
    * existing cache.
    *
@@ -130,7 +130,7 @@ export class FeatureFlagEvaluations {
   }
 
   /**
-   * Get the evaluated value of a feature flag. Fires a `$feature_flag_called` event
+   * Get the evaluated value of a feature flag. Fires a `edp_feature_flag_called` event
    * on the first access per (distinctId, flag, value) tuple.
    *
    * Returns the variant string for multivariate flags, `true` for enabled flags
@@ -214,7 +214,7 @@ export class FeatureFlagEvaluations {
   }
 
   /**
-   * Build the `$feature/*` and `$active_feature_flags` event properties derived
+   * Build the `feature/*` and `active_feature_flags` event properties derived
    * from the current flag set. Called by `capture()` when an event is captured
    * with `flags: ...`.
    *
@@ -225,14 +225,14 @@ export class FeatureFlagEvaluations {
     const activeFlags: string[] = []
     for (const [key, flag] of Object.entries(this._flags)) {
       const value = flag.enabled === false ? false : (flag.variant ?? true)
-      properties[`$feature/${key}`] = value
+      properties[`feature/${key}`] = value
       if (flag.enabled) {
         activeFlags.push(key)
       }
     }
     if (activeFlags.length > 0) {
       activeFlags.sort()
-      properties['$active_feature_flags'] = activeFlags
+      properties['active_feature_flags'] = activeFlags
     }
     return properties
   }
@@ -261,7 +261,7 @@ export class FeatureFlagEvaluations {
     this._accessed.add(key)
 
     // Empty snapshots (no resolvable distinctId) are returned by `evaluateFlags()` as a
-    // safety fallback. Firing $feature_flag_called for them would emit events with an
+    // safety fallback. Firing edp_feature_flag_called for them would emit events with an
     // empty distinct_id, polluting analytics — short-circuit here instead.
     if (this._distinctId === '') {
       return
@@ -280,26 +280,26 @@ export class FeatureFlagEvaluations {
       flag === undefined ? undefined : flag.enabled === false ? false : (flag.variant ?? true)
 
     const properties: Record<string, any> = {
-      $feature_flag: key,
-      $feature_flag_response: response,
-      $feature_flag_id: flag?.id,
-      $feature_flag_version: flag?.version,
-      $feature_flag_reason: flag?.reason,
+      feature_flag: key,
+      feature_flag_response: response,
+      feature_flag_id: flag?.id,
+      feature_flag_version: flag?.version,
+      feature_flag_reason: flag?.reason,
       locally_evaluated: flag?.locallyEvaluated ?? false,
-      [`$feature/${key}`]: response,
-      $feature_flag_request_id: this._requestId,
-      $feature_flag_evaluated_at: flag?.locallyEvaluated ? Date.now() : this._evaluatedAt,
+      [`feature/${key}`]: response,
+      feature_flag_request_id: this._requestId,
+      feature_flag_evaluated_at: flag?.locallyEvaluated ? Date.now() : this._evaluatedAt,
     }
 
     if (flag?.hasExperiment !== undefined) {
-      properties.$feature_flag_has_experiment = flag.hasExperiment
+      properties.feature_flag_has_experiment = flag.hasExperiment
     }
 
     if (flag?.locallyEvaluated && this._flagDefinitionsLoadedAt !== undefined) {
-      properties.$feature_flag_definitions_loaded_at = this._flagDefinitionsLoadedAt
+      properties.feature_flag_definitions_loaded_at = this._flagDefinitionsLoadedAt
     }
 
-    // Build the comma-joined `$feature_flag_error` matching the single-flag path's
+    // Build the comma-joined `feature_flag_error` matching the single-flag path's
     // granularity: response-level errors (errors-while-computing, quota-limited) are
     // combined with per-flag errors (flag-missing) so consumers can filter by type.
     const errors: string[] = []
@@ -313,7 +313,7 @@ export class FeatureFlagEvaluations {
       errors.push(FeatureFlagError.FLAG_MISSING)
     }
     if (errors.length > 0) {
-      properties.$feature_flag_error = errors.join(',')
+      properties.feature_flag_error = errors.join(',')
     }
 
     this._host.captureFlagCalledEventIfNeeded({

@@ -508,9 +508,9 @@
           "title": "get_property",
           "examples": [
             {
-              "id": "grab_value_for_'$user_id'_after_the_posthog_library_has_loaded",
-              "name": "grab value for '$user_id' after the posthog library has loaded",
-              "code": "\n\n// grab value for '$user_id' after the posthog library has loaded\nposthog.init('<YOUR PROJECT TOKEN>', {\n    loaded: function(posthog) {\n        user_id = posthog.get_property('$user_id');\n    }\n});\n\n\n\n"
+              "id": "grab_value_for_'user_id'_after_the_posthog_library_has_loaded",
+              "name": "grab value for 'user_id' after the posthog library has loaded",
+              "code": "\n\n// grab value for 'user_id' after the posthog library has loaded\nposthog.init('<YOUR PROJECT TOKEN>', {\n    loaded: function(posthog) {\n        user_id = posthog.get_property('user_id');\n    }\n});\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -683,7 +683,7 @@
               "name": "key"
             },
             {
-              "description": "(optional) If send_event: false, we won't send an $feature_flag_call event to PostHog.",
+              "description": "(optional) If send_event: false, we won't send an feature_flag_call event to PostHog.",
               "isOptional": true,
               "type": "{\n        send_event?: boolean;\n    }",
               "name": "options"
@@ -726,7 +726,7 @@
         },
         {
           "category": "Feature flags",
-          "description": "Get a feature flag evaluation result including both the flag value and payload.\nBy default, this method emits the `$feature_flag_called` event.",
+          "description": "Get a feature flag evaluation result including both the flag value and payload.\nBy default, this method emits the `edp_feature_flag_called` event.",
           "details": null,
           "id": "getFeatureFlagResult",
           "showDocs": true,
@@ -1097,7 +1097,7 @@
             {
               "id": "disable_event_tracking",
               "name": "disable event tracking",
-              "code": "\n\n// disable event tracking\nif (posthog.isFeatureEnabled('feature', { send_event: false })) {\n    // flag checked without sending $feature_flag_call event\n}\n\n\n\n"
+              "code": "\n\n// disable event tracking\nif (posthog.isFeatureEnabled('feature', { send_event: false })) {\n    // flag checked without sending feature_flag_call event\n}\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -1109,7 +1109,7 @@
               "name": "key"
             },
             {
-              "description": "(optional) If send_event: false, we won't send an $feature_flag_call event to PostHog.",
+              "description": "(optional) If send_event: false, we won't send an feature_flag_call event to PostHog.",
               "isOptional": true,
               "type": "{\n        send_event: boolean;\n    }",
               "name": "options"
@@ -1280,7 +1280,7 @@
         {
           "category": "Privacy",
           "description": "Opts the user into data capturing and persistence.",
-          "details": "Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance. By default, captures an `$opt_in` event unless disabled.",
+          "details": "Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance. By default, captures an `edp_opt_in` event unless disabled.",
           "id": "opt_in_capturing",
           "showDocs": true,
           "title": "opt_in_capturing",
@@ -1749,7 +1749,7 @@
         },
         {
           "category": "Identification",
-          "description": "Marks the current user as a test user by setting the `$internal_or_test_user` person property to `true`. This also enables person processing for the current user.\nThis is useful for using in a cohort your internal/test filters for your posthog org.",
+          "description": "Marks the current user as a test user by setting the `internal_or_test_user` person property to `true`. This also enables person processing for the current user.\nThis is useful for using in a cohort your internal/test filters for your posthog org.",
           "details": null,
           "id": "setInternalOrTestUser",
           "showDocs": true,
@@ -1785,7 +1785,7 @@
             {
               "id": "set_properties",
               "name": "set properties",
-              "code": "\n\n// set properties\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // $set properties\n    { initial_url: '/blog' }   // $set_once properties\n)\n\n\n\n"
+              "code": "\n\n// set properties\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // edp_set properties\n    { initial_url: '/blog' }   // edp_set_once properties\n)\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -2135,7 +2135,7 @@
           "name": "properties"
         },
         {
-          "description": "pre-compiled regex pattern for matching selector against $elements_chain",
+          "description": "pre-compiled regex pattern for matching selector against elements_chain",
           "type": "string | null",
           "name": "selector_regex"
         },
@@ -2366,7 +2366,7 @@
       "name": "ErrorTrackingSuppressionRuleValue",
       "properties": [
         {
-          "type": "'$exception_types' | '$exception_values'",
+          "type": "'exception_types' | 'exception_values'",
           "name": "key"
         },
         {
@@ -2955,115 +2955,115 @@
       "name": "ProductTourEventProperties",
       "properties": [
         {
-          "type": "\"$inference_data_present\"",
+          "type": "\"inference_data_present\"",
           "name": "INFERENCE_DATA_PRESENT"
         },
         {
-          "type": "\"$product_tour_banner_selector\"",
+          "type": "\"product_tour_banner_selector\"",
           "name": "TOUR_BANNER_SELECTOR"
         },
         {
-          "type": "\"$product_tour_button_action\"",
+          "type": "\"product_tour_button_action\"",
           "name": "TOUR_BUTTON_ACTION"
         },
         {
-          "type": "\"$product_tour_button_link\"",
+          "type": "\"product_tour_button_link\"",
           "name": "TOUR_BUTTON_LINK"
         },
         {
-          "type": "\"$product_tour_button_text\"",
+          "type": "\"product_tour_button_text\"",
           "name": "TOUR_BUTTON_TEXT"
         },
         {
-          "type": "\"$product_tour_button_tour_id\"",
+          "type": "\"product_tour_button_tour_id\"",
           "name": "TOUR_BUTTON_TOUR_ID"
         },
         {
-          "type": "\"$product_tour_dismiss_reason\"",
+          "type": "\"product_tour_dismiss_reason\"",
           "name": "TOUR_DISMISS_REASON"
         },
         {
-          "type": "\"$product_tour_error\"",
+          "type": "\"product_tour_error\"",
           "name": "TOUR_ERROR"
         },
         {
-          "type": "\"$product_tour_failure_phase\"",
+          "type": "\"product_tour_failure_phase\"",
           "name": "TOUR_FAILURE_PHASE"
         },
         {
-          "type": "\"$product_tour_id\"",
+          "type": "\"product_tour_id\"",
           "name": "TOUR_ID"
         },
         {
-          "type": "\"$product_tour_iteration\"",
+          "type": "\"product_tour_iteration\"",
           "name": "TOUR_ITERATION"
         },
         {
-          "type": "\"$product_tour_linked_survey_id\"",
+          "type": "\"product_tour_linked_survey_id\"",
           "name": "TOUR_LINKED_SURVEY_ID"
         },
         {
-          "type": "\"$product_tour_matches_count\"",
+          "type": "\"product_tour_matches_count\"",
           "name": "TOUR_MATCHES_COUNT"
         },
         {
-          "type": "\"$product_tour_name\"",
+          "type": "\"product_tour_name\"",
           "name": "TOUR_NAME"
         },
         {
-          "type": "\"$product_tour_render_reason\"",
+          "type": "\"product_tour_render_reason\"",
           "name": "TOUR_RENDER_REASON"
         },
         {
-          "type": "\"$product_tour_step_element_classes\"",
+          "type": "\"product_tour_step_element_classes\"",
           "name": "TOUR_STEP_ELEMENT_CLASSES"
         },
         {
-          "type": "\"$product_tour_step_element_id\"",
+          "type": "\"product_tour_step_element_id\"",
           "name": "TOUR_STEP_ELEMENT_ID"
         },
         {
-          "type": "\"$product_tour_step_element_tag\"",
+          "type": "\"product_tour_step_element_tag\"",
           "name": "TOUR_STEP_ELEMENT_TAG"
         },
         {
-          "type": "\"$product_tour_step_element_text\"",
+          "type": "\"product_tour_step_element_text\"",
           "name": "TOUR_STEP_ELEMENT_TEXT"
         },
         {
-          "type": "\"$product_tour_step_id\"",
+          "type": "\"product_tour_step_id\"",
           "name": "TOUR_STEP_ID"
         },
         {
-          "type": "\"$product_tour_step_order\"",
+          "type": "\"product_tour_step_order\"",
           "name": "TOUR_STEP_ORDER"
         },
         {
-          "type": "\"$product_tour_step_selector\"",
+          "type": "\"product_tour_step_selector\"",
           "name": "TOUR_STEP_SELECTOR"
         },
         {
-          "type": "\"$product_tour_step_selector_found\"",
+          "type": "\"product_tour_step_selector_found\"",
           "name": "TOUR_STEP_SELECTOR_FOUND"
         },
         {
-          "type": "\"$product_tour_step_type\"",
+          "type": "\"product_tour_step_type\"",
           "name": "TOUR_STEP_TYPE"
         },
         {
-          "type": "\"$product_tour_steps_count\"",
+          "type": "\"product_tour_steps_count\"",
           "name": "TOUR_STEPS_COUNT"
         },
         {
-          "type": "\"$product_tour_wait_duration_ms\"",
+          "type": "\"product_tour_wait_duration_ms\"",
           "name": "TOUR_WAIT_DURATION_MS"
         },
         {
-          "type": "\"$product_tour_waited_for_element\"",
+          "type": "\"product_tour_waited_for_element\"",
           "name": "TOUR_WAITED_FOR_ELEMENT"
         },
         {
-          "type": "\"$use_manual_selector\"",
+          "type": "\"use_manual_selector\"",
           "name": "USE_MANUAL_SELECTOR"
         }
       ],
@@ -3394,7 +3394,7 @@
           "name": "editorParams"
         },
         {
-          "description": "Whether the `$elements_chain` property should be sent as a string or as an array\nfalse",
+          "description": "Whether the `elements_chain` property should be sent as a string or as an array\nfalse",
           "type": "boolean",
           "name": "elementsChainAsString"
         },
@@ -3886,7 +3886,7 @@
       "properties": [
         {
           "type": "string",
-          "name": "$el_text"
+          "name": "el_text"
         },
         {
           "type": "string[]",
@@ -3963,47 +3963,47 @@
       "name": "SurveyEventProperties",
       "properties": [
         {
-          "type": "\"$product_tour_id\"",
+          "type": "\"product_tour_id\"",
           "name": "PRODUCT_TOUR_ID"
         },
         {
-          "type": "\"$survey_completed\"",
+          "type": "\"survey_completed\"",
           "name": "SURVEY_COMPLETED"
         },
         {
-          "type": "\"$survey_id\"",
+          "type": "\"survey_id\"",
           "name": "SURVEY_ID"
         },
         {
-          "type": "\"$survey_iteration\"",
+          "type": "\"survey_iteration\"",
           "name": "SURVEY_ITERATION"
         },
         {
-          "type": "\"$survey_iteration_start_date\"",
+          "type": "\"survey_iteration_start_date\"",
           "name": "SURVEY_ITERATION_START_DATE"
         },
         {
-          "type": "\"$survey_last_seen_date\"",
+          "type": "\"survey_last_seen_date\"",
           "name": "SURVEY_LAST_SEEN_DATE"
         },
         {
-          "type": "\"$survey_name\"",
+          "type": "\"survey_name\"",
           "name": "SURVEY_NAME"
         },
         {
-          "type": "\"$survey_partially_completed\"",
+          "type": "\"survey_partially_completed\"",
           "name": "SURVEY_PARTIALLY_COMPLETED"
         },
         {
-          "type": "\"$survey_questions\"",
+          "type": "\"survey_questions\"",
           "name": "SURVEY_QUESTIONS"
         },
         {
-          "type": "\"$survey_response\"",
+          "type": "\"survey_response\"",
           "name": "SURVEY_RESPONSE"
         },
         {
-          "type": "\"$survey_submission_id\"",
+          "type": "\"survey_submission_id\"",
           "name": "SURVEY_SUBMISSION_ID"
         }
       ],

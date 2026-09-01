@@ -79,7 +79,7 @@ export const captureEvent = spacetimedb.procedure(
                 event,
                 distinct_id: distinctId,
                 properties: {
-                    $lib: 'spacetimedb-module',
+                    lib: 'spacetimedb-module',
                     source: 'in-module-procedure',
                 },
             }),

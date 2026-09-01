@@ -64,7 +64,7 @@ describe('PostHogSpanProcessor', () => {
       expectedUrl: 'https://custom.posthog.com/i/v0/ai/otel',
       expectedToken: 'phc_test999',
     },
-  ])('configures the OTLP exporter correctly with $name', ({ projectToken, host, expectedUrl, expectedToken }) => {
+  ])('configures the OTLP exporter correctly with name', ({ projectToken, host, expectedUrl, expectedToken }) => {
     new PostHogSpanProcessor({ projectToken, host })
 
     expect(OTLPTraceExporter).toHaveBeenCalledWith({

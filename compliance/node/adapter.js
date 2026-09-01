@@ -18,10 +18,10 @@ const CAPTURE_MODE = process.env.POSTHOG_CAPTURE_MODE === 'v1' ? 'v1' : 'v0'
 // Harness EventOptions -> posthog-node sentinel properties. The SDK lifts these
 // sentinels out of properties into the v1 event `options` object.
 const OPTION_SENTINELS = {
-    cookieless_mode: '$cookieless_mode',
+    cookieless_mode: 'cookieless_mode',
     disable_skew_correction: '$ignore_sent_at',
-    process_person_profile: '$process_person_profile',
-    product_tour_id: '$product_tour_id',
+    process_person_profile: 'process_person_profile',
+    product_tour_id: 'product_tour_id',
 }
 
 const state = {
@@ -294,7 +294,7 @@ app.post('/get_feature_flag', async (req, res) => {
             onlyEvaluateLocally: !force_remote,
         })
 
-        // Feature flag calls enqueue a $feature_flag_called event by default.
+        // Feature flag calls enqueue a edp_feature_flag_called event by default.
         // Flush it before returning so it cannot leak into the next test case.
         await state.client.flush()
 

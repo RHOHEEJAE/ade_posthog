@@ -176,7 +176,7 @@
                     const originalCapture = window.posthog.capture;
                     window.posthog.capture = function (...args) {
                         if (args[1] && typeof args[1] === 'object') {
-                            args[1].$lib_version = currentVersion;
+                            args[1].lib_version = currentVersion;
                         }
                         return originalCapture.apply(this, args);
                     };
@@ -237,15 +237,15 @@
                 event: eventName,
                 properties: {
                     distinct_id: getOrGenerateDistinctId(),
-                    $lib: 'web',
-                    $lib_version: currentVersion,
-                    $session_id: sessionId,
-                    $current_url: window.location.href,
-                    $host: window.location.host || 'localhost',
-                    $pathname: window.location.pathname || '/test',
-                    $browser: 'Chrome',
-                    $device_type: 'Desktop',
-                    $os: 'Mac OS X',
+                    lib: 'web',
+                    lib_version: currentVersion,
+                    session_id: sessionId,
+                    current_url: window.location.href,
+                    host: window.location.host || 'localhost',
+                    pathname: window.location.pathname || '/test',
+                    browser: 'Chrome',
+                    device_type: 'Desktop',
+                    os: 'Mac OS X',
                     token: API_KEY,
                     ...properties
                 },
@@ -296,10 +296,10 @@
 
                 // Simulate feature flag call before init (this creates the misconfiguration)
                 log('1️⃣ Simulating feature flag called before initialization...', 'warning');
-                await sendMisconfigEvent('$feature_flag_called', sessionId, {
-                    $feature_flag: 'test-flag-before-init',
-                    $feature_flag_response: false,
-                    $feature_flag_bootstrapped: false,
+                await sendMisconfigEvent('edp_feature_flag_called', sessionId, {
+                    feature_flag: 'test-flag-before-init',
+                    feature_flag_response: false,
+                    feature_flag_bootstrapped: false,
                     flag_call_timing: 'before_init',
                     misconfiguration_type: 'flag_before_init'
                 });
@@ -317,7 +317,7 @@
                 // Now simulate PostHog initialization (after the flag was called)
                 log('', '');
                 log('2️⃣ Now simulating PostHog initialization (too late!)...', 'info');
-                await sendMisconfigEvent('$pageview', sessionId, {
+                await sendMisconfigEvent('edp_pageview', sessionId, {
                     init_timing: 'after_flag_call',
                     scenario: 'flag_before_init_test'
                 });
@@ -354,7 +354,7 @@
 
                 // Simulate PostHog initialization first
                 log('1️⃣ Simulating PostHog initialization...', 'info');
-                await sendMisconfigEvent('$pageview', sessionId, {
+                await sendMisconfigEvent('edp_pageview', sessionId, {
                     init_timing: 'proper_init_first',
                     scenario: 'proper_flag_usage_test'
                 });
@@ -373,10 +373,10 @@
                     const flagName = flagsToTest[i];
 
                     // Simulate proper flag call AFTER PostHog initialization
-                    await sendMisconfigEvent('$feature_flag_called', sessionId, {
-                        $feature_flag: flagName,
-                        $feature_flag_response: Math.random() > 0.5, // Random true/false
-                        $feature_flag_bootstrapped: false, // Bootstrapping is NOT required for proper usage
+                    await sendMisconfigEvent('edp_feature_flag_called', sessionId, {
+                        feature_flag: flagName,
+                        feature_flag_response: Math.random() > 0.5, // Random true/false
+                        feature_flag_bootstrapped: false, // Bootstrapping is NOT required for proper usage
                         flag_call_timing: 'after_init',
                         proper_usage: true
                     });
@@ -392,7 +392,7 @@
                 log('');
                 log('🎉 PROPER USAGE: All flags called after PostHog initialization!', 'success');
                 log('📊 SDK Doctor should show: "Feature flag health is good"', 'info');
-                log('🔑 Key pattern: Flags called AFTER $pageview (timing-based, not bootstrap-dependent)', 'info');
+                log('🔑 Key pattern: Flags called AFTER edp_pageview (timing-based, not bootstrap-dependent)', 'info');
 
             } catch (error) {
                 log(`❌ Test error: ${error.message}`, 'error');
@@ -437,10 +437,10 @@
                     const flagName = flags[i];
 
                     // Simulate flag call BEFORE init (this creates the misconfiguration)
-                    await sendMisconfigEvent('$feature_flag_called', sessionId, {
-                        $feature_flag: flagName,
-                        $feature_flag_response: false, // Usually false when called before init
-                        $feature_flag_bootstrapped: false,
+                    await sendMisconfigEvent('edp_feature_flag_called', sessionId, {
+                        feature_flag: flagName,
+                        feature_flag_response: false, // Usually false when called before init
+                        feature_flag_bootstrapped: false,
                         flag_call_timing: 'before_init',
                         misconfiguration_type: 'multiple_flags_before_init',
                         flag_sequence: i + 1
@@ -463,7 +463,7 @@
                 // Now simulate PostHog initialization (too late!)
                 log('', '');
                 log('2️⃣ Finally simulating PostHog initialization (way too late!)...', 'info');
-                await sendMisconfigEvent('$pageview', sessionId, {
+                await sendMisconfigEvent('edp_pageview', sessionId, {
                     init_timing: 'after_multiple_flag_calls',
                     scenario: 'multiple_flags_before_init_test',
                     flags_called_before: flags.length

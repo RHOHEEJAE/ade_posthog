@@ -14,7 +14,7 @@ export const jsonStringify = (data: any, space?: string | number): string => {
     } catch {
         // A self-referential value — most commonly a DOM node that retains a React fiber pointing back
         // at the element — makes JSON.stringify throw "Converting circular structure to JSON". With
-        // exception autocapture enabled that throw was recaptured as a new $exception, sometimes in a
+        // exception autocapture enabled that throw was recaptured as a new edp_exception, sometimes in a
         // tight loop. Fall back to the shared circular-safe serializer (which also handles BigInt and
         // Errors); it replaces only true cycles with "[Circular]", leaving shared-but-acyclic
         // references intact. `space` formatting is dropped on this rare path.

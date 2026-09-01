@@ -60,10 +60,10 @@ describe('capture v1 transform', () => {
 
   describe('buildV1Event - option sentinels', () => {
     it.each<[string, JsonType, keyof ReturnType<typeof buildV1Event>['options'], boolean | string]>([
-      ['$cookieless_mode', true, 'cookieless_mode', true],
+      ['cookieless_mode', true, 'cookieless_mode', true],
       ['$ignore_sent_at', 'true', 'disable_skew_correction', true],
-      ['$process_person_profile', 0, 'process_person_profile', false],
-      ['$product_tour_id', 'tour_9', 'product_tour_id', 'tour_9'],
+      ['process_person_profile', 0, 'process_person_profile', false],
+      ['product_tour_id', 'tour_9', 'product_tour_id', 'tour_9'],
     ])('lifts %s into options and strips it from properties', (property, value, optionKey, expected) => {
       const event = buildV1Event(baseMessage({ properties: { [property]: value, keep: 'me' } }))
 
@@ -72,20 +72,20 @@ describe('capture v1 transform', () => {
       expect(event.properties.keep).toBe('me')
     })
 
-    it('drops a non-string $product_tour_id but still strips the sentinel', () => {
-      const event = buildV1Event(baseMessage({ properties: { $product_tour_id: 42, keep: 'me' } }))
+    it('drops a non-string product_tour_id but still strips the sentinel', () => {
+      const event = buildV1Event(baseMessage({ properties: { product_tour_id: 42, keep: 'me' } }))
       expect(event.options).not.toHaveProperty('product_tour_id')
-      expect(event.properties).not.toHaveProperty('$product_tour_id')
+      expect(event.properties).not.toHaveProperty('product_tour_id')
       expect(event.properties.keep).toBe('me')
     })
 
     it('omits an option that cannot be coerced but still strips the sentinel', () => {
-      const event = buildV1Event(baseMessage({ properties: { $cookieless_mode: 'maybe', $product_tour_id: 1.5 } }))
+      const event = buildV1Event(baseMessage({ properties: { cookieless_mode: 'maybe', product_tour_id: 1.5 } }))
 
       expect(event.options).not.toHaveProperty('cookieless_mode')
       expect(event.options).not.toHaveProperty('product_tour_id')
-      expect(event.properties).not.toHaveProperty('$cookieless_mode')
-      expect(event.properties).not.toHaveProperty('$product_tour_id')
+      expect(event.properties).not.toHaveProperty('cookieless_mode')
+      expect(event.properties).not.toHaveProperty('product_tour_id')
     })
 
     it('leaves options as an empty object when no sentinels are present', () => {
@@ -97,10 +97,10 @@ describe('capture v1 transform', () => {
       const event = buildV1Event(
         baseMessage({
           properties: {
-            $cookieless_mode: '1',
+            cookieless_mode: '1',
             $ignore_sent_at: false,
-            $process_person_profile: true,
-            $product_tour_id: 'abc',
+            process_person_profile: true,
+            product_tour_id: 'abc',
           },
         })
       )
@@ -114,23 +114,23 @@ describe('capture v1 transform', () => {
   })
 
   describe('buildV1Event - top-level sentinels', () => {
-    it('promotes $session_id and $window_id to top-level strings and strips them', () => {
+    it('promotes session_id and window_id to top-level strings and strips them', () => {
       const event = buildV1Event(
-        baseMessage({ properties: { $session_id: 'sess-1', $window_id: 'win-1', keep: 'me' } })
+        baseMessage({ properties: { session_id: 'sess-1', window_id: 'win-1', keep: 'me' } })
       )
 
       expect(event.session_id).toBe('sess-1')
       expect(event.window_id).toBe('win-1')
-      expect(event.properties).not.toHaveProperty('$session_id')
-      expect(event.properties).not.toHaveProperty('$window_id')
+      expect(event.properties).not.toHaveProperty('session_id')
+      expect(event.properties).not.toHaveProperty('window_id')
       expect(event.properties.keep).toBe('me')
     })
 
-    it('drops a non-string $session_id but still strips it', () => {
-      const event = buildV1Event(baseMessage({ properties: { $session_id: 123 } }))
+    it('drops a non-string session_id but still strips it', () => {
+      const event = buildV1Event(baseMessage({ properties: { session_id: 123 } }))
 
       expect(event.session_id).toBeUndefined()
-      expect(event.properties).not.toHaveProperty('$session_id')
+      expect(event.properties).not.toHaveProperty('session_id')
     })
 
     it('omits session_id/window_id when the sentinels are absent', () => {
@@ -141,47 +141,47 @@ describe('capture v1 transform', () => {
     })
   })
 
-  describe('buildV1Event - $lib stripping and $set relocation', () => {
-    it('strips $lib and $lib_version from properties', () => {
+  describe('buildV1Event - lib stripping and edp_set relocation', () => {
+    it('strips lib and lib_version from properties', () => {
       const event = buildV1Event(
-        baseMessage({ properties: { $lib: 'posthog-node', $lib_version: '1.2.3', keep: 'me' } })
+        baseMessage({ properties: { lib: 'posthog-node', lib_version: '1.2.3', keep: 'me' } })
       )
 
-      expect(event.properties).not.toHaveProperty('$lib')
-      expect(event.properties).not.toHaveProperty('$lib_version')
+      expect(event.properties).not.toHaveProperty('lib')
+      expect(event.properties).not.toHaveProperty('lib_version')
       expect(event.properties.keep).toBe('me')
     })
 
-    it('relocates top-level $set/$set_once into properties', () => {
+    it('relocates top-level edp_set/edp_set_once into properties', () => {
       const event = buildV1Event(
-        baseMessage({ $set: { name: 'Jane' }, $set_once: { first_seen: 'today' }, properties: {} })
+        baseMessage({ edp_set: { name: 'Jane' }, edp_set_once: { first_seen: 'today' }, properties: {} })
       )
 
-      expect(event.properties.$set).toEqual({ name: 'Jane' })
-      expect(event.properties.$set_once).toEqual({ first_seen: 'today' })
+      expect(event.properties.edp_set).toEqual({ name: 'Jane' })
+      expect(event.properties.edp_set_once).toEqual({ first_seen: 'today' })
     })
 
-    it('lets an existing properties value win over a top-level $set on collision', () => {
+    it('lets an existing properties value win over a top-level edp_set on collision', () => {
       const event = buildV1Event(
-        baseMessage({ $set: { name: 'top-level' }, properties: { $set: { name: 'in-properties' } } })
+        baseMessage({ edp_set: { name: 'top-level' }, properties: { edp_set: { name: 'in-properties' } } })
       )
 
-      expect(event.properties.$set).toEqual({ name: 'in-properties' })
+      expect(event.properties.edp_set).toEqual({ name: 'in-properties' })
     })
 
-    it('does not add $set when there is no top-level value', () => {
+    it('does not add edp_set when there is no top-level value', () => {
       const event = buildV1Event(baseMessage({ properties: { foo: 'bar' } }))
-      expect(event.properties).not.toHaveProperty('$set')
+      expect(event.properties).not.toHaveProperty('edp_set')
     })
   })
 
   describe('buildV1Event - passthrough and purity', () => {
     it('passes through event, uuid, distinct_id and preserves ordinary properties', () => {
       const event = buildV1Event(
-        baseMessage({ event: '$pageview', distinct_id: 'abc', properties: { url: '/home', n: 5 } })
+        baseMessage({ event: 'edp_pageview', distinct_id: 'abc', properties: { url: '/home', n: 5 } })
       )
 
-      expect(event.event).toBe('$pageview')
+      expect(event.event).toBe('edp_pageview')
       expect(event.distinct_id).toBe('abc')
       expect(event.uuid).toBe('0189dcd5-5311-7d40-8db0-9496a2eef37b')
       expect(event.properties).toEqual({ url: '/home', n: 5 })
@@ -253,8 +253,8 @@ describe('capture v1 transform', () => {
 
     it('does not mutate the input message or its properties', () => {
       const message = baseMessage({
-        $set: { name: 'Jane' },
-        properties: { $cookieless_mode: true, $session_id: 'sess', $lib: 'posthog-node', keep: 'me' },
+        edp_set: { name: 'Jane' },
+        properties: { cookieless_mode: true, session_id: 'sess', lib: 'posthog-node', keep: 'me' },
       })
       const snapshot = structuredClone(message)
 

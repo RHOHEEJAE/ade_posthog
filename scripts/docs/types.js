@@ -340,7 +340,7 @@ function gatherValuesFromReferencedTypes(member, typeDefinitions) {
 // Generate example for complex types
 function generateTypeExample(signature) {
     if (/KnownEventName|KnownUnsafeEditableEvent/.test(signature)) {
-        return '"$pageview" | "$identify" | "custom_event" | string';
+        return '"edp_pageview" | "edp_identify" | "custom_event" | string';
     }
     if (signature.includes('string &')) {
         return 'string';

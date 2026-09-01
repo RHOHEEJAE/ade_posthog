@@ -70,7 +70,7 @@ describe('PostHogProvider web click capture', () => {
     cleanup()
   })
 
-  it('should capture a click as $event_type click', () => {
+  it('should capture a click as event_type click', () => {
     const client = createClient()
     const { getByText } = renderOnWeb(client)
 

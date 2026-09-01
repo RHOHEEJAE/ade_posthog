@@ -83,22 +83,22 @@ describe('beforeSend option', () => {
     expect(capture.getCaptures()).toHaveLength(0)
   })
 
-  it('runs per fanned-out payload, so it can drop the $exception but keep the tool call', async () => {
+  it('runs per fanned-out payload, so it can drop the edp_exception but keep the tool call', async () => {
     instrument(server, fakePostHog(), {
-      beforeSend: (event) => (event.event === '$exception' ? null : event),
+      beforeSend: (event) => (event.event === 'edp_exception' ? null : event),
     })
 
     await callMissingTodo(client).catch(() => undefined)
     await new Promise((r) => setTimeout(r, 50))
 
     expect(capture.findCapturesByEvent('$mcp_tool_call')).toHaveLength(1)
-    expect(capture.findCapturesByEvent('$exception')).toHaveLength(0)
+    expect(capture.findCapturesByEvent('edp_exception')).toHaveLength(0)
   })
 
   it('drops only the throwing payload and still sends the rest', async () => {
     instrument(server, fakePostHog(), {
       beforeSend: (event) => {
-        if (event.event === '$exception') {
+        if (event.event === 'edp_exception') {
           throw new Error('beforeSend boom')
         }
         return event
@@ -109,7 +109,7 @@ describe('beforeSend option', () => {
     await new Promise((r) => setTimeout(r, 50))
 
     expect(capture.findCapturesByEvent('$mcp_tool_call')).toHaveLength(1)
-    expect(capture.findCapturesByEvent('$exception')).toHaveLength(0)
+    expect(capture.findCapturesByEvent('edp_exception')).toHaveLength(0)
   })
 
   it('supports async beforeSend', async () => {

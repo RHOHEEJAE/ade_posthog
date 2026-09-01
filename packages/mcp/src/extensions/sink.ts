@@ -22,7 +22,7 @@ export interface McpCaptureOptions {
 
 /**
  * Runs an MCP event through the full transform: sanitize → truncate → fan out
- * into the `$mcp_*` / `$exception` capture payloads → `beforeSend`. Returns
+ * into the `$mcp_*` / `edp_exception` capture payloads → `beforeSend`. Returns
  * `null` (and logs) if a transform stage throws, so the event is dropped rather
  * than partially sent. Individual payloads dropped by `beforeSend` are filtered
  * out of the returned `captures`.
@@ -118,13 +118,13 @@ export class McpEventSink {
     const { event: fullEvent, captures } = result
     try {
       for (const captureEvent of captures) {
-        // `$groups` is written into `properties` by `buildPostHogCaptureEvents`,
+        // `groups` is written into `properties` by `buildPostHogCaptureEvents`,
         // but posthog-node's `prepareEventMessage` overwrites the outgoing
-        // `$groups` property with the top-level `groups` field
-        // (`$groups: eventMessage.groups || groups`). Without passing `groups`
+        // `groups` property with the top-level `groups` field
+        // (`groups: eventMessage.groups || groups`). Without passing `groups`
         // here the group association would be silently dropped. See
         // https://github.com/PostHog/posthog-js/issues/3888.
-        const groups = captureEvent.properties.$groups as Record<string, string> | undefined
+        const groups = captureEvent.properties.groups as Record<string, string> | undefined
 
         this.posthog.capture({
           distinctId: captureEvent.distinct_id,

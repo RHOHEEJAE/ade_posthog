@@ -29,11 +29,11 @@ function findEvent(events: PostHogCaptureEvent[], eventName: string): PostHogCap
   return events.find((event) => event.event === eventName)
 }
 
-// Minimal core ErrorProperties ($exception_list) shape for fixtures.
+// Minimal core ErrorProperties (exception_list) shape for fixtures.
 function makeError(value: string, type = 'Error'): Event['error'] {
   return {
-    $exception_list: [{ type, value, mechanism: { type: 'generic', handled: true } }],
-    $exception_level: 'error',
+    exception_list: [{ type, value, mechanism: { type: 'generic', handled: true } }],
+    exception_level: 'error',
   }
 }
 
@@ -59,12 +59,12 @@ describe('buildPostHogCaptureEvents', () => {
     expect(event.properties).not.toHaveProperty('project_id')
   })
 
-  it('stamps $mcp_protocol_version on any event carrying it, including the $exception sibling', () => {
+  it('stamps $mcp_protocol_version on any event carrying it, including the edp_exception sibling', () => {
     // Not initialize-only: a tool call inherits the session's negotiated version.
     const [toolCall] = buildPostHogCaptureEvents(makeEvent({ protocolVersion: '2025-06-18' }))
     expect(toolCall.properties[PostHogMCPAnalyticsProperty.ProtocolVersion]).toBe('2025-06-18')
 
-    // The $exception sibling carries it too (surfaced for debugging failures).
+    // The edp_exception sibling carries it too (surfaced for debugging failures).
     const errored = buildPostHogCaptureEvents(
       makeEvent({ protocolVersion: '2025-06-18', isError: true, error: makeError('boom') })
     )
@@ -76,14 +76,14 @@ describe('buildPostHogCaptureEvents', () => {
     expect(preHandshake.properties).not.toHaveProperty(PostHogMCPAnalyticsProperty.ProtocolVersion)
   })
 
-  it('does not stamp $lib/$lib_version in the built properties (the client owns those)', () => {
-    // `$lib` / `$lib_version` are set by the posthog-node client via
+  it('does not stamp lib/lib_version in the built properties (the client owns those)', () => {
+    // `lib` / `lib_version` are set by the posthog-node client via
     // `getLibraryId()` / `getLibraryVersion()` (see `applyMcpLibIdentity`), not
     // by the event builder — and never as the legacy `$mcp_lib` keys.
     const [event] = buildPostHogCaptureEvents(makeEvent())
 
-    expect(event.properties).not.toHaveProperty('$lib')
-    expect(event.properties).not.toHaveProperty('$lib_version')
+    expect(event.properties).not.toHaveProperty('lib')
+    expect(event.properties).not.toHaveProperty('lib_version')
     expect(event.properties).not.toHaveProperty('$mcp_lib')
     expect(event.properties).not.toHaveProperty('$mcp_lib_version')
   })
@@ -117,7 +117,7 @@ describe('buildPostHogCaptureEvents', () => {
     )
     expect(toolCall?.properties).not.toHaveProperty('$mcp_context')
     // With an identity resolved we do not opt out of person processing.
-    expect(toolCall?.properties).not.toHaveProperty('$process_person_profile')
+    expect(toolCall?.properties).not.toHaveProperty('process_person_profile')
   })
 
   it('uses identifyActorGivenId as distinct_id when available', () => {
@@ -132,7 +132,7 @@ describe('buildPostHogCaptureEvents', () => {
     expect(event.distinct_id).toBe('ses_session456')
   })
 
-  it('builds an $exception event alongside the regular event for errors', () => {
+  it('builds an edp_exception event alongside the regular event for errors', () => {
     const events = buildPostHogCaptureEvents(
       makeEvent({
         isError: true,
@@ -145,14 +145,14 @@ describe('buildPostHogCaptureEvents', () => {
     expect(events[0].properties.$mcp_is_error).toBe(true)
 
     const exceptionEvent = events[1]
-    expect(exceptionEvent.event).toBe('$exception')
+    expect(exceptionEvent.event).toBe('edp_exception')
     expect(exceptionEvent.distinct_id).toBe('ses_session456')
-    // The core $exception_list / $exception_level properties are spread through.
-    expect(exceptionEvent.properties.$exception_level).toBe('error')
-    expect(exceptionEvent.properties.$exception_list).toEqual([
+    // The core exception_list / exception_level properties are spread through.
+    expect(exceptionEvent.properties.exception_level).toBe('error')
+    expect(exceptionEvent.properties.exception_list).toEqual([
       expect.objectContaining({ type: 'TimeoutError', value: 'Connection timeout' }),
     ])
-    expect(exceptionEvent.properties.$session_id).toBe('ses_session456')
+    expect(exceptionEvent.properties.session_id).toBe('ses_session456')
     expect(exceptionEvent.properties.$mcp_resource_name).toBe('get_weather')
     expect(exceptionEvent.properties.$mcp_tool_name).toBe('get_weather')
     expect(exceptionEvent.properties.$mcp_server_name).toBe('weather-server')
@@ -160,7 +160,7 @@ describe('buildPostHogCaptureEvents', () => {
     expect(exceptionEvent.properties).not.toHaveProperty('$mcp_lib_version')
   })
 
-  it('spreads customer eventProperties onto the $exception event', () => {
+  it('spreads customer eventProperties onto the edp_exception event', () => {
     const events = buildPostHogCaptureEvents(
       makeEvent({
         isError: true,
@@ -168,7 +168,7 @@ describe('buildPostHogCaptureEvents', () => {
         properties: {
           deployment: 'prod',
           $mcp_exec_tool_call_description: 'Run a HogQL/SQL query.',
-          $groups: { organization: 'org_123' },
+          groups: { organization: 'org_123' },
         },
       })
     )
@@ -177,19 +177,19 @@ describe('buildPostHogCaptureEvents', () => {
 
     expect(exceptionEvent?.properties.deployment).toBe('prod')
     expect(exceptionEvent?.properties.$mcp_exec_tool_call_description).toBe('Run a HogQL/SQL query.')
-    expect(exceptionEvent?.properties.$groups).toEqual({
+    expect(exceptionEvent?.properties.groups).toEqual({
       organization: 'org_123',
     })
   })
 
-  it('does not build an $exception event when isError is false', () => {
+  it('does not build an edp_exception event when isError is false', () => {
     const events = buildPostHogCaptureEvents(makeEvent({ isError: false }))
 
     expect(events).toHaveLength(1)
     expect(events[0].event).toBe('$mcp_tool_call')
   })
 
-  it('does not build an $exception event when enableExceptionAutocapture is false', () => {
+  it('does not build an edp_exception event when enableExceptionAutocapture is false', () => {
     const events = buildPostHogCaptureEvents(makeEvent({ isError: true, error: makeError('boom') }), {
       enableExceptionAutocapture: false,
     })
@@ -199,7 +199,7 @@ describe('buildPostHogCaptureEvents', () => {
     expect(findEvent(events, PostHogMCPAnalyticsEvent.Exception)).toBeUndefined()
   })
 
-  it('builds an $exception event by default when isError is true', () => {
+  it('builds an edp_exception event by default when isError is true', () => {
     const events = buildPostHogCaptureEvents(makeEvent({ isError: true, error: makeError('boom') }))
 
     expect(events).toHaveLength(2)
@@ -243,7 +243,7 @@ describe('buildPostHogCaptureEvents', () => {
     }
   })
 
-  it('includes $set person properties from identity data', () => {
+  it('includes edp_set person properties from identity data', () => {
     const [event] = buildPostHogCaptureEvents(
       makeEvent({
         identifyActorGivenId: 'user_abc',
@@ -251,17 +251,17 @@ describe('buildPostHogCaptureEvents', () => {
       })
     )
 
-    expect(event.properties.$set).toEqual({
+    expect(event.properties.edp_set).toEqual({
       name: 'Alice',
       email: 'alice@example.com',
       plan: 'pro',
     })
   })
 
-  it('does not include $set when no identity data is present', () => {
+  it('does not include edp_set when no identity data is present', () => {
     const [event] = buildPostHogCaptureEvents(makeEvent())
 
-    expect(event.properties.$set).toBeUndefined()
+    expect(event.properties.edp_set).toBeUndefined()
   })
 
   it('passes through parameters and response as-is', () => {

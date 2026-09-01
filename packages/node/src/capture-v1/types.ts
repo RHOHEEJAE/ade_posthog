@@ -14,7 +14,7 @@ export interface V1EventOptions {
 
 /**
  * A single event in a Capture V1 batch (`POST /i/v1/analytics/events`).
- * `session_id`/`window_id` are promoted from the `$session_id`/`$window_id`
+ * `session_id`/`window_id` are promoted from the `session_id`/`window_id`
  * sentinels; there is no top-level `api_key`.
  */
 export interface V1Event {

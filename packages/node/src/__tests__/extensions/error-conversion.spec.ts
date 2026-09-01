@@ -21,12 +21,12 @@ describe('error conversion', () => {
     [createModulerModifier(), addSourceContext, createRelativePathModifier()]
   )
 
-  async function getExceptionList(error: unknown): Promise<CoreErrorTracking.ErrorProperties['$exception_list']> {
+  async function getExceptionList(error: unknown): Promise<CoreErrorTracking.ErrorProperties['exception_list']> {
     const syntheticException = new Error('PostHog syntheticException')
-    const { $exception_list } = errorPropertiesBuilder.buildFromUnknown(error, {
+    const { exception_list } = errorPropertiesBuilder.buildFromUnknown(error, {
       syntheticException,
     })
-    return await errorPropertiesBuilder.modifyFrames($exception_list)
+    return await errorPropertiesBuilder.modifyFrames(exception_list)
   }
 
   it('should create an exception list from a string', async () => {

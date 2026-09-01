@@ -214,7 +214,7 @@ describe('transport-identity (HTTP request headers)', () => {
       expect(userAgent).toBe('x'.repeat(256) + '...')
     })
 
-    it('carries the transport identity onto the $exception sibling of a failed call', async () => {
+    it('carries the transport identity onto the edp_exception sibling of a failed call', async () => {
       const server = createServer()
       await expect(
         invoke(

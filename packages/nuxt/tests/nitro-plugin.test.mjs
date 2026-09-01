@@ -76,7 +76,7 @@ assert.deepEqual(calls[2], [
   'captureException',
   error,
   'event-id',
-  { $process_person_profile: false, path: '/api/test', method: 'POST' },
+  { process_person_profile: false, path: '/api/test', method: 'POST' },
 ])
 assert.deepEqual(calls[3], ['flush'])
 
@@ -86,7 +86,7 @@ assert.deepEqual(calls[4], [
   'captureException',
   backgroundError,
   'event-id',
-  { $process_person_profile: false },
+  { process_person_profile: false },
 ])
 assert.deepEqual(calls[5], ['flush'])
 

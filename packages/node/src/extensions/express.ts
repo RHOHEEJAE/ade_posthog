@@ -40,7 +40,7 @@ function buildRequestContextData(posthog: PostHogBackendClient, req: Request): P
 
   addProperty(
     properties,
-    '$current_url',
+    'current_url',
     normalizeRequestCurrentUrl(req.originalUrl || req.url, disableCaptureUrlHashes)
   )
   addProperty(properties, '$request_method', req.method)
@@ -90,7 +90,7 @@ function posthogErrorHandler(posthog: PostHogBackendClient): ExpressErrorMiddlew
     const syntheticException = new Error('Synthetic exception')
     const hint: CoreErrorTracking.EventHint = { mechanism: { type: 'middleware', handled: false }, syntheticException }
     const additionalProperties: Record<string, any> = {
-      ...(contextData.sessionId !== undefined ? { $session_id: contextData.sessionId } : {}),
+      ...(contextData.sessionId !== undefined ? { session_id: contextData.sessionId } : {}),
       ...(contextData.properties || {}),
       $response_status_code: res.statusCode,
     }

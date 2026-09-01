@@ -6,7 +6,7 @@
 import { ErrorTracking as CoreErrorTracking } from '@posthog/core'
 
 /**
- * Builds PostHog error-tracking properties (`$exception_list`) from arbitrary
+ * Builds PostHog error-tracking properties (`exception_list`) from arbitrary
  * thrown values, reusing `@posthog/core`'s shared coercers + stack parser
  * instead of a bespoke V8 parser. Mirrors how `posthog-node` constructs its
  * builder, minus the Node-only frame modifiers (source context, relative
@@ -36,12 +36,12 @@ interface CallToolResult {
 /**
  * Captures structured exception properties from any thrown value.
  *
- * Returns the `$exception_list` shape PostHog error tracking expects, so MCP
+ * Returns the `exception_list` shape PostHog error tracking expects, so MCP
  * tool failures group and (with uploaded source maps) symbolicate the same way
  * as exceptions from any other PostHog SDK.
  *
  * @param error - The thrown value (Error, string, object, CallToolResult, or anything).
- * @returns Core `ErrorProperties` ready to spread onto a `$exception` event.
+ * @returns Core `ErrorProperties` ready to spread onto a `edp_exception` event.
  */
 export function captureException(error: unknown): CoreErrorTracking.ErrorProperties {
   // MCP SDK 1.21.0+ converts tool errors to CallToolResult, which the core

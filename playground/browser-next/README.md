@@ -42,7 +42,7 @@ The sandbox:
 
 - prefixes manually named capture events with `real_posthog_test_`; identity and group actions use PostHog's reserved event names;
 - prefixes operator-supplied identified IDs with `real-posthog-test-`; anonymous IDs remain SDK-generated UUIDs;
-- adds a unique `test_run_id`, `synthetic: true`, and `$process_person_profile: false` to captured events;
+- adds a unique `test_run_id`, `synthetic: true`, and `process_person_profile: false` to captured events;
 - disables automatic pageviews and bot filtering for explicit headless-browser testing;
 - does not expose `POSTHOG_PERSONAL_API_KEY` to Vite or mutate project configuration.
 

@@ -26,7 +26,7 @@ export default function ExternalChat() {
             {/* Crisp chat Script */}
             <Script id="crisp-chat" strategy="afterInteractive">
                 {`
-                    window.$crisp=[];
+                    window.crisp=[];
                     window.CRISP_WEBSITE_ID="8a81621c-0ed1-4d1f-b552-9404db8effd5";
                     (function(){
                         d = document;

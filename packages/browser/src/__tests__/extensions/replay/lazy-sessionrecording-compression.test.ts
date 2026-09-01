@@ -160,7 +160,7 @@ describe('LazyLoadedSessionRecording compression paths', () => {
             shouldCallGzipCompress: false,
             shouldQueueCustomEvent: false,
         },
-    ])('compresses full snapshots with $name', async (testCase) => {
+    ])('compresses full snapshots with name', async (testCase) => {
         let releaseCompression: () => void = () => {}
         const compressionGate = new Promise<void>((resolve) => {
             releaseCompression = resolve
@@ -203,9 +203,9 @@ describe('LazyLoadedSessionRecording compression paths', () => {
         }
 
         expect(posthog.capture).toHaveBeenCalledWith(
-            '$snapshot',
+            'edp_snapshot',
             expect.objectContaining({
-                $snapshot_data: expectedSnapshotData,
+                snapshot_data: expectedSnapshotData,
             }),
             expect.any(Object)
         )
@@ -237,9 +237,9 @@ describe('LazyLoadedSessionRecording compression paths', () => {
         await Promise.resolve()
 
         expect(posthog.capture).toHaveBeenCalledWith(
-            '$snapshot',
+            'edp_snapshot',
             expect.objectContaining({
-                $snapshot_data: [expect.objectContaining({ type: 2, cv: '2024-10', data: expect.any(String) })],
+                snapshot_data: [expect.objectContaining({ type: 2, cv: '2024-10', data: expect.any(String) })],
             }),
             expect.any(Object)
         )
@@ -264,9 +264,9 @@ describe('LazyLoadedSessionRecording compression paths', () => {
         lazyLoadedSessionRecording['_onBeforeUnload']()
 
         expect(posthog.capture).toHaveBeenCalledWith(
-            '$snapshot',
+            'edp_snapshot',
             expect.objectContaining({
-                $snapshot_data: [expect.objectContaining({ type: 2, cv: '2024-10', data: expect.any(String) })],
+                snapshot_data: [expect.objectContaining({ type: 2, cv: '2024-10', data: expect.any(String) })],
             }),
             expect.any(Object)
         )
@@ -293,10 +293,10 @@ describe('LazyLoadedSessionRecording compression paths', () => {
 
         // the full snapshot must be attributed to the rotated session, not the buffer's stale one
         expect(posthog.capture).toHaveBeenCalledWith(
-            '$snapshot',
+            'edp_snapshot',
             expect.objectContaining({
-                $session_id: 'rotated-session-id',
-                $snapshot_data: expect.arrayContaining([expect.objectContaining({ type: 2 })]),
+                session_id: 'rotated-session-id',
+                snapshot_data: expect.arrayContaining([expect.objectContaining({ type: 2 })]),
             }),
             expect.any(Object)
         )
@@ -326,10 +326,10 @@ describe('LazyLoadedSessionRecording compression paths', () => {
         // only the new session's full snapshot ships; the undrained old-session event is discarded, not relabeled
         expect(posthog.capture).toHaveBeenCalledTimes(1)
         expect(posthog.capture).toHaveBeenCalledWith(
-            '$snapshot',
+            'edp_snapshot',
             expect.objectContaining({
-                $session_id: 'rotated-session-id',
-                $snapshot_data: [expect.objectContaining({ type: 2 })],
+                session_id: 'rotated-session-id',
+                snapshot_data: [expect.objectContaining({ type: 2 })],
             }),
             expect.any(Object)
         )

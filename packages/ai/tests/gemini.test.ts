@@ -641,7 +641,7 @@ describe('PostHogGemini - Jest test suite', () => {
     expect(properties['$ai_output_tokens']).toBe(4)
   })
 
-  test('anonymous user - $process_person_profile set to false', async () => {
+  test('anonymous user - process_person_profile set to false', async () => {
     await client.models.generateContent({
       model: 'gemini-2.0-flash-001',
       contents: 'Hello',
@@ -653,10 +653,10 @@ describe('PostHogGemini - Jest test suite', () => {
     const { distinctId, properties } = captureArgs[0]
 
     expect(distinctId).toBe('trace-123')
-    expect(properties['$process_person_profile']).toBe(false)
+    expect(properties['process_person_profile']).toBe(false)
   })
 
-  test('identified user - $process_person_profile not set', async () => {
+  test('identified user - process_person_profile not set', async () => {
     await client.models.generateContent({
       model: 'gemini-2.0-flash-001',
       contents: 'Hello',
@@ -669,7 +669,7 @@ describe('PostHogGemini - Jest test suite', () => {
     const { distinctId, properties } = captureArgs[0]
 
     expect(distinctId).toBe('user-456')
-    expect(properties['$process_person_profile']).toBeUndefined()
+    expect(properties['process_person_profile']).toBeUndefined()
   })
 
   test('systemInstruction parameter as string', async () => {
@@ -1169,7 +1169,7 @@ describe('PostHogGemini - Jest test suite', () => {
       expect(properties['$ai_output_choices']).toBeNull()
       expect(properties['$ai_http_status']).toBe(200)
       expect(properties['$ai_latency']).toBeGreaterThanOrEqual(0)
-      expect(properties['$ai_trace_id']).toBeDefined()
+      expect(properties['ai_trace_id']).toBeDefined()
       expect(properties['$ai_base_url']).toBe('https://generativelanguage.googleapis.com')
       expect(properties['foo']).toBe('bar')
 
@@ -1251,7 +1251,7 @@ describe('PostHogGemini - Jest test suite', () => {
       expect(embedCall.config).toEqual({ outputDimensionality: 64 })
     })
 
-    test('no distinct id sets $process_person_profile to false', async () => {
+    test('no distinct id sets process_person_profile to false', async () => {
       ;(client as any).client.models.embedContent = jest.fn().mockResolvedValue(mockEmbedResponse)
 
       await client.models.embedContent({
@@ -1260,9 +1260,9 @@ describe('PostHogGemini - Jest test suite', () => {
       })
 
       const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
-      expect(captureArgs[0].properties['$process_person_profile']).toBe(false)
+      expect(captureArgs[0].properties['process_person_profile']).toBe(false)
       // distinctId should fall back to traceId
-      expect(captureArgs[0].distinctId).toBe(captureArgs[0].properties['$ai_trace_id'])
+      expect(captureArgs[0].distinctId).toBe(captureArgs[0].properties['ai_trace_id'])
     })
   })
 })

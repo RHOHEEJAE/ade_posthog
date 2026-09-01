@@ -8,27 +8,27 @@ export function getContext(window: Window | undefined, disableCaptureUrlHashes: 
     const osValue = os(window)
     context = {
       ...context,
-      ...(osValue !== undefined && { $os: osValue }),
-      $browser: browser(userAgent, window.navigator.vendor, !!(window as any).opera),
-      $referrer: window.document.referrer,
-      $referring_domain: referringDomain(window.document.referrer),
-      $device: device(userAgent),
-      $current_url: disableCaptureUrlHashes ? stripUrlHash(window.location.href) : window.location.href,
-      $host: window.location.host,
-      $pathname: window.location.pathname,
-      $browser_version: browserVersion(userAgent, window.navigator.vendor, !!(window as any).opera),
-      $screen_height: window.screen.height,
-      $screen_width: window.screen.width,
-      $screen_dpr: window.devicePixelRatio,
+      ...(osValue !== undefined && { os: osValue }),
+      browser: browser(userAgent, window.navigator.vendor, !!(window as any).opera),
+      referrer: window.document.referrer,
+      referring_domain: referringDomain(window.document.referrer),
+      device: device(userAgent),
+      current_url: disableCaptureUrlHashes ? stripUrlHash(window.location.href) : window.location.href,
+      host: window.location.host,
+      pathname: window.location.pathname,
+      browser_version: browserVersion(userAgent, window.navigator.vendor, !!(window as any).opera),
+      screen_height: window.screen.height,
+      screen_width: window.screen.width,
+      screen_dpr: window.devicePixelRatio,
     }
   }
 
   context = {
     ...context,
-    $lib: 'js',
-    $lib_version: version,
-    $insert_id: Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10),
-    $time: currentTimestamp() / 1000, // epoch time in seconds
+    lib: 'js',
+    lib_version: version,
+    insert_id: Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10),
+    time: currentTimestamp() / 1000, // epoch time in seconds
   }
   return context // TODO: strip empty props?
 }

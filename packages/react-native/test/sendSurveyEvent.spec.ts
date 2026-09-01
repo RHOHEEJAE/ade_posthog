@@ -35,16 +35,16 @@ describe('sendSurveyEvent', () => {
     it('should capture survey sent event with correct base properties', () => {
       const survey = createMockSurvey()
       const responses = {
-        '$survey_response_question-1': 4,
-        '$survey_response_question-2': 'Great service!',
+        'survey_response_question-1': 4,
+        'survey_response_question-2': 'Great service!',
       }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       expect(mockPostHog.capture).toHaveBeenCalledWith('survey sent', {
-        $survey_name: 'Test Survey',
-        $survey_id: 'test-survey-id',
-        $survey_questions: [
+        survey_name: 'Test Survey',
+        survey_id: 'test-survey-id',
+        survey_questions: [
           {
             id: 'question-1',
             question: 'How satisfied are you?',
@@ -56,12 +56,12 @@ describe('sendSurveyEvent', () => {
             response: 'Great service!',
           },
         ],
-        '$survey_response_question-1': 4,
-        '$survey_response_question-2': 'Great service!',
-        $survey_response: 4,
-        $survey_response_1: 'Great service!',
-        $set: {
-          '$survey_responded/test-survey-id': true,
+        'survey_response_question-1': 4,
+        'survey_response_question-2': 'Great service!',
+        survey_response: 4,
+        survey_response_1: 'Great service!',
+        edp_set: {
+          'survey_responded/test-survey-id': true,
         },
       })
     })
@@ -76,17 +76,17 @@ describe('sendSurveyEvent', () => {
       expect(mockPostHog.capture).toHaveBeenNthCalledWith(
         1,
         'survey shown',
-        expect.objectContaining({ $survey_language: 'pt' })
+        expect.objectContaining({ survey_language: 'pt' })
       )
       expect(mockPostHog.capture).toHaveBeenNthCalledWith(
         2,
         'survey dismissed',
-        expect.objectContaining({ $survey_language: 'pt' })
+        expect.objectContaining({ survey_language: 'pt' })
       )
       expect(mockPostHog.capture).toHaveBeenNthCalledWith(
         3,
         'survey sent',
-        expect.objectContaining({ $survey_language: 'pt' })
+        expect.objectContaining({ survey_language: 'pt' })
       )
     })
   })
@@ -98,18 +98,18 @@ describe('sendSurveyEvent', () => {
         current_iteration_start_date: '2024-01-15',
       })
       const responses = {
-        '$survey_response_question-1': 4,
-        '$survey_response_question-2': 'Great service!',
+        'survey_response_question-1': 4,
+        'survey_response_question-2': 'Great service!',
       }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       expect(mockPostHog.capture).toHaveBeenCalledWith('survey sent', {
-        $survey_name: 'Test Survey',
-        $survey_id: 'test-survey-id',
-        $survey_iteration: 2,
-        $survey_iteration_start_date: '2024-01-15',
-        $survey_questions: [
+        survey_name: 'Test Survey',
+        survey_id: 'test-survey-id',
+        survey_iteration: 2,
+        survey_iteration_start_date: '2024-01-15',
+        survey_questions: [
           {
             id: 'question-1',
             question: 'How satisfied are you?',
@@ -121,12 +121,12 @@ describe('sendSurveyEvent', () => {
             response: 'Great service!',
           },
         ],
-        '$survey_response_question-1': 4,
-        '$survey_response_question-2': 'Great service!',
-        $survey_response: 4,
-        $survey_response_1: 'Great service!',
-        $set: {
-          '$survey_responded/test-survey-id/2': true,
+        'survey_response_question-1': 4,
+        'survey_response_question-2': 'Great service!',
+        survey_response: 4,
+        survey_response_1: 'Great service!',
+        edp_set: {
+          'survey_responded/test-survey-id/2': true,
         },
       })
     })
@@ -136,15 +136,15 @@ describe('sendSurveyEvent', () => {
         current_iteration: undefined,
         current_iteration_start_date: undefined,
       })
-      const responses = { '$survey_response_question-1': 3 }
+      const responses = { 'survey_response_question-1': 3 }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      expect(captureCall).not.toHaveProperty('$survey_iteration')
-      expect(captureCall).not.toHaveProperty('$survey_iteration_start_date')
-      expect(captureCall.$set).toEqual({
-        '$survey_responded/test-survey-id': true,
+      expect(captureCall).not.toHaveProperty('survey_iteration')
+      expect(captureCall).not.toHaveProperty('survey_iteration_start_date')
+      expect(captureCall.edp_set).toEqual({
+        'survey_responded/test-survey-id': true,
       })
     })
   })
@@ -153,25 +153,25 @@ describe('sendSurveyEvent', () => {
     it('should handle string responses', () => {
       const survey = createMockSurvey()
       const responses = {
-        '$survey_response_question-2': 'This is a text response',
+        'survey_response_question-2': 'This is a text response',
       }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      expect(captureCall.$survey_questions[1].response).toBe('This is a text response')
+      expect(captureCall.survey_questions[1].response).toBe('This is a text response')
     })
 
     it('should handle numeric responses', () => {
       const survey = createMockSurvey()
       const responses = {
-        '$survey_response_question-1': 5,
+        'survey_response_question-1': 5,
       }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      expect(captureCall.$survey_questions[0].response).toBe(5)
+      expect(captureCall.survey_questions[0].response).toBe(5)
     })
 
     it('should handle array responses by creating a copy', () => {
@@ -187,13 +187,13 @@ describe('sendSurveyEvent', () => {
       })
       const originalArray = ['Option 1', 'Option 3']
       const responses = {
-        '$survey_response_question-multi': originalArray,
+        'survey_response_question-multi': originalArray,
       }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      const responseArray = captureCall.$survey_questions[0].response
+      const responseArray = captureCall.survey_questions[0].response
 
       expect(responseArray).toEqual(['Option 1', 'Option 3'])
       expect(responseArray).not.toBe(originalArray) // Should be a copy, not the same reference
@@ -202,27 +202,27 @@ describe('sendSurveyEvent', () => {
     it('should handle null responses', () => {
       const survey = createMockSurvey()
       const responses = {
-        '$survey_response_question-1': null,
+        'survey_response_question-1': null,
       }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      expect(captureCall.$survey_questions[0].response).toBeNull()
+      expect(captureCall.survey_questions[0].response).toBeNull()
     })
 
     it('should return null for questions without responses', () => {
       const survey = createMockSurvey()
       const responses = {
-        '$survey_response_question-1': 4,
+        'survey_response_question-1': 4,
         // question-2 has no response
       }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      expect(captureCall.$survey_questions[0].response).toBe(4)
-      expect(captureCall.$survey_questions[1].response).toBeUndefined()
+      expect(captureCall.survey_questions[0].response).toBe(4)
+      expect(captureCall.survey_questions[1].response).toBeUndefined()
     })
   })
 
@@ -234,8 +234,8 @@ describe('sendSurveyEvent', () => {
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      expect(captureCall.$set).toEqual({
-        '$survey_responded/test-survey-id': true,
+      expect(captureCall.edp_set).toEqual({
+        'survey_responded/test-survey-id': true,
       })
     })
 
@@ -248,8 +248,8 @@ describe('sendSurveyEvent', () => {
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      expect(captureCall.$set).toEqual({
-        '$survey_responded/test-survey-id/3': true,
+      expect(captureCall.edp_set).toEqual({
+        'survey_responded/test-survey-id/3': true,
       })
     })
   })
@@ -278,15 +278,15 @@ describe('sendSurveyEvent', () => {
         ],
       })
       const responses = {
-        '$survey_response_rating-q': 8,
-        '$survey_response_multi-q': ['A', 'C'],
-        '$survey_response_text-q': 'Good job!',
+        'survey_response_rating-q': 8,
+        'survey_response_multi-q': ['A', 'C'],
+        'survey_response_text-q': 'Good job!',
       }
 
       sendSurveyEvent(responses, survey, mockPostHog)
 
       const captureCall = mockPostHog.capture.mock.calls[0][1]
-      expect(captureCall.$survey_questions).toEqual([
+      expect(captureCall.survey_questions).toEqual([
         {
           id: 'rating-q',
           question: 'Rate us',
@@ -320,14 +320,14 @@ describe('dismissedSurveyEvent', () => {
     {
       label: 'captures dismissal responses and marks partial completion when there are answers',
       responses: {
-        '$survey_response_question-1': 4,
-        '$survey_response_question-2': 'Great service!',
+        'survey_response_question-1': 4,
+        'survey_response_question-2': 'Great service!',
       },
       expectedPayload: {
-        $survey_name: 'Test Survey',
-        $survey_id: 'test-survey-id',
-        $survey_partially_completed: true,
-        $survey_questions: [
+        survey_name: 'Test Survey',
+        survey_id: 'test-survey-id',
+        survey_partially_completed: true,
+        survey_questions: [
           {
             id: 'question-1',
             question: 'How satisfied are you?',
@@ -339,11 +339,11 @@ describe('dismissedSurveyEvent', () => {
             response: 'Great service!',
           },
         ],
-        '$survey_response_question-1': 4,
-        '$survey_response_question-2': 'Great service!',
-        $survey_response: 4,
-        $survey_response_1: 'Great service!',
-        $set: {
+        'survey_response_question-1': 4,
+        'survey_response_question-2': 'Great service!',
+        survey_response: 4,
+        survey_response_1: 'Great service!',
+        edp_set: {
           '$survey_dismissed/test-survey-id': true,
         },
       },
@@ -352,10 +352,10 @@ describe('dismissedSurveyEvent', () => {
       label: 'marks dismissal as not partially completed when no answers exist',
       responses: {},
       expectedPayload: {
-        $survey_name: 'Test Survey',
-        $survey_id: 'test-survey-id',
-        $survey_partially_completed: false,
-        $survey_questions: [
+        survey_name: 'Test Survey',
+        survey_id: 'test-survey-id',
+        survey_partially_completed: false,
+        survey_questions: [
           {
             id: 'question-1',
             question: 'How satisfied are you?',
@@ -367,7 +367,7 @@ describe('dismissedSurveyEvent', () => {
             response: undefined,
           },
         ],
-        $set: {
+        edp_set: {
           '$survey_dismissed/test-survey-id': true,
         },
       },

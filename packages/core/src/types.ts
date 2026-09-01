@@ -45,12 +45,12 @@ export type PostHogCoreOptions = {
    * Whether to strip URL fragments (`#...`) from automatically captured URL fields.
    * Disabled by default for backwards compatibility. Set to `true` to strip hashes from:
    *
-   * - `$current_url` on automatically captured browser events, including `$pageview`
-   * - `$initial_current_url`
-   * - `$session_entry_url`
-   * - `$elements[*].attr__href` and `$external_click_url` for autocapture and dead-click autocapture
-   * - Next.js Pages Router `$pageview` `$current_url`
-   * - web vitals `$current_url`
+   * - `current_url` on automatically captured browser events, including `edp_pageview`
+   * - `initial_current_url`
+   * - `session_entry_url`
+   * - `elements[*].attr__href` and `external_click_url` for autocapture and dead-click autocapture
+   * - Next.js Pages Router `edp_pageview` `current_url`
+   * - web vitals `current_url`
    * - logs `url.full`
    * - conversations `current_url` and `request_url`
    * - session replay rrweb meta/custom-event `href` URLs
@@ -318,9 +318,9 @@ export type PostHogCaptureOptions = {
   timestamp?: Date
   disableGeoip?: boolean
   /**
-   * Internal flag set by captureException() to indicate this $exception
+   * Internal flag set by captureException() to indicate this edp_exception
    * event originated from the proper exception capture path. Used to warn users who call
-   * capture('$exception') directly.
+   * capture('edp_exception') directly.
    */
   _originatedFromCaptureException?: boolean
 }
@@ -349,7 +349,7 @@ export type PostHogGroupProperties = {
 }
 
 export type PostHogAutocaptureElement = {
-  $el_text?: string
+  el_text?: string
   tag_name: string
   href?: string
   nth_child?: number
@@ -433,7 +433,7 @@ export type FeatureFlagResult = {
 }
 
 export type FeatureFlagResultOptions = {
-  /** Whether to send a $feature_flag_called event. Defaults to true. */
+  /** Whether to send a edp_feature_flag_called event. Defaults to true. */
   sendEvent?: boolean
 }
 
@@ -462,7 +462,7 @@ export type PostHogFlagsResponse = Omit<PostHogRemoteConfig, 'hasFeatureFlags'> 
   requestId?: string
   evaluatedAt?: number // Unix timestamp in milliseconds
   /**
-   * Server-controlled gate for minimal `$feature_flag_called` events. `true` only when the
+   * Server-controlled gate for minimal `edp_feature_flag_called` events. `true` only when the
    * project opted in; omitted otherwise. Absence always means full events.
    */
   minimalFlagCalledEvents?: boolean
@@ -545,7 +545,7 @@ export type JsonType = string | number | boolean | null | { [key: string]: JsonT
 export type FetchLike = (url: string, options: PostHogFetchOptions) => Promise<PostHogFetchResponse>
 
 /**
- * Error type constants for the $feature_flag_error property.
+ * Error type constants for the feature_flag_error property.
  *
  * These values are sent in analytics events to track flag evaluation failures.
  * They should not be changed without considering impact on existing dashboards
@@ -857,7 +857,7 @@ export type SurveySchedule = (typeof SurveySchedule)[keyof typeof SurveySchedule
 
 export type SurveyElement = {
   text?: string
-  $el_text?: string
+  el_text?: string
   tag_name?: string
   href?: string
   attr_id?: string
@@ -951,20 +951,20 @@ export type Logger = {
 }
 
 export const knownUnsafeEditableEvent = [
-  '$snapshot',
-  '$pageview',
-  '$pageleave',
-  '$set',
+  'edp_snapshot',
+  'edp_pageview',
+  'edp_pageleave',
+  'edp_set',
   'survey dismissed',
   'survey sent',
   'survey shown',
-  '$identify',
-  '$groupidentify',
-  '$create_alias',
+  'edp_identify',
+  'edp_groupidentify',
+  'edp_create_alias',
   '$$client_ingestion_warning',
-  '$web_experiment_applied',
-  '$feature_enrollment_update',
-  '$feature_flag_called',
+  'edp_web_experiment_applied',
+  'edp_feature_enrollment_update',
+  'edp_feature_flag_called',
 ] as const
 
 /**
@@ -998,9 +998,9 @@ export type CaptureEvent = {
   /** Properties associated with the event (optional to allow compatibility with Node SDK's EventMessage) */
   properties?: PostHogEventProperties
   /** Properties to set on the person (overrides existing values) */
-  $set?: PostHogEventProperties
+  edp_set?: PostHogEventProperties
   /** Properties to set on the person only once (does not override existing values) */
-  $set_once?: PostHogEventProperties
+  edp_set_once?: PostHogEventProperties
   /** Timestamp for the event */
   timestamp?: Date
 }

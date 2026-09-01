@@ -20,7 +20,7 @@ describe('matchProperty — numeric comparisons', () => {
     // number-on-number sanity
     { op: 'gt', value: 5, override: 6, expected: true },
     { op: 'lt', value: 5, override: 6, expected: false },
-  ])('$op $value vs $override -> $expected', ({ op, value, override, expected }) => {
+  ])('$op $value vs $override -> expected', ({ op, value, override, expected }) => {
     expect(matchProperty(prop(op, value), { k: override })).toBe(expected)
   })
 

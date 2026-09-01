@@ -25,7 +25,7 @@ function createMockPostHog(
     const props: Properties = {
         distinct_id: 'distinct-id',
         [DEVICE_ID]: 'anonymous-id',
-        $groups: { organization: 'org-id' },
+        groups: { organization: 'org-id' },
     }
     const eventHandlers = new Set<(event: { event: string; properties: Properties }) => void>()
     const currentSession = { sessionId: 'session-id', windowId: 'window-id', sessionStartTimestamp: 123 }
@@ -50,7 +50,7 @@ function createMockPostHog(
         _shouldDisableFlags: jest.fn(() => options.flagsDisabled ?? false),
         get_distinct_id: jest.fn(() => props.distinct_id as string),
         get_property: jest.fn((key: string) => props[key]),
-        getGroups: jest.fn(() => props.$groups),
+        getGroups: jest.fn(() => props.groups),
         is_capturing: jest.fn(() => true),
         sessionManager: {
             checkAndGetSessionAndWindowId: jest.fn(() => currentSession),
@@ -139,8 +139,8 @@ describe('BrowserClientAdapter', () => {
         expect(instance.capture).toHaveBeenCalledWith('test-event', { explicit: true }, {
             timestamp,
             uuid: 'test-uuid',
-            $set: { plan: 'paid' },
-            $set_once: { source: 'test' },
+            edp_set: { plan: 'paid' },
+            edp_set_once: { source: 'test' },
         } satisfies CaptureOptions)
 
         await host.dispose()
@@ -592,8 +592,8 @@ describe('BrowserClientAdapter', () => {
             expect.objectContaining({
                 data: expect.objectContaining({
                     timestamp,
-                    $set: { a: 1 },
-                    $set_once: { b: 2 },
+                    edp_set: { a: 1 },
+                    edp_set_once: { b: 2 },
                 }),
             })
         )

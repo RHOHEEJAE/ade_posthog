@@ -373,7 +373,7 @@ describe('local evaluation', () => {
     expect(mockedFetch).toHaveBeenCalledWith(...anyLocalEvalCall)
   })
 
-  it('falls back to server when bucketing_identifier is device_id and $device_id is missing', async () => {
+  it('falls back to server when bucketing_identifier is device_id and device_id is missing', async () => {
     const flags = {
       flags: [
         {
@@ -404,7 +404,7 @@ describe('local evaluation', () => {
     expect(mockedFetch).toHaveBeenCalledWith(...anyFlagsCall)
   })
 
-  it('does not fallback to server for missing $device_id when onlyEvaluateLocally is true', async () => {
+  it('does not fallback to server for missing device_id when onlyEvaluateLocally is true', async () => {
     const flags = {
       flags: [
         {
@@ -437,7 +437,7 @@ describe('local evaluation', () => {
     expect(mockedFetch).not.toHaveBeenCalledWith(...anyFlagsCall)
   })
 
-  it('getFeatureFlagResult falls back to server when bucketing_identifier is device_id and $device_id is missing', async () => {
+  it('getFeatureFlagResult falls back to server when bucketing_identifier is device_id and device_id is missing', async () => {
     const flags = {
       flags: [
         {
@@ -478,7 +478,7 @@ describe('local evaluation', () => {
     expect(mockedFetch).toHaveBeenCalledWith(...anyFlagsCall)
   })
 
-  it('getFeatureFlagResult does not fallback to server for missing $device_id when onlyEvaluateLocally is true', async () => {
+  it('getFeatureFlagResult does not fallback to server for missing device_id when onlyEvaluateLocally is true', async () => {
     const flags = {
       flags: [
         {
@@ -516,7 +516,7 @@ describe('local evaluation', () => {
     expect(mockedFetch).not.toHaveBeenCalledWith(...anyFlagsCall)
   })
 
-  it('getFeatureFlagPayload falls back to server when bucketing_identifier is device_id and $device_id is missing', async () => {
+  it('getFeatureFlagPayload falls back to server when bucketing_identifier is device_id and device_id is missing', async () => {
     const flags = {
       flags: [
         {
@@ -553,7 +553,7 @@ describe('local evaluation', () => {
     expect(mockedFetch).toHaveBeenCalledWith(...anyFlagsCall)
   })
 
-  it('getFeatureFlagPayload does not fallback to server for missing $device_id when onlyEvaluateLocally is true', async () => {
+  it('getFeatureFlagPayload does not fallback to server for missing device_id when onlyEvaluateLocally is true', async () => {
     const flags = {
       flags: [
         {
@@ -592,7 +592,7 @@ describe('local evaluation', () => {
     expect(mockedFetch).not.toHaveBeenCalledWith(...anyFlagsCall)
   })
 
-  it('uses $device_id for bucketing when bucketing_identifier is device_id', async () => {
+  it('uses device_id for bucketing when bucketing_identifier is device_id', async () => {
     const flags = {
       flags: [
         {
@@ -620,13 +620,13 @@ describe('local evaluation', () => {
 
     expect(
       await posthog.getFeatureFlag('complex-flag', 'some-distinct-id_within_rollout?', {
-        personProperties: { $device_id: sharedDeviceId },
+        personProperties: { device_id: sharedDeviceId },
       })
     ).toEqual(true)
 
     expect(
       await posthog.getFeatureFlag('complex-flag', 'some-distinct-id_outside_rollout?', {
-        personProperties: { $device_id: sharedDeviceId },
+        personProperties: { device_id: sharedDeviceId },
       })
     ).toEqual(true)
 
@@ -3208,7 +3208,7 @@ describe('local evaluation with evaluation contexts', () => {
 })
 
 describe('getFeatureFlag', () => {
-  it('should capture $feature_flag_called when called, but not add all cached flags', async () => {
+  it('should capture edp_feature_flag_called when called, but not add all cached flags', async () => {
     const flags = {
       flags: [
         {
@@ -3266,22 +3266,22 @@ describe('getFeatureFlag', () => {
 
     expect(capturedMessage).toMatchObject({
       distinct_id: 'some-distinct-id',
-      event: '$feature_flag_called',
+      event: 'edp_feature_flag_called',
       properties: {
-        '$feature/complex-flag': true,
-        $feature_flag: 'complex-flag',
-        $feature_flag_response: true,
-        $lib: posthog.getLibraryId(),
-        $lib_version: posthog.getLibraryVersion(),
+        'feature/complex-flag': true,
+        feature_flag: 'complex-flag',
+        feature_flag_response: true,
+        lib: posthog.getLibraryId(),
+        lib_version: posthog.getLibraryVersion(),
         locally_evaluated: true,
       },
     })
 
-    expect(capturedMessage.properties).not.toHaveProperty('$active_feature_flags')
-    expect(capturedMessage.properties).not.toHaveProperty('$feature/simple-flag')
+    expect(capturedMessage.properties).not.toHaveProperty('active_feature_flags')
+    expect(capturedMessage.properties).not.toHaveProperty('feature/simple-flag')
   })
 
-  it('should include $feature_flag_id and $feature_flag_reason for locally evaluated flags', async () => {
+  it('should include feature_flag_id and feature_flag_reason for locally evaluated flags', async () => {
     const flags = {
       flags: [
         {
@@ -3310,12 +3310,12 @@ describe('getFeatureFlag', () => {
     await waitForPromises()
 
     expect(capturedMessage).toMatchObject({
-      event: '$feature_flag_called',
+      event: 'edp_feature_flag_called',
       properties: {
-        $feature_flag: 'test-flag',
-        $feature_flag_response: true,
-        $feature_flag_id: 42,
-        $feature_flag_reason: 'Evaluated locally',
+        feature_flag: 'test-flag',
+        feature_flag_response: true,
+        feature_flag_id: 42,
+        feature_flag_reason: 'Evaluated locally',
         locally_evaluated: true,
       },
     })
@@ -3841,7 +3841,7 @@ describe('match properties', () => {
       // number-on-number sanity
       { op: 'gt', value: 5, override: 6, expected: true },
       { op: 'lt', value: 5, override: 6, expected: false },
-    ])('$op $value vs $override -> $expected', ({ op, value, override, expected }) => {
+    ])('$op $value vs $override -> expected', ({ op, value, override, expected }) => {
       expect(matchProperty({ key: 'k', value, operator: op }, { k: override })).toBe(expected)
     })
 
@@ -7911,7 +7911,7 @@ describe('strictLocalEvaluation option', () => {
       capturedEvents.push(event)
     })
 
-    // Call getFeatureFlag which should trigger local evaluation and send a $feature_flag_called event
+    // Call getFeatureFlag which should trigger local evaluation and send a edp_feature_flag_called event
     const beforeCall = Date.now()
     const result = await posthog.getFeatureFlag('simple-flag', 'user-123')
     const afterCall = Date.now()
@@ -7920,11 +7920,11 @@ describe('strictLocalEvaluation option', () => {
     expect(capturedEvents).toHaveLength(1)
 
     const event = capturedEvents[0]
-    expect(event.event).toBe('$feature_flag_called')
+    expect(event.event).toBe('edp_feature_flag_called')
     expect(event.properties.locally_evaluated).toBe(true)
-    expect(event.properties.$feature_flag_definitions_loaded_at).toBe(flagDefinitionsLoadedAt)
-    expect(event.properties.$feature_flag_evaluated_at).toBeGreaterThanOrEqual(beforeCall)
-    expect(event.properties.$feature_flag_evaluated_at).toBeLessThanOrEqual(afterCall)
+    expect(event.properties.feature_flag_definitions_loaded_at).toBe(flagDefinitionsLoadedAt)
+    expect(event.properties.feature_flag_evaluated_at).toBeGreaterThanOrEqual(beforeCall)
+    expect(event.properties.feature_flag_evaluated_at).toBeLessThanOrEqual(afterCall)
   })
 
   it('tracks flag definitions loaded timestamp', async () => {
@@ -8052,7 +8052,7 @@ describe('mixed targeting local evaluation', () => {
       localFlags: { flags: [onlyGroupFlag], group_type_mapping: { '0': 'company' } },
       decideFlags: { 'only-group-flag': 'server-fallback' },
     },
-  ])('$name', async ({ flagKey, distinctId, options, expected, localFlags, decideFlags }) => {
+  ])('name', async ({ flagKey, distinctId, options, expected, localFlags, decideFlags }) => {
     mockedFetch.mockImplementation(
       apiImplementation({
         localFlags: localFlags ?? mixedFlagLocalResponse,

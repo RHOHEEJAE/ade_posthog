@@ -4,7 +4,7 @@ import { version } from '../version'
 
 /**
  * Every event @posthog/mcp sends should self-identify with the standard PostHog
- * `$lib` / `$lib_version` keys (value `posthog-node-mcp`), not the inherited
+ * `lib` / `lib_version` keys (value `posthog-node-mcp`), not the inherited
  * `posthog-node` transport id. posthog-node stamps those from the client's
  * `getLibraryId()` / `getLibraryVersion()`, so we assert on the getters.
  */
@@ -18,11 +18,11 @@ describe('lib identity', () => {
     return posthog
   }
 
-  // Both emit paths must report the identical `$lib` / `$lib_version` contract.
+  // Both emit paths must report the identical `lib` / `lib_version` contract.
   it.each([
     { path: 'PostHogMCP', makeClient: () => new PostHogMCP('phc_test', options) },
     { path: 'instrument()', makeClient: instrumented },
-  ])('$path reports $lib=posthog-node-mcp / $lib_version=<package version>', async ({ makeClient }) => {
+  ])('$path reports lib=posthog-node-mcp / lib_version=<package version>', async ({ makeClient }) => {
     const client = makeClient()
     try {
       expect(client.getLibraryId()).toBe('posthog-node-mcp')

@@ -170,7 +170,7 @@ describe('postHogMiddleware', () => {
             const cookieValue = mockCookiesSet.mock.calls[0][1]
             const parsed = JSON.parse(cookieValue)
             expect(parsed.distinct_id).toBe('mock-anon-id')
-            expect(parsed.$device_id).toBe('mock-anon-id')
+            expect(parsed.device_id).toBe('mock-anon-id')
         })
 
         it('uses the generated anonymous ID in the cookie', async () => {
@@ -204,7 +204,7 @@ describe('postHogMiddleware', () => {
             const req = new MockNextRequest('https://example.com/', {
                 [COOKIE_NAME]: JSON.stringify({
                     distinct_id: 'existing-user',
-                    $device_id: 'existing-device',
+                    device_id: 'existing-device',
                 }),
             })
 
@@ -252,7 +252,7 @@ describe('postHogMiddleware', () => {
             const req = new MockNextRequest('https://example.com/', {
                 [COOKIE_NAME]: JSON.stringify({
                     distinct_id: 'existing-user',
-                    $device_id: 'existing-device',
+                    device_id: 'existing-device',
                 }),
             })
 
@@ -487,7 +487,7 @@ describe('postHogMiddleware', () => {
         it('deletes existing identity cookie when opted out', async () => {
             const middleware = postHogMiddleware({ apiKey: 'phc_test123' })
             const req = new MockNextRequest('https://example.com/', {
-                [COOKIE_NAME]: JSON.stringify({ distinct_id: 'user_123', $device_id: 'device_abc' }),
+                [COOKIE_NAME]: JSON.stringify({ distinct_id: 'user_123', device_id: 'device_abc' }),
                 [CONSENT_COOKIE]: '0',
             })
 

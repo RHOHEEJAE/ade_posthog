@@ -12,16 +12,16 @@ SDK usage examples and code snippets live in the official documentation so they 
 
 On stateless deployments the SDK mints the `Mcp-Session-Id` response header at `initialize`
 as a token carrying the session id and client name/version. Clients replay the header on
-every request, so any pod keeps `$session_id` and `$mcp_client_name`/`$mcp_client_version`
+every request, so any pod keeps `session_id` and `$mcp_client_name`/`$mcp_client_version`
 stable with no server-side store.
 
-A standalone `$identify` event fires **at most once per session** — at `initialize` (or, on a
+A standalone `edp_identify` event fires **at most once per session** — at `initialize` (or, on a
 long-lived server, when the identity first appears or materially changes). Tool calls on other
-pods reuse the identity to stamp `distinct_id`/`$set` on every event **without** re-publishing
-`$identify`, so person **properties** are never lost. (Edge case: if identity isn't resolvable
-until _after_ `initialize`, the first `$identify` is suppressed too, so pre-identify anonymous
-events aren't aliased onto the user — see `docs/ARCHITECTURE.md` §4.) To drop `$identify`
-entirely, return `null` from `beforeSend` when `event === '$identify'`.
+pods reuse the identity to stamp `distinct_id`/`edp_set` on every event **without** re-publishing
+`edp_identify`, so person **properties** are never lost. (Edge case: if identity isn't resolvable
+until _after_ `initialize`, the first `edp_identify` is suppressed too, so pre-identify anonymous
+events aren't aliased onto the user — see `docs/ARCHITECTURE.md` §4.) To drop `edp_identify`
+entirely, return `null` from `beforeSend` when `event === 'edp_identify'`.
 
 ### Streamable HTTP: set `enableJsonResponse: true`
 
@@ -80,7 +80,7 @@ Protocol revision is a property of each **request**, not of the server: a v2 ser
 
 - **On `2026-07-28`** there is no `initialize` and no session header — the revision removed
   protocol-level sessions, and this SDK will not mint one. Session correlation therefore comes from
-  `enableConversationId`, which is **opt-in**. Without it every request is its own `$session_id`.
+  `enableConversationId`, which is **opt-in**. Without it every request is its own `session_id`.
 - **On `2025-11-25`**, the session id and the client's name and version are exchanged once at
   `initialize`. If your server builds a fresh `McpServer` per HTTP request — which
   `createMcpHandler` does by default — the instance serving a later `tools/call` never saw that

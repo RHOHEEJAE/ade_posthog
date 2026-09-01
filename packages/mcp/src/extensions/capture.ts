@@ -87,10 +87,10 @@ export function captureEvent(
     llmModelSource: eventInput.llmModelSource,
     isError: eventInput.isError,
     // Two consumers of the same failure: `error` is the full thrown value that
-    // fans out into the separate `$exception` event (stacktrace, error-tracking
+    // fans out into the separate `edp_exception` event (stacktrace, error-tracking
     // grouping), while `errorType` is a coarse category kept on this tool-call
     // event so the dashboard can break failures down by reason without joining
-    // to `$exception`. The error message is derived from `error` onto this event
+    // to `edp_exception`. The error message is derived from `error` onto this event
     // downstream in posthog-events.ts.
     error: eventInput.error,
     errorType: eventInput.errorType,

@@ -16,16 +16,16 @@ describe('Edge Runtime Compatibility', () => {
   describe('Exception Capture - Graceful Degradation', () => {
     it('should capture basic exception info without filesystem access', () => {
       const captured = captureException(new Error('Test error'))
-      const [exception] = captured.$exception_list
+      const [exception] = captured.exception_list
 
       expect(exception.value).toBe('Test error')
       expect(exception.type).toBe('Error')
-      expect(captured.$exception_level).toBe('error')
+      expect(captured.exception_level).toBe('error')
     })
 
     it('should parse stack traces without requiring fs module', () => {
       const captured = captureException(new Error('Stack trace test'))
-      const frames = captured.$exception_list[0].stacktrace?.frames
+      const frames = captured.exception_list[0].stacktrace?.frames
 
       expect(Array.isArray(frames)).toBe(true)
       expect(frames!.length).toBeGreaterThan(0)
@@ -36,15 +36,15 @@ describe('Edge Runtime Compatibility', () => {
       const wrapper = new Error('Wrapper error', { cause: new Error('Root cause') })
       const captured = captureException(wrapper)
 
-      // Cause chains become multiple entries in $exception_list.
-      expect(captured.$exception_list.map((e) => e.value)).toEqual(['Wrapper error', 'Root cause'])
+      // Cause chains become multiple entries in exception_list.
+      expect(captured.exception_list.map((e) => e.value)).toEqual(['Wrapper error', 'Root cause'])
     })
 
     it('should handle non-Error objects being thrown', () => {
-      expect(captureException('string error').$exception_list[0].value).toBe('string error')
-      expect(captureException({ code: 404 }).$exception_list[0].value).toContain('code')
-      expect(captureException(null).$exception_list[0].value).toContain('null')
-      expect(captureException(undefined).$exception_list[0].value).toContain('undefined')
+      expect(captureException('string error').exception_list[0].value).toBe('string error')
+      expect(captureException({ code: 404 }).exception_list[0].value).toContain('code')
+      expect(captureException(null).exception_list[0].value).toContain('null')
+      expect(captureException(undefined).exception_list[0].value).toContain('undefined')
     })
   })
 
@@ -70,8 +70,8 @@ describe('Edge Runtime Compatibility', () => {
       const error = new Error('Test without cwd')
       const captured = captureException(error)
 
-      expect(captured.$exception_list[0].value).toBe('Test without cwd')
-      expect(captured.$exception_list[0].type).toBe('Error')
+      expect(captured.exception_list[0].value).toBe('Test without cwd')
+      expect(captured.exception_list[0].type).toBe('Error')
     })
 
     it('should handle process.cwd throwing', () => {
@@ -86,7 +86,7 @@ describe('Edge Runtime Compatibility', () => {
       const error = new Error('Test with throwing cwd')
       const captured = captureException(error)
 
-      expect(captured.$exception_list[0].value).toBe('Test with throwing cwd')
+      expect(captured.exception_list[0].value).toBe('Test with throwing cwd')
     })
   })
 
@@ -242,7 +242,7 @@ describe('Edge Runtime Compatibility', () => {
       const captured = captureException(error)
 
       // Should have parsed the stack without errors
-      expect(captured.$exception_list[0].stacktrace?.frames).toBeDefined()
+      expect(captured.exception_list[0].stacktrace?.frames).toBeDefined()
     })
   })
 })
@@ -287,7 +287,7 @@ describe('Integration: SDK in Limited Environment', () => {
     const error = new Error('Limited env test')
     const captured = capture(error)
 
-    expect(captured.$exception_list[0].value).toBe('Limited env test')
+    expect(captured.exception_list[0].value).toBe('Limited env test')
 
     // Restore
     globalThis.process = originalProcess
@@ -312,8 +312,8 @@ describe('Error Handling Robustness', () => {
     const captured = captureException(error)
 
     // Should still capture basic info
-    expect(captured.$exception_list[0].value).toBe('Malformed')
-    expect(captured.$exception_list[0].type).toBe('Error')
+    expect(captured.exception_list[0].value).toBe('Malformed')
+    expect(captured.exception_list[0].type).toBe('Error')
   })
 
   it('should handle circular reference in error.cause', () => {
@@ -327,9 +327,9 @@ describe('Error Handling Robustness', () => {
     // Should not infinite loop
     const captured = captureException(error1)
 
-    expect(captured.$exception_list[0].value).toBe('Error 1')
+    expect(captured.exception_list[0].value).toBe('Error 1')
     // Core caps cause recursion, so the list stays bounded instead of looping.
-    expect(captured.$exception_list.length).toBeLessThanOrEqual(10)
+    expect(captured.exception_list.length).toBeLessThanOrEqual(10)
   })
 
   it('should handle deeply nested error chains', () => {
@@ -341,8 +341,8 @@ describe('Error Handling Robustness', () => {
 
     const captured = captureException(current)
 
-    expect(captured.$exception_list[0].value).toBe('Level 19')
+    expect(captured.exception_list[0].value).toBe('Level 19')
     // Core caps the cause chain, so the list stays bounded.
-    expect(captured.$exception_list.length).toBeLessThanOrEqual(10)
+    expect(captured.exception_list.length).toBeLessThanOrEqual(10)
   })
 })

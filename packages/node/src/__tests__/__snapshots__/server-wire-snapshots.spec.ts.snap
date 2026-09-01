@@ -7,10 +7,10 @@ exports[`server wire snapshots snapshots a deterministic complete captureExcepti
     "batch": [
       {
         "distinct_id": "person-exception",
-        "event": "$exception",
+        "event": "edp_exception",
         "properties": {
-          "$exception_level": "error",
-          "$exception_list": [
+          "exception_level": "error",
+          "exception_list": [
             {
               "mechanism": {
                 "handled": true,
@@ -44,10 +44,10 @@ exports[`server wire snapshots snapshots a deterministic complete captureExcepti
               "value": "database unavailable",
             },
           ],
-          "$geoip_disable": true,
-          "$is_server": true,
-          "$lib": "posthog-node",
-          "$lib_version": "<sdk-version>",
+          "geoip_disable": true,
+          "is_server": true,
+          "lib": "posthog-node",
+          "lib_version": "<sdk-version>",
           "endpoint": "/v1/orders",
           "request": {
             "method": "POST",
@@ -76,7 +76,7 @@ exports[`server wire snapshots snapshots a deterministic complete captureExcepti
 exports[`server wire snapshots snapshots a maximal flags request body 1`] = `
 {
   "body": {
-    "$device_id": "device-3",
+    "device_id": "device-3",
     "distinct_id": "person-flags",
     "evaluation_contexts": [
       "production",
@@ -89,12 +89,12 @@ exports[`server wire snapshots snapshots a maximal flags request body 1`] = `
     "geoip_disable": false,
     "group_properties": {
       "company": {
-        "$group_key": "company-7",
+        "group_key": "company-7",
         "name": "Acme",
         "seats": 42,
       },
       "project": {
-        "$group_key": "project-9",
+        "group_key": "project-9",
         "region": "eu-west-1",
         "tier": "critical",
       },
@@ -104,7 +104,7 @@ exports[`server wire snapshots snapshots a maximal flags request body 1`] = `
       "project": "project-9",
     },
     "person_properties": {
-      "$device_id": "device-3",
+      "device_id": "device-3",
       "email": "person@example.test",
       "plan": "enterprise",
     },
@@ -133,10 +133,10 @@ exports[`server wire snapshots snapshots the canonical Capture V1 transform and 
           "product_tour_id": "tour-7",
         },
         "properties": {
-          "$set": {
+          "edp_set": {
             "plan": "pro",
           },
-          "$set_once": {
+          "edp_set_once": {
             "first_seen": "2025-02-03",
           },
           "nested": {

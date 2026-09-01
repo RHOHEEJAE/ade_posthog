@@ -6,28 +6,28 @@ import { logger } from '@posthog/browser-common/utils/logger'
 import { SessionIdChangedCallback } from './types'
 
 interface PageViewEventProperties {
-    $pageview_id?: string
-    $prev_pageview_id?: string
-    $prev_pageview_pathname?: string
-    $prev_pageview_duration?: number // seconds
-    $prev_pageview_last_scroll?: number
-    $prev_pageview_last_scroll_percentage?: number
-    $prev_pageview_max_scroll?: number
-    $prev_pageview_max_scroll_percentage?: number
-    $prev_pageview_last_content?: number
-    $prev_pageview_last_content_percentage?: number
-    $prev_pageview_max_content?: number
-    $prev_pageview_max_content_percentage?: number
+    pageview_id?: string
+    prev_pageview_id?: string
+    prev_pageview_pathname?: string
+    prev_pageview_duration?: number // seconds
+    prev_pageview_last_scroll?: number
+    prev_pageview_last_scroll_percentage?: number
+    prev_pageview_max_scroll?: number
+    prev_pageview_max_scroll_percentage?: number
+    prev_pageview_last_content?: number
+    prev_pageview_last_content_percentage?: number
+    prev_pageview_max_content?: number
+    prev_pageview_max_content_percentage?: number
 }
 
 // This keeps track of the PageView state (such as the previous PageView's path, timestamp, id, and scroll properties).
 // We store the state in memory, which means that for non-SPA sites, the state will be lost on page reload. This means
-// that non-SPA sites should always send a $pageleave event on any navigation, before the page unloads. For SPA sites,
-// they only need to send a $pageleave event when the user navigates away from the site, as the information is not lost
-// on an internal navigation, and is included as the $prev_pageview_ properties in the next $pageview event.
+// that non-SPA sites should always send a edp_pageleave event on any navigation, before the page unloads. For SPA sites,
+// they only need to send a edp_pageleave event when the user navigates away from the site, as the information is not lost
+// on an internal navigation, and is included as the $prev_pageview_ properties in the next edp_pageview event.
 
 // Practically, this means that to find the scroll properties for a given pageview, you need to find the event where
-// event name is $pageview or $pageleave and where $prev_pageview_id matches the original pageview event's id.
+// event name is edp_pageview or edp_pageleave and where prev_pageview_id matches the original pageview event's id.
 
 export class PageViewManager {
     _currentPageview?: { timestamp: Date; pageViewId: string | undefined; pathname: string | undefined }
@@ -89,19 +89,19 @@ export class PageViewManager {
     }
 
     doEvent(): PageViewEventProperties {
-        return { $pageview_id: this._currentPageview?.pageViewId }
+        return { pageview_id: this._currentPageview?.pageViewId }
     }
 
     private _previousPageViewProperties(timestamp: Date, pageviewId: string | undefined): PageViewEventProperties {
         const previousPageView = this._currentPageview
 
         if (!previousPageView) {
-            return { $pageview_id: pageviewId }
+            return { pageview_id: pageviewId }
         }
 
         let properties: PageViewEventProperties = {
-            $pageview_id: pageviewId,
-            $prev_pageview_id: previousPageView.pageViewId,
+            pageview_id: pageviewId,
+            prev_pageview_id: previousPageView.pageViewId,
         }
 
         const scrollContext = this._instance.scrollManager.getContext()
@@ -137,24 +137,24 @@ export class PageViewManager {
                     maxContentHeight <= 1 ? 1 : clampToRange(maxContentY / maxContentHeight, 0, 1, logger)
 
                 properties = extend(properties, {
-                    $prev_pageview_last_scroll: lastScrollY,
-                    $prev_pageview_last_scroll_percentage: lastScrollPercentage,
-                    $prev_pageview_max_scroll: maxScrollY,
-                    $prev_pageview_max_scroll_percentage: maxScrollPercentage,
-                    $prev_pageview_last_content: lastContentY,
-                    $prev_pageview_last_content_percentage: lastContentPercentage,
-                    $prev_pageview_max_content: maxContentY,
-                    $prev_pageview_max_content_percentage: maxContentPercentage,
+                    prev_pageview_last_scroll: lastScrollY,
+                    prev_pageview_last_scroll_percentage: lastScrollPercentage,
+                    prev_pageview_max_scroll: maxScrollY,
+                    prev_pageview_max_scroll_percentage: maxScrollPercentage,
+                    prev_pageview_last_content: lastContentY,
+                    prev_pageview_last_content_percentage: lastContentPercentage,
+                    prev_pageview_max_content: maxContentY,
+                    prev_pageview_max_content_percentage: maxContentPercentage,
                 })
             }
         }
 
         if (previousPageView.pathname) {
-            properties.$prev_pageview_pathname = previousPageView.pathname
+            properties.prev_pageview_pathname = previousPageView.pathname
         }
         if (previousPageView.timestamp) {
-            // Use seconds, for consistency with our other duration-related properties like $duration
-            properties.$prev_pageview_duration = (timestamp.getTime() - previousPageView.timestamp.getTime()) / 1000
+            // Use seconds, for consistency with our other duration-related properties like duration
+            properties.prev_pageview_duration = (timestamp.getTime() - previousPageView.timestamp.getTime()) / 1000
         }
 
         return properties

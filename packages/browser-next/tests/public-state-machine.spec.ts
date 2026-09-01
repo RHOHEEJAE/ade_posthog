@@ -51,7 +51,7 @@ describe('@posthog/browser public lifecycle state machine', () => {
         await posthog.identify('baseline-user')
         await posthog.group('company', 'baseline-company')
         await posthog.capture('baseline-event')
-        expect(observed).toEqual(['$identify', '$groupidentify', 'baseline-event'])
+        expect(observed).toEqual(['edp_identify', 'edp_groupidentify', 'baseline-event'])
         observed.length = 0
 
         const shutdown = posthog.shutdown()
@@ -91,7 +91,7 @@ describe('@posthog/browser public lifecycle state machine', () => {
         expect(posthog.shutdown()).toBe(shutdown)
         expect(posthog.dispose()).toBe(shutdown)
         expect(fetch).toHaveBeenCalledTimes(1)
-        expect(bodies[0]?.batch?.map(({ event }) => event)).toEqual(['$identify', '$groupidentify', 'baseline-event'])
+        expect(bodies[0]?.batch?.map(({ event }) => event)).toEqual(['edp_identify', 'edp_groupidentify', 'baseline-event'])
 
         const reloaded = await createPostHog({
             projectToken: 'ph_test',

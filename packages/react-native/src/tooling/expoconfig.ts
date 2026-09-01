@@ -664,7 +664,7 @@ type PostHogPluginProps = {
    * symbols its frames resolved against.
    *
    * EXPERIMENTAL `event` uploads them release-independent, and each event resolves its own
-   * release from the `$app_namespace` / `$app_version` / `$app_build` the SDK already sends.
+   * release from the `app_namespace` / `app_version` / `app_build` the SDK already sends.
    * Nothing is injected into the app in exchange. Use it when two releases can ship identical
    * JavaScript or identical native code: symbol ids are derived from content, so in `symbol-set`
    * mode both releases report whichever one uploaded first.

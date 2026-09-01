@@ -98,8 +98,8 @@ describe('createPostHog', () => {
                 createMockCookies({
                     ph_phc_test123_posthog: JSON.stringify({
                         distinct_id: 'cookie-user',
-                        $device_id: 'device_xyz',
-                        $sesid: [1708700000000, 'cookie-session', 1708700000000],
+                        device_id: 'device_xyz',
+                        sesid: [1708700000000, 'cookie-session', 1708700000000],
                     }),
                 })
             )
@@ -115,7 +115,7 @@ describe('createPostHog', () => {
                 {
                     distinctId: 'server-user',
                     sessionId: 'cookie-session',
-                    properties: { $session_id: 'cookie-session', $device_id: 'device_xyz' },
+                    properties: { session_id: 'cookie-session', device_id: 'device_xyz' },
                 },
                 expect.any(Function)
             )

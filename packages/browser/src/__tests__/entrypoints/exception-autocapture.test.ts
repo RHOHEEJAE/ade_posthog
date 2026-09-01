@@ -25,9 +25,9 @@ describe('exception-autocapture entrypoint', () => {
         window?.onerror?.('message', 'source', 1, 2, new Error('legacy error'))
 
         expect(capture).toHaveBeenCalledWith(
-            '$exception',
+            'edp_exception',
             expect.objectContaining({
-                $exception_list: [expect.objectContaining({ type: 'Error', value: 'legacy error' })],
+                exception_list: [expect.objectContaining({ type: 'Error', value: 'legacy error' })],
             }),
             { _noTruncate: true, _batchKey: 'exceptionEvent', _noHeatmaps: true }
         )
@@ -65,9 +65,9 @@ describe('exception-autocapture entrypoint', () => {
 
         expect(capture).toHaveBeenCalledTimes(1)
         expect(capture).toHaveBeenCalledWith(
-            '$exception',
+            'edp_exception',
             expect.objectContaining({
-                $exception_list: [expect.objectContaining({ value: 'reported error' })],
+                exception_list: [expect.objectContaining({ value: 'reported error' })],
             }),
             { _noTruncate: true, _batchKey: 'exceptionEvent', _noHeatmaps: true }
         )
@@ -89,9 +89,9 @@ describe('exception-autocapture entrypoint', () => {
         } as PromiseRejectionEvent)
 
         expect(capture).toHaveBeenCalledWith(
-            '$exception',
+            'edp_exception',
             expect.objectContaining({
-                $exception_list: [expect.objectContaining({ value: 'ignored error' })],
+                exception_list: [expect.objectContaining({ value: 'ignored error' })],
             }),
             { _noTruncate: true, _batchKey: 'exceptionEvent', _noHeatmaps: true }
         )
@@ -125,9 +125,9 @@ describe('exception-autocapture entrypoint', () => {
 
         expect(handled).toBe(true)
         expect(capture).toHaveBeenCalledWith(
-            '$exception',
+            'edp_exception',
             expect.objectContaining({
-                $exception_list: [expect.objectContaining({ value: 'legacy rejection' })],
+                exception_list: [expect.objectContaining({ value: 'legacy rejection' })],
             }),
             { _noTruncate: true, _batchKey: 'exceptionEvent', _noHeatmaps: true }
         )

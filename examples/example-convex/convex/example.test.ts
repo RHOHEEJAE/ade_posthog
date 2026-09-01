@@ -134,7 +134,7 @@ describe('capture', () => {
         const props = event.properties as Record<string, unknown>
         expect(props.plan).toBe('pro')
         expect(props.amount).toBe(99)
-        expect(props.$groups).toEqual({ company: 'acme' })
+        expect(props.groups).toEqual({ company: 'acme' })
     })
 
     test('beforeSend enriches properties with environment', async () => {
@@ -165,7 +165,7 @@ describe('capture', () => {
         await finishScheduledFunctions(t)
 
         const props = firstBatchEvent().properties as Record<string, unknown>
-        expect(props.$geoip_disable).toBe(true)
+        expect(props.geoip_disable).toBe(true)
     })
 
     test('sends custom uuid', async () => {
@@ -213,7 +213,7 @@ describe('identify', () => {
         fetchCalls = []
     })
 
-    test('sends $identify event', async () => {
+    test('sends edp_identify event', async () => {
         global.fetch = mockFetch()
         const t = initConvexTest()
 
@@ -225,7 +225,7 @@ describe('identify', () => {
 
         expect(batchCalls().length).toBeGreaterThanOrEqual(1)
         const event = firstBatchEvent()
-        expect(event.event).toBe('$identify')
+        expect(event.event).toBe('edp_identify')
         expect(event.distinct_id).toBe('user-123')
     })
 
@@ -243,11 +243,11 @@ describe('identify', () => {
         await finishScheduledFunctions(t)
 
         const event = firstBatchEvent()
-        // posthog-node puts properties into $set inside event.properties
+        // posthog-node puts properties into edp_set inside event.properties
         const props = event.properties as Record<string, unknown>
-        const $set = props.$set as Record<string, unknown>
-        expect($set.name).toBe('Test User')
-        expect($set.email).toBe('test@example.com')
+        const edp_set = props.edp_set as Record<string, unknown>
+        expect(edp_set.name).toBe('Test User')
+        expect(edp_set.email).toBe('test@example.com')
     })
 
     test('sends disableGeoip', async () => {
@@ -261,7 +261,7 @@ describe('identify', () => {
         await finishScheduledFunctions(t)
 
         const props = firstBatchEvent().properties as Record<string, unknown>
-        expect(props.$geoip_disable).toBe(true)
+        expect(props.geoip_disable).toBe(true)
     })
 })
 
@@ -278,7 +278,7 @@ describe('captureException', () => {
         fetchCalls = []
     })
 
-    test('sends $exception event with Error object', async () => {
+    test('sends edp_exception event with Error object', async () => {
         global.fetch = mockFetch()
         const t = initConvexTest()
 
@@ -291,17 +291,17 @@ describe('captureException', () => {
 
         expect(batchCalls().length).toBeGreaterThanOrEqual(1)
         const event = firstBatchEvent()
-        expect(event.event).toBe('$exception')
+        expect(event.event).toBe('edp_exception')
         const props = event.properties as Record<string, unknown>
-        // posthog-node v5 uses $exception_list instead of $exception_message
-        const exceptionList = props.$exception_list as Array<{
+        // posthog-node v5 uses exception_list instead of exception_message
+        const exceptionList = props.exception_list as Array<{
             value: string
             type: string
         }>
         expect(exceptionList[0].value).toBe('Something went wrong')
     })
 
-    test('sends $exception event with string error', async () => {
+    test('sends edp_exception event with string error', async () => {
         global.fetch = mockFetch()
         const t = initConvexTest()
 
@@ -312,13 +312,13 @@ describe('captureException', () => {
         await finishScheduledFunctions(t)
 
         const props = firstBatchEvent().properties as Record<string, unknown>
-        const exceptionList = props.$exception_list as Array<{
+        const exceptionList = props.exception_list as Array<{
             value: string
         }>
         expect(exceptionList[0].value).toBe('string error')
     })
 
-    test('sends $exception event with object error', async () => {
+    test('sends edp_exception event with object error', async () => {
         global.fetch = mockFetch()
         const t = initConvexTest()
 
@@ -329,7 +329,7 @@ describe('captureException', () => {
         await finishScheduledFunctions(t)
 
         const props = firstBatchEvent().properties as Record<string, unknown>
-        const exceptionList = props.$exception_list as Array<{
+        const exceptionList = props.exception_list as Array<{
             value: string
         }>
         expect(exceptionList[0].value).toBe('obj error')
@@ -1097,7 +1097,7 @@ describe('evaluateFlag (remote)', () => {
         const flagsCalls = fetchCalls.filter((c) => c.url.includes('/flags'))
         expect(flagsCalls.length).toBeGreaterThanOrEqual(1)
         expect(allBatchEvents()).toHaveLength(1)
-        expect(allBatchEvents()[0].event).toBe('$feature_flag_called')
+        expect(allBatchEvents()[0].event).toBe('edp_feature_flag_called')
     })
 
     test('returns the flag value when telemetry fails', async () => {
@@ -1216,7 +1216,7 @@ describe('evaluateAllFlags (remote)', () => {
         })
         expect(result.featureFlagPayloads).toEqual({ 'flag-a': { config: 'value' } })
         expect(allBatchEvents()).toHaveLength(3)
-        expect(allBatchEvents().every((event) => event.event === '$feature_flag_called')).toBe(true)
+        expect(allBatchEvents().every((event) => event.event === 'edp_feature_flag_called')).toBe(true)
     })
 
     test('returns all flags when telemetry fails', async () => {

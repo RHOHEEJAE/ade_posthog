@@ -36,43 +36,43 @@ export const currentDeviceType = getDeviceType()
 
 export const getAppProperties = (): PostHogCustomAppProperties => {
   const properties: PostHogCustomAppProperties = {
-    $device_type: currentDeviceType,
+    device_type: currentDeviceType,
   }
 
   if (OptionalExpoApplication) {
-    properties.$app_build = OptionalExpoApplication.nativeBuildVersion
-    properties.$app_name = OptionalExpoApplication.applicationName
-    properties.$app_namespace = OptionalExpoApplication.applicationId
-    properties.$app_version = OptionalExpoApplication.nativeApplicationVersion
+    properties.app_build = OptionalExpoApplication.nativeBuildVersion
+    properties.app_name = OptionalExpoApplication.applicationName
+    properties.app_namespace = OptionalExpoApplication.applicationId
+    properties.app_version = OptionalExpoApplication.nativeApplicationVersion
   } else if (OptionalReactNativeDeviceInfo) {
-    properties.$app_build = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getBuildNumber())
-    properties.$app_name = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getApplicationName())
-    properties.$app_namespace = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getBundleId())
-    properties.$app_version = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getVersion())
+    properties.app_build = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getBuildNumber())
+    properties.app_name = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getApplicationName())
+    properties.app_namespace = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getBundleId())
+    properties.app_version = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getVersion())
   }
 
   if (OptionalExpoDevice) {
-    properties.$device_manufacturer = OptionalExpoDevice.manufacturer
+    properties.device_manufacturer = OptionalExpoDevice.manufacturer
     // expo-device already maps the device model identifier to a human readable name
-    properties.$device_name = OptionalExpoDevice.modelName
+    properties.device_name = OptionalExpoDevice.modelName
 
     // https://github.com/expo/expo/issues/6990
     // some devices return a value similar to:
     // HUAWEI/SNE-LX1/HWSNE:8.1.0/HUAWEISNE-LX1/131(C432):user/release-keys
     if (getPlatformOS() === 'android') {
-      properties.$os_name = 'Android'
+      properties.os_name = 'Android'
     } else {
-      properties.$os_name = OptionalExpoDevice.osName
+      properties.os_name = OptionalExpoDevice.osName
     }
 
-    properties.$os_version = OptionalExpoDevice.osVersion
+    properties.os_version = OptionalExpoDevice.osVersion
     properties.$is_emulator = !OptionalExpoDevice.isDevice
   } else if (OptionalReactNativeDeviceInfo) {
-    properties.$device_manufacturer = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getManufacturerSync())
+    properties.device_manufacturer = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getManufacturerSync())
     // react-native-device-info already maps the device model identifier to a human readable name
-    properties.$device_name = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getModel())
-    properties.$os_name = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getSystemName())
-    properties.$os_version = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getSystemVersion())
+    properties.device_name = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getModel())
+    properties.os_name = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getSystemName())
+    properties.os_version = returnPropertyIfNotUnknown(OptionalReactNativeDeviceInfo.getSystemVersion())
     properties.$is_emulator = OptionalReactNativeDeviceInfo.isEmulatorSync()
   }
 
@@ -103,7 +103,7 @@ export const getAppProperties = (): PostHogCustomAppProperties => {
       timezone = optionalExpoLocalization.getCalendars()[0]?.timeZone
     }
     if (timezone) {
-      properties.$timezone = timezone
+      properties.timezone = timezone
     }
   } else if (OptionalReactNativeLocalize) {
     const localesFn = OptionalReactNativeLocalize.getLocales
@@ -123,7 +123,7 @@ export const getAppProperties = (): PostHogCustomAppProperties => {
       const timezone = timezoneFn()
 
       if (timezone) {
-        properties.$timezone = timezone
+        properties.timezone = timezone
       }
     }
   }

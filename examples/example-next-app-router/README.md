@@ -51,7 +51,7 @@ This example includes an [`instrumentation.ts`](./instrumentation.ts) file:
 export { onRequestError } from '@posthog/next'
 ```
 
-Next.js calls this hook when a request throws on the server. Visit `/server-errors` and click the button to throw from a route handler and capture a `$exception` event in PostHog.
+Next.js calls this hook when a request throws on the server. Visit `/server-errors` and click the button to throw from a route handler and capture a `edp_exception` event in PostHog.
 
 ## Feature Flags
 

@@ -55,7 +55,7 @@ describe('browser-next initial pageview', () => {
                 order.push('setup')
                 client.onEvent(({ event, properties }) => {
                     order.push(event)
-                    if (event === '$pageview') {
+                    if (event === 'edp_pageview') {
                         pageviewProperties = properties
                     }
                 })
@@ -70,12 +70,12 @@ describe('browser-next initial pageview', () => {
             extensions: [extension],
         })
 
-        expect(order).toEqual(['setup', '$pageview'])
+        expect(order).toEqual(['setup', 'edp_pageview'])
         expect(pageviewProperties).not.toHaveProperty('title')
-        expect(pageviewProperties).not.toHaveProperty('$current_url')
+        expect(pageviewProperties).not.toHaveProperty('current_url')
         expect(posthog.session.sessionId).not.toBe('')
         await posthog.capture('explicit')
-        expect(order).toEqual(['setup', '$pageview', 'explicit'])
+        expect(order).toEqual(['setup', 'edp_pageview', 'explicit'])
     })
 
     it('does no pageview DOM work when disabled', async () => {
@@ -122,7 +122,7 @@ describe('browser-next initial pageview', () => {
         document.dispatchEvent(new Event('visibilitychange'))
         document.dispatchEvent(new Event('visibilitychange'))
 
-        expect(observed).toEqual(['$pageview'])
+        expect(observed).toEqual(['edp_pageview'])
         expect(remove.mock.calls.filter(([event]) => event === 'visibilitychange')).toHaveLength(1)
         expect(posthog.session.sessionId).not.toBe('')
     })
@@ -152,7 +152,7 @@ describe('browser-next initial pageview', () => {
         expect(observed).toEqual([])
         posthog.optIn()
 
-        expect(observed).toEqual(['$pageview'])
+        expect(observed).toEqual(['edp_pageview'])
     })
 
     it('keeps a hidden listener through denial and retries capture only after opt-in', async () => {
@@ -176,7 +176,7 @@ describe('browser-next initial pageview', () => {
         expect(remove.mock.calls.filter(([event]) => event === 'visibilitychange')).toHaveLength(1)
 
         posthog.optIn()
-        expect(observed).toEqual(['$pageview'])
+        expect(observed).toEqual(['edp_pageview'])
     })
 
     it('admits when consent is granted at the capture boundary after changing during DOM access', async () => {
@@ -214,7 +214,7 @@ describe('browser-next initial pageview', () => {
         })
 
         expect(posthog.hasOptedOut()).toBe(false)
-        expect(observed).toEqual(['$pageview'])
+        expect(observed).toEqual(['edp_pageview'])
     })
 
     it('keeps a visible pageview single-flight during reentrant opt-in', async () => {
@@ -229,7 +229,7 @@ describe('browser-next initial pageview', () => {
         const observed: string[] = []
         posthog.onEvent(({ event }) => {
             observed.push(event)
-            if (event === '$pageview') {
+            if (event === 'edp_pageview') {
                 posthog.optIn()
             }
         })
@@ -237,7 +237,7 @@ describe('browser-next initial pageview', () => {
         document.visibilityState = 'visible'
         document.dispatchEvent(new Event('visibilitychange'))
 
-        expect(observed).toEqual(['$pageview'])
+        expect(observed).toEqual(['edp_pageview'])
     })
 
     it('does not admit when DOM access revokes consent before capture begins', async () => {
@@ -343,7 +343,7 @@ describe('browser-next initial pageview', () => {
 
         expect(removeFirst.mock.calls.filter(([event]) => event === 'visibilitychange')).toHaveLength(1)
         expect(addSecond.mock.calls.filter(([event]) => event === 'visibilitychange')).toHaveLength(1)
-        expect(observed).toEqual(['$pageview'])
+        expect(observed).toEqual(['edp_pageview'])
     })
 
     it('removes an old hidden listener when document access later fails', async () => {
@@ -432,7 +432,7 @@ describe('browser-next initial pageview', () => {
         await Promise.resolve()
         await posthog.flush()
 
-        expect(observed).toEqual(['large', '$pageview'])
+        expect(observed).toEqual(['large', 'edp_pageview'])
         expect(fetch).toHaveBeenCalledTimes(2)
     })
 

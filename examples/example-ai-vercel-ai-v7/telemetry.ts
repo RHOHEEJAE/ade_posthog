@@ -1,6 +1,6 @@
 type PostHogAttributeValue = string | number | boolean
 
-const RESERVED_ATTRIBUTE_KEYS = new Set(['posthog.distinct_id', '$ai_session_id', '$groups', '$ai_trace_name'])
+const RESERVED_ATTRIBUTE_KEYS = new Set(['posthog.distinct_id', '$ai_session_id', 'groups', '$ai_trace_name'])
 
 function isAttributeValue(value: unknown): value is PostHogAttributeValue {
     return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
@@ -49,7 +49,7 @@ export function getPostHogSpanAttributes({
             }
         }
         if (Object.keys(serializableGroups).length > 0) {
-            attributes.$groups = JSON.stringify(serializableGroups)
+            attributes.groups = JSON.stringify(serializableGroups)
         }
     }
 

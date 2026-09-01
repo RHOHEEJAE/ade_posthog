@@ -10,7 +10,7 @@
 
     Stylesheet inlining now stops after a budget of CSSRules per snapshot (`session_recording.inlineStylesheetBudgetRules`, default 10,000; set `0` for the previous unbounded behaviour). Sheets past the budget are serialized without `_cssText`, keeping `rel`/`href` so replay can load them remotely, and are then inlined one per idle callback and delivered as attribute mutations. Replay fidelity is preserved; the work is just no longer one long blocking task.
 
-    The snapshot's cost is also now measured and reported on captured events, so slow snapshots are visible without a browser profile: `$sdk_debug_replay_slowest_full_snapshot_ms`, `$sdk_debug_replay_slowest_full_snapshot_stylesheet_ms`, `$sdk_debug_replay_slowest_full_snapshot_nodes`, `$sdk_debug_replay_slowest_full_snapshot_css_rules`, `$sdk_debug_replay_deferred_stylesheets`, and, for the incremental path, `$sdk_debug_replay_slowest_mutation_batch_ms`. (2026-08-05)
+    The snapshot's cost is also now measured and reported on captured events, so slow snapshots are visible without a browser profile: `sdk_debug_replay_slowest_full_snapshot_ms`, `sdk_debug_replay_slowest_full_snapshot_stylesheet_ms`, `sdk_debug_replay_slowest_full_snapshot_nodes`, `sdk_debug_replay_slowest_full_snapshot_css_rules`, `sdk_debug_replay_deferred_stylesheets`, and, for the incremental path, `sdk_debug_replay_slowest_mutation_batch_ms`. (2026-08-05)
 
 ## 0.0.67
 

@@ -8,7 +8,7 @@ import { getCurrentUrl } from '../shared/browser.js'
  * Tracks pageviews on route change in Next.js Pages Router.
  *
  * Place this component inside your `PostHogProvider` in `pages/_app.tsx`.
- * It will automatically capture a `$pageview` event whenever the route changes.
+ * It will automatically capture a `edp_pageview` event whenever the route changes.
  *
  * Uses `router.asPath` which includes query parameters and may include hash fragments.
  *
@@ -39,7 +39,7 @@ export function PostHogPageView() {
             return
         }
 
-        posthog.capture('$pageview', { $current_url: currentUrlWithoutHash })
+        posthog.capture('edp_pageview', { current_url: currentUrlWithoutHash })
     }, [router.asPath, router.isReady, posthog])
 
     return null

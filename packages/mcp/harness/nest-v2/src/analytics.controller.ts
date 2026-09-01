@@ -45,7 +45,7 @@ export class AnalyticsController {
 
   @Tool({
     name: 'fail_always',
-    description: 'Always throws. Exercises error capture and $exception.',
+    description: 'Always throws. Exercises error capture and edp_exception.',
     parameters: { type: 'object', properties: {} },
   })
   async failAlways() {

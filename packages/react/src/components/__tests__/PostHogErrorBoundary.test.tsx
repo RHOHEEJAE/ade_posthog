@@ -111,7 +111,7 @@ describe('captureException processing', () => {
         renderWithError({ message: 'Kaboom', fallback: <div></div>, additionalProperties: {} })
         const captureCalls = (posthog.capture as jest.Mock).mock.calls
         expect(captureCalls.length).toBe(1)
-        const exceptionList = captureCalls[0][1].$exception_list
+        const exceptionList = captureCalls[0][1].exception_list
         expect(exceptionList.length).toBe(2)
         const stacktrace = exceptionList[0].stacktrace
         expect(stacktrace.frames.length).toBeGreaterThan(20)
@@ -127,7 +127,7 @@ describe('captureException processing', () => {
         )
 
         const captureCalls = (posthog.capture as jest.Mock).mock.calls
-        const exceptionList = captureCalls[0][1].$exception_list
+        const exceptionList = captureCalls[0][1].exception_list
         expect(exceptionList).toHaveLength(1)
         expect(exceptionList[0].type).toBe('React ErrorBoundary Error')
         expectComponentStackFrames(exceptionList[0].stacktrace.frames, 'ComponentWithUndefinedError')

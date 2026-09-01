@@ -31,7 +31,7 @@ import { convertToURL } from '@posthog/browser-common/utils/request-utils'
 import { isElementNode, isShadowRoot, isTag, isTextNode } from '@posthog/browser-common/utils/element-utils'
 import { includes } from '@posthog/core'
 
-const COPY_AUTOCAPTURE_EVENT = '$copy_autocapture'
+const COPY_AUTOCAPTURE_EVENT = 'edp_copy_autocapture'
 
 const logger = createLogger('[AutoCapture]')
 
@@ -76,8 +76,8 @@ export function previousElementSibling(el: Element): Element | null {
 
 export function getDefaultProperties(eventType: string): Properties {
     return {
-        $event_type: eventType,
-        $ce_version: 1,
+        event_type: eventType,
+        ce_version: 1,
     }
 }
 
@@ -94,9 +94,9 @@ export function getPropertiesFromElement(
     }
     if (autocaptureCompatibleElements.indexOf(tag_name) > -1 && !maskText) {
         if (tag_name.toLowerCase() === 'a' || tag_name.toLowerCase() === 'button') {
-            props['$el_text'] = limitText(1024, getDirectAndNestedSpanText(elem))
+            props['el_text'] = limitText(1024, getDirectAndNestedSpanText(elem))
         } else {
-            props['$el_text'] = limitText(1024, getSafeText(elem))
+            props['el_text'] = limitText(1024, getSafeText(elem))
         }
     }
 
@@ -242,9 +242,9 @@ export function autocapturePropertiesForElement(
         // if the element is a button or anchor tag get the span text from any
         // children and include it as/with the text property on the parent element
         if (isTag(target, 'a') || isTag(target, 'button')) {
-            elementsJson[0]['$el_text'] = getDirectAndNestedSpanText(target)
+            elementsJson[0]['el_text'] = getDirectAndNestedSpanText(target)
         } else {
-            elementsJson[0]['$el_text'] = getSafeText(target)
+            elementsJson[0]['el_text'] = getSafeText(target)
         }
     }
 
@@ -260,12 +260,12 @@ export function autocapturePropertiesForElement(
 
     const props = extend(
         getDefaultProperties(e.type),
-        // Sending "$elements" is deprecated. Only one client on US cloud uses this.
-        !elementsChainAsString ? { $elements: elementsJson } : {},
-        // Always send $elements_chain, as it's needed downstream in site app filtering
-        { $elements_chain: getElementsChainString(elementsJson) },
-        elementsJson[0]?.['$el_text'] ? { $el_text: elementsJson[0]?.['$el_text'] } : {},
-        externalHref && e.type === 'click' ? { $external_click_url: externalHref } : {},
+        // Sending "elements" is deprecated. Only one client on US cloud uses this.
+        !elementsChainAsString ? { elements: elementsJson } : {},
+        // Always send elements_chain, as it's needed downstream in site app filtering
+        { elements_chain: getElementsChainString(elementsJson) },
+        elementsJson[0]?.['el_text'] ? { el_text: elementsJson[0]?.['el_text'] } : {},
+        externalHref && e.type === 'click' ? { external_click_url: externalHref } : {},
         autocaptureAugmentProperties
     )
 
@@ -468,7 +468,7 @@ export class Autocapture implements Extension {
         return !disabledClient && !disabledServer
     }
 
-    private _captureEvent(e: Event, eventName: EventName = '$autocapture'): boolean | void {
+    private _captureEvent(e: Event, eventName: EventName = 'edp_autocapture'): boolean | void {
         if (!this.isEnabled) {
             return
         }
@@ -481,13 +481,13 @@ export class Autocapture implements Extension {
         }
 
         const config = this._compileUrlPatterns()
-        if (eventName === '$autocapture' && e.type === 'click' && e instanceof MouseEvent) {
+        if (eventName === 'edp_autocapture' && e.type === 'click' && e instanceof MouseEvent) {
             if (
                 !!config.rageclick &&
                 this.rageclicks?.isRageClick(e.clientX, e.clientY, e.timeStamp || new Date().getTime())
             ) {
                 if (shouldCaptureRageclick(target, config.rageclick)) {
-                    this._captureEvent(e, '$rageclick')
+                    this._captureEvent(e, 'edp_rageclick')
                 }
             }
         }
@@ -524,7 +524,7 @@ export class Autocapture implements Extension {
 
             const elementSelectors = this.getElementSelectors(target)
             if (elementSelectors && elementSelectors.length > 0) {
-                props['$element_selectors'] = elementSelectors
+                props['element_selectors'] = elementSelectors
             }
 
             if (eventName === COPY_AUTOCAPTURE_EVENT) {
@@ -537,10 +537,10 @@ export class Autocapture implements Extension {
                     if (!selectedContent) {
                         return false
                     }
-                    props['$selected_content'] = selectedContent
-                    props['$clipboard_text_length'] = selectedText?.length ?? 0
+                    props['selected_content'] = selectedContent
+                    props['clipboard_text_length'] = selectedText?.length ?? 0
                 }
-                props['$copy_type'] = clipType
+                props['copy_type'] = clipType
             }
 
             void this._client

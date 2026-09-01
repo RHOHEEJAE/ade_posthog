@@ -351,10 +351,10 @@ function App() {
                     {/* 2. Identify */}
                     <Section num="02" title="Identify" subtitle="identify() · mutation context">
                         <p className="section-lede">
-                            Attaches person properties (<code>$set</code>) to the current distinct ID.
+                            Attaches person properties (<code>edp_set</code>) to the current distinct ID.
                         </p>
                         <div className="field-grid">
-                            <Field label="Properties" hint="JSON · sent as $set" wide>
+                            <Field label="Properties" hint="JSON · sent as edp_set" wide>
                                 <textarea
                                     value={identifyProps}
                                     onChange={(e) => setIdentifyProps(e.target.value)}

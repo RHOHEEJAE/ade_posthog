@@ -11,27 +11,27 @@ import type { Properties } from './common'
  */
 export type KnownEventName =
     | '$heatmaps_data'
-    | '$opt_in'
-    | '$exception'
+    | 'edp_opt_in'
+    | 'edp_exception'
     | '$$heatmap'
-    | '$web_vitals'
-    | '$dead_click'
-    | '$dead_swipe'
-    | '$autocapture'
-    | '$copy_autocapture'
-    | '$rageclick'
+    | 'edp_web_vitals'
+    | 'edp_dead_click'
+    | 'edp_dead_swipe'
+    | 'edp_autocapture'
+    | 'edp_copy_autocapture'
+    | 'edp_rageclick'
 
 /**
  * Known events that can be safely edited in beforeCapture without breaking PostHog functionality
  */
 export type KnownUnsafeEditableEvent =
-    | '$set'
-    | '$pageview'
-    | '$pageleave'
-    | '$identify'
-    | '$groupidentify'
-    | '$create_alias'
-    | '$feature_flag_called'
+    | 'edp_set'
+    | 'edp_pageview'
+    | 'edp_pageleave'
+    | 'edp_identify'
+    | 'edp_groupidentify'
+    | 'edp_create_alias'
+    | 'edp_feature_flag_called'
 
 export type EventName =
     | KnownUnsafeEditableEvent
@@ -45,29 +45,29 @@ export interface CaptureResult {
     uuid: string
     event: EventName
     properties: Properties
-    $set?: Properties
-    $set_once?: Properties
-    $unset?: string[]
+    edp_set?: Properties
+    edp_set_once?: Properties
+    unset?: string[]
     timestamp?: Date
 }
 
 export interface CaptureOptions {
     /**
-     * Used when `$identify` is called
+     * Used when `edp_identify` is called
      * Will set person properties overriding previous values
      */
-    $set?: Properties
+    edp_set?: Properties
 
     /**
-     * Used when `$identify` is called
+     * Used when `edp_identify` is called
      * Will set person properties but only once, it will NOT override previous values
      */
-    $set_once?: Properties
+    edp_set_once?: Properties
 
     /**
      * Used to unset person properties
      */
-    $unset?: string[]
+    unset?: string[]
 
     /**
      * Used to override the desired endpoint for the captured event
@@ -118,9 +118,9 @@ export interface CaptureOptions {
     uuid?: string
 
     /**
-     * Internal flag set by captureException() / sendExceptionEvent() to indicate this $exception
+     * Internal flag set by captureException() / sendExceptionEvent() to indicate this edp_exception
      * event originated from the proper exception capture path. Used to warn users who call
-     * capture('$exception') directly.
+     * capture('edp_exception') directly.
      * @internal
      */
     _originatedFromCaptureException?: boolean

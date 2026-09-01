@@ -60,7 +60,7 @@ const normalizeHost = (host: string): string => {
 }
 const isValidDistinctId = (value: unknown): value is string =>
     isNonEmptyString(value) &&
-    !['$posthog_cookieless', 'distinct_id', 'distinctid', 'undefined', 'null'].includes(value.toLowerCase())
+    !['posthog_cookieless', 'distinct_id', 'distinctid', 'undefined', 'null'].includes(value.toLowerCase())
 
 const deepFreeze = <T>(value: T): T => {
     if (value && typeof value === 'object') {
@@ -369,10 +369,10 @@ class PostHogBrowserClient implements PostHog {
             uuid = options.uuid
             timestamp = options.timestamp
             if (set) {
-                callerProperties['$set'] = set
+                callerProperties['edp_set'] = set
             }
             if (setOnce) {
-                callerProperties['$set_once'] = setOnce
+                callerProperties['edp_set_once'] = setOnce
             }
             const serializedProperties = JSON.stringify(callerProperties)
             const parsedMessageProperties: unknown = JSON.parse(serializedProperties)
@@ -395,22 +395,22 @@ class PostHogBrowserClient implements PostHog {
         Object.assign(messageProperties, {
             token: this.projectToken,
             distinct_id: distinctId,
-            $device_id: deviceId,
-            $groups: groups,
-            $session_id: session.sessionId,
-            $window_id: session.windowId,
-            $lib: 'web',
-            $lib_version: version,
+            device_id: deviceId,
+            groups: groups,
+            session_id: session.sessionId,
+            window_id: session.windowId,
+            lib: 'web',
+            lib_version: version,
         })
         Object.assign(observedProperties, {
             token: this.projectToken,
             distinct_id: distinctId,
-            $device_id: deviceId,
-            $groups: { ...groups },
-            $session_id: session.sessionId,
-            $window_id: session.windowId,
-            $lib: 'web',
-            $lib_version: version,
+            device_id: deviceId,
+            groups: { ...groups },
+            session_id: session.sessionId,
+            window_id: session.windowId,
+            lib: 'web',
+            lib_version: version,
         })
 
         const message: AnalyticsMessage = {
@@ -470,18 +470,18 @@ class PostHogBrowserClient implements PostHog {
         if (distinctId === previousDistinctId) {
             if (!wasIdentified) {
                 this._state.identify(distinctId)
-                await this.capture('$set', null, { set: set ?? {}, setOnce: setOnce ?? {} })
+                await this.capture('edp_set', null, { set: set ?? {}, setOnce: setOnce ?? {} })
             } else if (hasPersonProperties) {
-                await this.capture('$set', null, captureOptions)
+                await this.capture('edp_set', null, captureOptions)
             }
             return
         }
 
         this._state.identify(distinctId)
         if (!wasIdentified) {
-            await this.capture('$identify', { $anon_distinct_id: previousDistinctId }, captureOptions)
+            await this.capture('edp_identify', { anon_distinct_id: previousDistinctId }, captureOptions)
         } else if (hasPersonProperties) {
-            await this.capture('$set', null, captureOptions)
+            await this.capture('edp_set', null, captureOptions)
         }
     }
 
@@ -495,10 +495,10 @@ class PostHogBrowserClient implements PostHog {
         if (!changed && !properties) {
             return
         }
-        await this.capture('$groupidentify', {
-            $group_type: type,
-            $group_key: key,
-            ...(properties ? { $group_set: properties } : {}),
+        await this.capture('edp_groupidentify', {
+            group_type: type,
+            group_key: key,
+            ...(properties ? { group_set: properties } : {}),
         })
     }
 
@@ -879,7 +879,7 @@ class PostHogBrowserClient implements PostHog {
 
         this._removePageviewListener()
         this._initialPageviewPending = false
-        if (!this._capture('$pageview')) {
+        if (!this._capture('edp_pageview')) {
             this._initialPageviewPending = !this._disposed && !this._blocked
         }
     }

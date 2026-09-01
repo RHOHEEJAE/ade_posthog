@@ -178,7 +178,7 @@ describe('capture v1 wiring (Node SDK)', () => {
       await posthog.groupIdentifyImmediate({ groupType: 'company', groupKey: 'acme', properties: { plan: 'pro' } })
 
       expect(callsTo('/batch/')).toHaveLength(0)
-      expect(eventsIn('/i/v1/analytics/events')).toEqual(['$identify', '$create_alias', '$groupidentify'])
+      expect(eventsIn('/i/v1/analytics/events')).toEqual(['edp_identify', 'edp_create_alias', 'edp_groupidentify'])
     })
   })
 

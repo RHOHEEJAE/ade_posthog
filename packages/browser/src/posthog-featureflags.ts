@@ -86,7 +86,7 @@ type FeatureFlagsState = {
 }
 
 /**
- * Error type constants for the $feature_flag_error property.
+ * Error type constants for the feature_flag_error property.
  *
  * These values are sent in analytics events to track flag evaluation failures.
  * They should not be changed without considering impact on existing dashboards
@@ -144,15 +144,15 @@ export const parseFlagsResponse = (
     // using the v1 api
     if (isArray(featureFlags)) {
         responseLogger.warn('v1 of the feature flags endpoint is deprecated. Please use the latest version.')
-        const $enabled_feature_flags: Record<string, boolean> = {}
+        const enabled_feature_flags: Record<string, boolean> = {}
         if (featureFlags) {
             for (let i = 0; i < featureFlags.length; i++) {
-                $enabled_feature_flags[featureFlags[i]] = true
+                enabled_feature_flags[featureFlags[i]] = true
             }
         }
         return {
             [PERSISTENCE_ACTIVE_FEATURE_FLAGS]: featureFlags,
-            [ENABLED_FEATURE_FLAGS]: $enabled_feature_flags,
+            [ENABLED_FEATURE_FLAGS]: enabled_feature_flags,
             // Legacy responses never carry the gate — fail safe to full events.
             [PERSISTENCE_MINIMAL_FLAG_CALLED_EVENTS]: false,
         }
@@ -253,7 +253,7 @@ export class PostHogFeatureFlags implements Extension {
     readonly name = FeatureFlagsExtension
     _override_warning: boolean = false
     featureFlagEventHandlers: FeatureFlagsCallback[] = []
-    $anon_distinct_id: string | undefined
+    anon_distinct_id: string | undefined
     private _client?: Client
     private _initializingClient?: Client
     private _logger: Client['logger'] = logger
@@ -467,7 +467,7 @@ export class PostHogFeatureFlags implements Extension {
         const flags = this._prop(ENABLED_FEATURE_FLAGS)
         if (flags) {
             for (const [key, value] of Object.entries(flags)) {
-                withFlagValues[`$feature/${key}`] = value
+                withFlagValues[`feature/${key}`] = value
             }
         }
         this._eventPropertiesWithFlagValues = withFlagValues
@@ -638,7 +638,7 @@ export class PostHogFeatureFlags implements Extension {
                 variant: finalEnabled ? (overrideVariant ?? originalDetail?.variant) : undefined,
             }
 
-            // Keep track of the original enabled and variant values so we can send them in the $feature_flag_called event.
+            // Keep track of the original enabled and variant values so we can send them in the edp_feature_flag_called event.
             // This will be helpful for debugging and for understanding the impact of overrides.
             if (finalEnabled !== originalDetail?.enabled) {
                 overridenDetail.original_enabled = originalDetail?.enabled
@@ -793,7 +793,7 @@ export class PostHogFeatureFlags implements Extension {
     }
 
     setAnonymousDistinctId(anon_distinct_id: string): void {
-        this.$anon_distinct_id = anon_distinct_id
+        this.anon_distinct_id = anon_distinct_id
     }
 
     setReloadingPaused(isPaused: boolean): void {
@@ -819,18 +819,18 @@ export class PostHogFeatureFlags implements Extension {
             token: client.projectToken,
             distinct_id: client.distinctId,
             groups: client.groups,
-            $anon_distinct_id: this.$anon_distinct_id,
+            anon_distinct_id: this.anon_distinct_id,
             person_properties: {
                 ...client.initialPersonProperties,
                 ...(this._prop(STORED_PERSON_PROPERTIES_KEY) || {}),
-                $lib: client.library.name,
-                $lib_version: client.library.version,
+                lib: client.library.name,
+                lib_version: client.library.version,
             },
             group_properties: this._prop(STORED_GROUP_PROPERTIES_KEY),
             timezone: getTimezone(),
         }
         if (!isUndefined(client.deviceId)) {
-            data.$device_id = client.deviceId
+            data.device_id = client.deviceId
         }
         if (options?.disableFlags || this._config.featureFlagsDisabled) {
             data.disable_flags = true
@@ -865,7 +865,7 @@ export class PostHogFeatureFlags implements Extension {
             }
             this._trackStatusZeroReachability(response.statusCode)
             if (!errorsLoading && !this._additionalReloadRequested) {
-                this.$anon_distinct_id = undefined
+                this.anon_distinct_id = undefined
             }
             if (data.disable_flags && !this._additionalReloadRequested) {
                 return
@@ -965,7 +965,7 @@ export class PostHogFeatureFlags implements Extension {
      *
      * @param {String} key Key of the feature flag.
      * @param {Object} options Optional settings.
-     * @param {boolean} [options.send_event=true] If false, won't send a $feature_flag_called event to PostHog.
+     * @param {boolean} [options.send_event=true] If false, won't send a edp_feature_flag_called event to PostHog.
      * @param {boolean} [options.fresh=false] If true, only returns values loaded from the server, not cached localStorage values.
      *                  Use this when you need to ensure the flag value reflects the current server state,
      *                  such as after disabling a flag. Returns undefined until the /flags endpoint responds.
@@ -1005,7 +1005,7 @@ export class PostHogFeatureFlags implements Extension {
 
     /**
      * @deprecated Use `getFeatureFlagResult()` instead which properly tracks the feature flag call.
-     * `getFeatureFlagPayload()` does not emit the `$feature_flag_called` event which may result in
+     * `getFeatureFlagPayload()` does not emit the `edp_feature_flag_called` event which may result in
      * missing analytics. This method will be removed in a future version.
      */
     getFeatureFlagPayload(key: string): JsonType {
@@ -1016,7 +1016,7 @@ export class PostHogFeatureFlags implements Extension {
 
     /**
      * Get a feature flag result including both the flag value and payload, while properly tracking the call.
-     * This method emits the `$feature_flag_called` event by default.
+     * This method emits the `edp_feature_flag_called` event by default.
      *
      * By default, this method may return cached values from localStorage if the `/flags` endpoint
      * hasn't responded yet. This reduces flicker but means you might briefly see stale values
@@ -1034,7 +1034,7 @@ export class PostHogFeatureFlags implements Extension {
      *
      * @param {String} key Key of the feature flag.
      * @param {Object} [options] Options for the feature flag lookup.
-     * @param {boolean} [options.send_event=true] If false, won't send the $feature_flag_called event.
+     * @param {boolean} [options.send_event=true] If false, won't send the edp_feature_flag_called event.
      * @param {boolean} [options.fresh=false] If true, only returns values loaded from the server, not cached localStorage values.
      *                  Use this when you need to ensure the flag value reflects the current server state.
      *                  Returns undefined until the /flags endpoint responds.
@@ -1093,49 +1093,49 @@ export class PostHogFeatureFlags implements Extension {
                 }
 
                 const properties: Record<string, any | undefined> = {
-                    $feature_flag: key,
-                    $feature_flag_response: flagValue,
-                    $feature_flag_payload: payload ?? null,
-                    $feature_flag_request_id: requestId,
-                    $feature_flag_evaluated_at: evaluatedAt,
-                    $feature_flag_bootstrapped_response: this._config.bootstrap?.featureFlags?.[key] ?? null,
-                    $feature_flag_bootstrapped_payload: this._config.bootstrap?.featureFlagPayloads?.[key] ?? null,
+                    feature_flag: key,
+                    feature_flag_response: flagValue,
+                    feature_flag_payload: payload ?? null,
+                    feature_flag_request_id: requestId,
+                    feature_flag_evaluated_at: evaluatedAt,
+                    feature_flag_bootstrapped_response: this._config.bootstrap?.featureFlags?.[key] ?? null,
+                    feature_flag_bootstrapped_payload: this._config.bootstrap?.featureFlagPayloads?.[key] ?? null,
                     // If we haven't yet received a response from the /flags endpoint, we must have used the bootstrapped value
-                    $used_bootstrap_value: !this._flagsLoadedFromRemote,
+                    used_bootstrap_value: !this._flagsLoadedFromRemote,
                 }
 
                 if (!isUndefined(flagDetails?.metadata?.has_experiment)) {
-                    properties.$feature_flag_has_experiment = flagDetails.metadata.has_experiment
+                    properties.feature_flag_has_experiment = flagDetails.metadata.has_experiment
                 }
 
                 if (!isUndefined(flagDetails?.metadata?.version)) {
-                    properties.$feature_flag_version = flagDetails.metadata.version
+                    properties.feature_flag_version = flagDetails.metadata.version
                 }
 
                 const reason = flagDetails?.reason?.description ?? flagDetails?.reason?.code
                 if (reason) {
-                    properties.$feature_flag_reason = reason
+                    properties.feature_flag_reason = reason
                 }
 
                 if (flagDetails?.metadata?.id) {
-                    properties.$feature_flag_id = flagDetails.metadata.id
+                    properties.feature_flag_id = flagDetails.metadata.id
                 }
 
                 // It's possible that flag values were overridden by calling overrideFeatureFlags.
                 // We want to capture the original values in case someone forgets they were using overrides
                 // and is wondering why their app is acting weird.
                 if (!isUndefined(flagDetails?.original_variant) || !isUndefined(flagDetails?.original_enabled)) {
-                    properties.$feature_flag_original_response = !isUndefined(flagDetails.original_variant)
+                    properties.feature_flag_original_response = !isUndefined(flagDetails.original_variant)
                         ? flagDetails.original_variant
                         : flagDetails.original_enabled
                 }
 
                 if (flagDetails?.metadata?.original_payload) {
-                    properties.$feature_flag_original_payload = flagDetails?.metadata?.original_payload
+                    properties.feature_flag_original_payload = flagDetails?.metadata?.original_payload
                 }
 
                 if (errors.length) {
-                    properties.$feature_flag_error = errors.join(',')
+                    properties.feature_flag_error = errors.join(',')
                 }
 
                 this._captureFeatureFlagCalled(properties)
@@ -1166,7 +1166,7 @@ export class PostHogFeatureFlags implements Extension {
 
     private _captureFeatureFlagCalled(properties: Record<string, any | undefined>): void {
         try {
-            void this._client?.capture('$feature_flag_called', properties).catch((error) => {
+            void this._client?.capture('edp_feature_flag_called', properties).catch((error) => {
                 this._logger.error('Failed to capture feature flag call', error)
             })
         } catch (error) {
@@ -1201,7 +1201,7 @@ export class PostHogFeatureFlags implements Extension {
         const data: Record<string, any> = {
             distinct_id: client.distinctId,
             token: client.projectToken,
-            person_properties: { $lib: client.library.name, $lib_version: client.library.version },
+            person_properties: { lib: client.library.name, lib_version: client.library.version },
         }
         const evaluationContexts = this._getValidEvaluationEnvironments()
         if (evaluationContexts.length) {
@@ -1250,7 +1250,7 @@ export class PostHogFeatureFlags implements Extension {
      *
      * @param {String} key Key of the feature flag.
      * @param {Object} [options] Optional settings.
-     * @param {boolean} [options.send_event=true] If false, won't send a $feature_flag_called event to PostHog.
+     * @param {boolean} [options.send_event=true] If false, won't send a edp_feature_flag_called event to PostHog.
      * @param {boolean} [options.fresh=false] If true, only returns values loaded from the server, not cached localStorage values.
      *                  Use this when you need to ensure the flag value reflects the current server state.
      *                  Returns undefined until the /flags endpoint responds.
@@ -1465,21 +1465,21 @@ export class PostHogFeatureFlags implements Extension {
         const feature = existing_early_access_features.find((f) => f.flagKey === key)
 
         const enrollmentPersonProp = {
-            [`$feature_enrollment/${key}`]: isEnrolled,
+            [`feature_enrollment/${key}`]: isEnrolled,
         }
 
         const properties: Properties = {
-            $feature_flag: key,
-            $feature_enrollment: isEnrolled,
-            $set: enrollmentPersonProp,
+            feature_flag: key,
+            feature_enrollment: isEnrolled,
+            edp_set: enrollmentPersonProp,
         }
 
         if (feature) {
-            properties['$early_access_feature_name'] = feature.name
+            properties['early_access_feature_name'] = feature.name
         }
 
         if (stage) {
-            properties['$feature_enrollment_stage'] = stage
+            properties['feature_enrollment_stage'] = stage
         }
 
         const newFlags = { ...this.getFlagVariants(), [key]: isEnrolled }
@@ -1493,7 +1493,7 @@ export class PostHogFeatureFlags implements Extension {
         })
         this._fireFeatureFlagsCallbacks()
         try {
-            void this._client?.capture('$feature_enrollment_update', properties).catch((error) => {
+            void this._client?.capture('edp_feature_enrollment_update', properties).catch((error) => {
                 this._logger.error('Failed to capture early access feature enrollment', error)
             })
         } catch (error) {
@@ -1596,11 +1596,11 @@ export class PostHogFeatureFlags implements Extension {
     private _setPersonPropertiesForFlags(properties: Properties, reloadFeatureFlags = true): void {
         const existingProperties = this._prop(STORED_PERSON_PROPERTIES_KEY) || {}
 
-        // If the caller passes { $set, $set_once }, split them apart so we can apply $set_once
-        // semantics (skip keys that already exist). Otherwise treat all properties as $set for
+        // If the caller passes { edp_set, edp_set_once }, split them apart so we can apply edp_set_once
+        // semantics (skip keys that already exist). Otherwise treat all properties as edp_set for
         // backward compatibility with the public API.
-        const propsToSet = properties?.['$set'] || (!properties?.['$set_once'] ? properties : {})
-        const propsToSetOnce = properties?.['$set_once']
+        const propsToSet = properties?.['edp_set'] || (!properties?.['edp_set_once'] ? properties : {})
+        const propsToSetOnce = properties?.['edp_set_once']
 
         const setOnceProps: Properties = {}
         if (propsToSetOnce) {
@@ -1691,7 +1691,7 @@ export class PostHogFeatureFlags implements Extension {
         this._hasLoadedFlags = false
         this._reloadingDisabled = false
         this._flagsLoadedFromRemote = false
-        this.$anon_distinct_id = undefined
+        this.anon_distinct_id = undefined
         this._clearDebouncer()
         this._override_warning = false
         this._consecutiveStatusZeroFailures = 0

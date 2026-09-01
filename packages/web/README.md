@@ -30,7 +30,7 @@ posthog.capture('my-event', { myProperty: 'foo' })
 // Identify a user (e.g. on login)
 posthog.identify('my-unique-user-id', { email: 'example@posthog.com', name: 'Jane Doe' })
 // ...or with Set Once additional properties
-posthog.identify('my-unique-user-id', { $set: { email: 'example@posthog.com', name: 'Jane Doe' }, $set_once: { vip: true } })
+posthog.identify('my-unique-user-id', { edp_set: { email: 'example@posthog.com', name: 'Jane Doe' }, edp_set_once: { vip: true } })
 
 // Reset a user (e.g. on logout)
 posthog.reset()
@@ -89,7 +89,7 @@ const posthog = new PostHog('my-api-key', {
 When enabled, PostHog will:
 - Track calls to `history.pushState()` and `history.replaceState()`
 - Track `popstate` events (browser back/forward navigation)
-- Send these as `$pageview` events with the current URL and pathname
+- Send these as `edp_pageview` events with the current URL and pathname
 - Include the navigation type (`pushState`, `replaceState`, or `popstate`) as a property
 
 This ensures accurate page tracking in modern web applications without requiring manual pageview capture calls.

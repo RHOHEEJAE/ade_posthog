@@ -32,7 +32,7 @@ interface AutocaptureOptions {
 
 /**
  * Controls the breadcrumb-style exception steps recorded via `addExceptionStep` and attached
- * to captured exceptions as `$exception_steps`.
+ * to captured exceptions as `exception_steps`.
  */
 export interface ExceptionStepsOptions {
   /**
@@ -103,7 +103,7 @@ export class ErrorTracking {
 
   /**
    * Records a breadcrumb-style exception step in the instance buffer and mirrors it to the embedded
-   * native SDK. The `$timestamp` is captured at call time. Invalid messages are ignored with a
+   * native SDK. The `timestamp` is captured at call time. Invalid messages are ignored with a
    * warning and never throw. The step only reaches native when it was actually buffered.
    */
   addExceptionStep(message: string, properties?: Properties): void {
@@ -143,7 +143,7 @@ export class ErrorTracking {
   onNativeErrorTrackingReady(): void {
     this._nativeForwardingEnabled = true
     for (const step of this.getAttachableExceptionSteps()) {
-      this.forwardExceptionStepToNative(step.$message, step as Properties)
+      this.forwardExceptionStepToNative(step.message, step as Properties)
     }
   }
 
@@ -162,12 +162,12 @@ export class ErrorTracking {
   }
 
   /**
-   * Returns `properties` with a snapshot of the buffered steps attached as `$exception_steps`,
+   * Returns `properties` with a snapshot of the buffered steps attached as `exception_steps`,
    * unless the feature is disabled, the caller already provided that key, or the buffer is empty.
    * The buffer is left intact so subsequent exceptions read the same steps.
    */
   attachExceptionSteps(properties: PostHogEventProperties): PostHogEventProperties {
-    if (!this._exceptionStepsConfig.enabled || !isNullish(properties.$exception_steps)) {
+    if (!this._exceptionStepsConfig.enabled || !isNullish(properties.exception_steps)) {
       return properties
     }
     const steps = this.getAttachableExceptionSteps()
@@ -175,7 +175,7 @@ export class ErrorTracking {
       return properties
     }
     // Steps are already normalized to their JSON-safe wire form by the buffer.
-    return { ...properties, $exception_steps: steps as unknown as JsonType }
+    return { ...properties, exception_steps: steps as unknown as JsonType }
   }
 
   /**
@@ -269,7 +269,7 @@ export class ErrorTracking {
       const additionalProperties: any = {}
 
       if (isFatal) {
-        additionalProperties['$exception_level'] = 'fatal' as CoreErrorTracking.SeverityLevel
+        additionalProperties['exception_level'] = 'fatal' as CoreErrorTracking.SeverityLevel
       }
 
       this.instance.captureException(error, additionalProperties, hint)
@@ -330,7 +330,7 @@ export class ErrorTracking {
         syntheticException,
       }
       const additionalProperties = {
-        $exception_level: level as CoreErrorTracking.SeverityLevel,
+        exception_level: level as CoreErrorTracking.SeverityLevel,
       }
       this.instance.captureException(error, additionalProperties, hint)
     }

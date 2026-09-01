@@ -102,7 +102,7 @@ describe('Survey Translations', () => {
                 hasGetProperty: false,
             },
         ])(
-            '$name',
+            'name',
             ({
                 configLanguage,
                 browserLanguage,
@@ -419,7 +419,7 @@ describe('Survey Translations', () => {
                     expect((survey.questions[0] as any).link).toBe('https://example.com/es')
                 },
             },
-        ])('should translate $name', ({ language, prepareSurvey, assertTranslatedSurvey }) => {
+        ])('should translate name', ({ language, prepareSurvey, assertTranslatedSurvey }) => {
             ;(mockPostHog.get_property as jest.Mock).mockReturnValue({ language })
             const survey = createBaseSurvey()
 
@@ -495,7 +495,7 @@ describe('Survey Translations', () => {
                     },
                 },
             },
-        ])('should ignore $name', ({ translations }) => {
+        ])('should ignore name', ({ translations }) => {
             ;(mockPostHog.get_property as jest.Mock).mockReturnValue({ language: 'es' })
             const survey = createBaseSurvey()
             survey.questions[0].translations = translations

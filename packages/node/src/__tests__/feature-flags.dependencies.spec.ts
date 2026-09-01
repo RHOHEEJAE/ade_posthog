@@ -128,7 +128,7 @@ describe('feature flag dependencies', () => {
       // Without group context, dependency evaluation cannot match the group flag.
       expect(await posthog.getFeatureFlag('dependent-flag', 'distinct-id')).toEqual(false)
 
-      // With group context, dependency should evaluate the group flag by group key, not $device_id.
+      // With group context, dependency should evaluate the group flag by group key, not device_id.
       expect(
         await posthog.getFeatureFlag('dependent-flag', 'distinct-id', {
           groups: { company: 'acme' },

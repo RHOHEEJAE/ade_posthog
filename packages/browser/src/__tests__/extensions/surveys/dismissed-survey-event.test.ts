@@ -27,7 +27,7 @@ describe('dismissedSurveyEvent', () => {
         setInProgressSurveyState(survey, {
             surveySubmissionId: 'sub-1',
             lastQuestionIndex: 0,
-            responses: { $survey_response_q1: 'answer' },
+            responses: { survey_response_q1: 'answer' },
             surveyLanguage: null,
         })
         const mockPosthog = { capture: jest.fn(), get_session_replay_url: jest.fn() } as unknown as PostHog
@@ -35,14 +35,14 @@ describe('dismissedSurveyEvent', () => {
         dismissedSurveyEvent(survey, mockPosthog, false, 'fr')
 
         const [, properties] = (mockPosthog.capture as jest.Mock).mock.calls[0]
-        expect(properties).not.toHaveProperty('$survey_language')
+        expect(properties).not.toHaveProperty('survey_language')
     })
 
     it('uses the answer-time language when one was recorded', () => {
         setInProgressSurveyState(survey, {
             surveySubmissionId: 'sub-1',
             lastQuestionIndex: 0,
-            responses: { $survey_response_q1: 'answer' },
+            responses: { survey_response_q1: 'answer' },
             surveyLanguage: 'es',
         })
         const mockPosthog = { capture: jest.fn(), get_session_replay_url: jest.fn() } as unknown as PostHog
@@ -50,7 +50,7 @@ describe('dismissedSurveyEvent', () => {
         dismissedSurveyEvent(survey, mockPosthog, false, 'fr')
 
         const [, properties] = (mockPosthog.capture as jest.Mock).mock.calls[0]
-        expect(properties).toEqual(expect.objectContaining({ $survey_language: 'es' }))
+        expect(properties).toEqual(expect.objectContaining({ survey_language: 'es' }))
     })
 
     it('falls back to the current display language when the survey was dismissed without answering', () => {
@@ -61,6 +61,6 @@ describe('dismissedSurveyEvent', () => {
         dismissedSurveyEvent(survey, mockPosthog, false, 'fr')
 
         const [, properties] = (mockPosthog.capture as jest.Mock).mock.calls[0]
-        expect(properties).toEqual(expect.objectContaining({ $survey_language: 'fr' }))
+        expect(properties).toEqual(expect.objectContaining({ survey_language: 'fr' }))
     })
 })

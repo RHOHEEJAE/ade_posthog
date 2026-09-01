@@ -32,13 +32,13 @@ describe('heatmaps', () => {
             sanitize_properties: (props) => {
                 // what ever sanitization makes sense
                 const sanitizeUrl = (url: string) => url.replace(/https?:\/\/[^/]+/g, 'http://replaced')
-                if (props['$current_url']) {
-                    props['$current_url'] = sanitizeUrl(props['$current_url'])
+                if (props['current_url']) {
+                    props['current_url'] = sanitizeUrl(props['current_url'])
                 }
-                if (isObject(props['$heatmap_data'])) {
+                if (isObject(props['heatmap_data'])) {
                     // the keys of the heatmap data are URLs, so we might need to sanitize them to
                     // this sanitized URL would need to be entered in the toolbar for the heatmap display to work
-                    props['$heatmap_data'] = Object.entries(props['$heatmap_data']).reduce((acc, [url, data]) => {
+                    props['heatmap_data'] = Object.entries(props['heatmap_data']).reduce((acc, [url, data]) => {
                         acc[sanitizeUrl(url)] = data
                         return acc
                     }, {})
@@ -55,7 +55,7 @@ describe('heatmaps', () => {
         posthog.heatmaps!.startIfEnabled()
         expect(posthog.heatmaps!.getAndClearBuffer()).toBeUndefined()
 
-        posthog.register({ $current_test_name: expect.getState().currentTestName })
+        posthog.register({ current_test_name: expect.getState().currentTestName })
     })
 
     afterEach(() => {
@@ -71,7 +71,7 @@ describe('heatmaps', () => {
         expect(beforeSendMock.mock.lastCall[0]).toMatchObject({
             event: '$$heatmap',
             properties: {
-                $heatmap_data: {
+                heatmap_data: {
                     'http://replaced/': [
                         {
                             target_fixed: false,
@@ -94,7 +94,7 @@ describe('heatmaps', () => {
         expect(beforeSendMock.mock.lastCall[0]).toMatchObject({
             event: '$$heatmap',
             properties: {
-                $heatmap_data: {
+                heatmap_data: {
                     'http://replaced/': [
                         {
                             target_fixed: false,
@@ -130,7 +130,7 @@ describe('heatmaps', () => {
         jest.advanceTimersByTime(posthog.heatmaps!.flushIntervalMilliseconds + 1)
 
         expect(beforeSendMock).toBeCalledTimes(1)
-        expect(beforeSendMock.mock.lastCall[0].properties.$heatmap_data['http://replaced/'][0].target_fixed).toBe(false)
+        expect(beforeSendMock.mock.lastCall[0].properties.heatmap_data['http://replaced/'][0].target_fixed).toBe(false)
     })
 
     it('does not crash on mousemove when getComputedStyle throws for a cross-realm element', async () => {
@@ -146,7 +146,7 @@ describe('heatmaps', () => {
         expect(() => jest.advanceTimersByTime(posthog.heatmaps!.flushIntervalMilliseconds + 1)).not.toThrow()
 
         expect(beforeSendMock).toBeCalledTimes(1)
-        expect(beforeSendMock.mock.lastCall[0].properties.$heatmap_data['http://replaced/'][0]).toMatchObject({
+        expect(beforeSendMock.mock.lastCall[0].properties.heatmap_data['http://replaced/'][0]).toMatchObject({
             type: 'mousemove',
             target_fixed: false,
         })
@@ -169,7 +169,7 @@ describe('heatmaps', () => {
 
         expect(beforeSendMock).toBeCalledTimes(1)
         expect(beforeSendMock.mock.lastCall[0].event).toEqual('$$heatmap')
-        const heatmapData = beforeSendMock.mock.lastCall[0].properties.$heatmap_data
+        const heatmapData = beforeSendMock.mock.lastCall[0].properties.heatmap_data
         expect(heatmapData).toBeDefined()
         expect(heatmapData['http://replaced/']).toHaveLength(4)
         expect(heatmapData['http://replaced/'].map((x) => x.type)).toEqual(['click', 'click', 'rageclick', 'click'])
@@ -188,7 +188,7 @@ describe('heatmaps', () => {
         jest.advanceTimersByTime(posthog.heatmaps!.flushIntervalMilliseconds + 1)
 
         expect(beforeSendMock).toBeCalledTimes(1)
-        const heatmapData = beforeSendMock.mock.lastCall[0].properties.$heatmap_data
+        const heatmapData = beforeSendMock.mock.lastCall[0].properties.heatmap_data
         expect(heatmapData).toBeDefined()
         expect(heatmapData['http://replaced/']).toHaveLength(3)
         expect(heatmapData['http://replaced/'].map((x: { type: string }) => x.type)).toEqual([
@@ -206,8 +206,8 @@ describe('heatmaps', () => {
 
         expect(beforeSendMock).toBeCalledTimes(1)
         expect(beforeSendMock.mock.lastCall[0].event).toEqual('$$heatmap')
-        expect(beforeSendMock.mock.lastCall[0].properties.$heatmap_data).toBeDefined()
-        expect(beforeSendMock.mock.lastCall[0].properties.$heatmap_data['http://replaced/']).toHaveLength(2)
+        expect(beforeSendMock.mock.lastCall[0].properties.heatmap_data).toBeDefined()
+        expect(beforeSendMock.mock.lastCall[0].properties.heatmap_data['http://replaced/']).toHaveLength(2)
 
         expect(posthog.heatmaps!['buffer']).toEqual(undefined)
 
@@ -408,7 +408,7 @@ describe('heatmaps', () => {
             })
 
             it('masks properties accordingly', async () => {
-                const heatmapData = beforeSendMock.mock.lastCall[0].properties.$heatmap_data
+                const heatmapData = beforeSendMock.mock.lastCall[0].properties.heatmap_data
                 expect(heatmapData).toMatchObject({ [maskedUrl]: {} })
             })
         }

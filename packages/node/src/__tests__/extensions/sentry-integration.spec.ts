@@ -116,10 +116,10 @@ describe('PostHogSentryIntegration', () => {
     expect(batchEvents).toEqual([
       {
         distinct_id: 'EXAMPLE_APP_GLOBAL',
-        event: '$exception',
+        event: 'edp_exception',
         properties: {
-          $exception_level: 'error',
-          $exception_list: [
+          exception_level: 'error',
+          exception_list: [
             {
               mechanism: { handled: true, type: 'generic' },
               stacktrace: { frames: [], type: 'raw' },
@@ -127,10 +127,10 @@ describe('PostHogSentryIntegration', () => {
               value: 'example error',
             },
           ],
-          $exception_message: 'example error',
-          $exception_type: 'Error',
-          $sentry_event_id: '80a7023ac32c47f7acb0adaed600d149',
-          $sentry_exception: {
+          exception_message: 'example error',
+          exception_type: 'Error',
+          sentry_event_id: '80a7023ac32c47f7acb0adaed600d149',
+          sentry_exception: {
             values: [
               {
                 type: 'Error',
@@ -140,16 +140,16 @@ describe('PostHogSentryIntegration', () => {
               },
             ],
           },
-          $sentry_exception_message: 'example error',
-          $sentry_exception_type: 'Error',
-          $sentry_tags: {
+          sentry_exception_message: 'example error',
+          sentry_exception_type: 'Error',
+          sentry_tags: {
             posthog_distinct_id: 'EXAMPLE_APP_GLOBAL',
             'PostHog Person URL': 'http://example.com/project/TEST_API_KEY/person/EXAMPLE_APP_GLOBAL',
           },
-          $lib: 'posthog-node',
-          $lib_version: '1.2.3',
-          $geoip_disable: true,
-          $is_server: true,
+          lib: 'posthog-node',
+          lib_version: '1.2.3',
+          geoip_disable: true,
+          is_server: true,
         },
         timestamp: expect.any(String),
         uuid: expect.any(String),

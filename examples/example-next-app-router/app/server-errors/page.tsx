@@ -9,7 +9,7 @@ export default function ServerErrorsPage() {
         setStatus('Triggering /api/server-error...')
         try {
             const response = await fetch('/api/server-error')
-            setStatus(`Server responded with ${response.status}. Check PostHog for a $exception event.`)
+            setStatus(`Server responded with ${response.status}. Check PostHog for a edp_exception event.`)
         } catch (error) {
             setStatus(`Request failed: ${error instanceof Error ? error.message : String(error)}`)
         }

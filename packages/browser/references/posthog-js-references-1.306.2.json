@@ -508,9 +508,9 @@
           "title": "get_property",
           "examples": [
             {
-              "id": "grab_value_for_'$user_id'_after_the_posthog_library_has_loaded",
-              "name": "grab value for '$user_id' after the posthog library has loaded",
-              "code": "\n\n// grab value for '$user_id' after the posthog library has loaded\nposthog.init('<YOUR PROJECT TOKEN>', {\n    loaded: function(posthog) {\n        user_id = posthog.get_property('$user_id');\n    }\n});\n\n\n\n"
+              "id": "grab_value_for_'user_id'_after_the_posthog_library_has_loaded",
+              "name": "grab value for 'user_id' after the posthog library has loaded",
+              "code": "\n\n// grab value for 'user_id' after the posthog library has loaded\nposthog.init('<YOUR PROJECT TOKEN>', {\n    loaded: function(posthog) {\n        user_id = posthog.get_property('user_id');\n    }\n});\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -683,7 +683,7 @@
               "name": "key"
             },
             {
-              "description": "(optional) If send_event: false, we won't send an $feature_flag_call event to PostHog.",
+              "description": "(optional) If send_event: false, we won't send an feature_flag_call event to PostHog.",
               "isOptional": true,
               "type": "{\n        send_event?: boolean;\n    }",
               "name": "options"
@@ -1057,7 +1057,7 @@
             {
               "id": "disable_event_tracking",
               "name": "disable event tracking",
-              "code": "\n\n// disable event tracking\nif (posthog.isFeatureEnabled('feature', { send_event: false })) {\n    // flag checked without sending $feature_flag_call event\n}\n\n\n\n"
+              "code": "\n\n// disable event tracking\nif (posthog.isFeatureEnabled('feature', { send_event: false })) {\n    // flag checked without sending feature_flag_call event\n}\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -1069,7 +1069,7 @@
               "name": "key"
             },
             {
-              "description": "(optional) If send_event: false, we won't send an $feature_flag_call event to PostHog.",
+              "description": "(optional) If send_event: false, we won't send an feature_flag_call event to PostHog.",
               "isOptional": true,
               "type": "{\n        send_event: boolean;\n    }",
               "name": "options"
@@ -1235,7 +1235,7 @@
         {
           "category": "Privacy",
           "description": "Opts the user into data capturing and persistence.",
-          "details": "Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance. By default, captures an `$opt_in` event unless disabled.",
+          "details": "Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance. By default, captures an `edp_opt_in` event unless disabled.",
           "id": "opt_in_capturing",
           "showDocs": true,
           "title": "opt_in_capturing",
@@ -1718,7 +1718,7 @@
             {
               "id": "set_properties",
               "name": "set properties",
-              "code": "\n\n// set properties\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // $set properties\n    { initial_url: '/blog' }   // $set_once properties\n)\n\n\n\n"
+              "code": "\n\n// set properties\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // edp_set properties\n    { initial_url: '/blog' }   // edp_set_once properties\n)\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -1971,7 +1971,7 @@
           "name": "properties"
         },
         {
-          "description": "pre-compiled regex pattern for matching selector against $elements_chain",
+          "description": "pre-compiled regex pattern for matching selector against elements_chain",
           "type": "string | null",
           "name": "selector_regex"
         },
@@ -2134,14 +2134,14 @@
           "name": "_url"
         },
         {
-          "description": "Used when `$identify` is called Will set person properties but only once, it will NOT override previous values",
+          "description": "Used when `edp_identify` is called Will set person properties but only once, it will NOT override previous values",
           "type": "Properties",
-          "name": "$set_once"
+          "name": "edp_set_once"
         },
         {
-          "description": "Used when `$identify` is called Will set person properties overriding previous values",
+          "description": "Used when `edp_identify` is called Will set person properties overriding previous values",
           "type": "Properties",
-          "name": "$set"
+          "name": "edp_set"
         },
         {
           "description": "If set, skips the batched queue",
@@ -2172,11 +2172,11 @@
       "properties": [
         {
           "type": "Properties",
-          "name": "$set_once"
+          "name": "edp_set_once"
         },
         {
           "type": "Properties",
-          "name": "$set"
+          "name": "edp_set"
         },
         {
           "type": "EventName",
@@ -2400,7 +2400,7 @@
       "name": "ErrorTrackingSuppressionRuleValue",
       "properties": [
         {
-          "type": "'$exception_types' | '$exception_values'",
+          "type": "'exception_types' | 'exception_values'",
           "name": "key"
         },
         {
@@ -2437,7 +2437,7 @@
       "name": "EventName",
       "properties": [],
       "path": "lib/src/types.d.ts",
-      "example": "\"$pageview\" | \"$identify\" | \"custom_event\" | string"
+      "example": "\"edp_pageview\" | \"edp_identify\" | \"custom_event\" | string"
     },
     {
       "id": "ExceptionAutoCaptureConfig",
@@ -2524,7 +2524,7 @@
       "name": "HeatmapConfig",
       "properties": [
         {
-          "description": "How often to send batched data in `$heatmap_data` events If set to 0 or not set, sends using the default interval of 1 second\n1000",
+          "description": "How often to send batched data in `heatmap_data` events If set to 0 or not set, sends using the default interval of 1 second\n1000",
           "type": "number",
           "name": "flush_interval_milliseconds"
         }
@@ -2584,7 +2584,7 @@
       "name": "KnownEventName",
       "properties": [],
       "path": "lib/src/types.d.ts",
-      "example": "\"$heatmaps_data\" | \"$opt_in\" | \"$exception\" | \"$$heatmap\" | \"$web_vitals\" | \"$dead_click\" | \"$autocapture\" | \"$rageclick\""
+      "example": "\"$heatmaps_data\" | \"edp_opt_in\" | \"edp_exception\" | \"$$heatmap\" | \"edp_web_vitals\" | \"edp_dead_click\" | \"edp_autocapture\" | \"edp_rageclick\""
     },
     {
       "id": "LinkSurveyQuestion",
@@ -2722,7 +2722,7 @@
           "name": "__add_tracing_headers"
         },
         {
-          "description": "PREVIEW - MAY CHANGE WITHOUT WARNING - DO NOT USE IN PRODUCTION Enables collection of bot traffic as $bot_pageview events with detailed bot detection properties instead of dropping them entirely. Use it alongside opt_out_useragent_filter",
+          "description": "PREVIEW - MAY CHANGE WITHOUT WARNING - DO NOT USE IN PRODUCTION Enables collection of bot traffic as edp_bot_pageview events with detailed bot detection properties instead of dropping them entirely. Use it alongside opt_out_useragent_filter",
           "type": "boolean",
           "name": "__preview_capture_bot_pageviews"
         },
@@ -2732,7 +2732,7 @@
           "name": "__preview_deferred_init_extensions"
         },
         {
-          "description": "Prevents posthog-js from using the `navigator.sendBeacon` API to send events. Enabling this option may hurt the reliability of sending $pageleave events",
+          "description": "Prevents posthog-js from using the `navigator.sendBeacon` API to send events. Enabling this option may hurt the reliability of sending edp_pageleave events",
           "type": "boolean",
           "name": "__preview_disable_beacon"
         },
@@ -3081,7 +3081,7 @@
           "name": "opt_out_persistence_by_default"
         },
         {
-          "description": "Determines if users should be opted out of user agent filtering such as googlebot or other bots. If this is set to `true`, PostHog will set `$browser_type` to either `bot` or `browser` for all events, but will process all events as if they were from a browser.\nfalse",
+          "description": "Determines if users should be opted out of user agent filtering such as googlebot or other bots. If this is set to `true`, PostHog will set `browser_type` to either `bot` or `browser` for all events, but will process all events as if they were from a browser.\nfalse",
           "type": "boolean",
           "name": "opt_out_useragent_filter"
         },
@@ -3096,7 +3096,7 @@
           "name": "persistence"
         },
         {
-          "description": "You can control whether events from PostHog-js have person processing enabled with the `person_profiles` config setting. There are three options: - `person_profiles: 'always'` - we will process persons data for all events - `person_profiles: 'never'` - we won't process persons for any event. This means that anonymous users will not be merged once they sign up or login, so you lose the ability to create funnels that track users from anonymous to identified. All events (including `$identify`) will be sent with `$process_person_profile: False`. - `person_profiles: 'identified_only'` _(default)_ - we will only process persons when you call `posthog.identify`, `posthog.alias`, `posthog.setPersonProperties`, `posthog.group`, `posthog.setPersonPropertiesForFlags` or `posthog.setGroupPropertiesForFlags` Anonymous users won't get person profiles.\n'identified_only'",
+          "description": "You can control whether events from PostHog-js have person processing enabled with the `person_profiles` config setting. There are three options: - `person_profiles: 'always'` - we will process persons data for all events - `person_profiles: 'never'` - we won't process persons for any event. This means that anonymous users will not be merged once they sign up or login, so you lose the ability to create funnels that track users from anonymous to identified. All events (including `edp_identify`) will be sent with `process_person_profile: False`. - `person_profiles: 'identified_only'` _(default)_ - we will only process persons when you call `posthog.identify`, `posthog.alias`, `posthog.setPersonProperties`, `posthog.group`, `posthog.setPersonPropertiesForFlags` or `posthog.setGroupPropertiesForFlags` Anonymous users won't get person profiles.\n'identified_only'",
           "type": "'always' | 'never' | 'identified_only'",
           "name": "person_profiles"
         },
@@ -3464,7 +3464,7 @@
       "name": "Properties",
       "properties": [],
       "path": "lib/src/types.d.ts",
-      "example": "// Properties is a Record<string, Property> \n// Below are PostHog's default properties, you can add your own properties during capture\n{\n    $timestamp: '2024-05-29T17:32:07.202Z',\n    $os: 'Mac OS X',\n    $os_version: '10.15.7',\n    $browser: 'Chrome',\n    $browser_version: '125',\n    $device_type: 'Desktop',\n    $current_url: 'https://example.com/page',\n    $host: 'example.com',\n    $pathname: '/page',\n    $screen_height: 1080,\n    $screen_width: 1920,\n    $viewport_height: 950,\n    $viewport_width: 1903,\n    $lib: 'web',\n    $lib_version: '1.31.0',\n    $search_engine: 'google',\n    $referrer: 'https://google.com',\n    $referring_domain: 'www.google.com',\n    $active_feature_flags: ['beta_feature'],\n    $event_type: 'click',\n    $utm_source: 'newsletter',\n    $utm_medium: 'email',\n    $utm_campaign: 'product_launch',\n    $utm_term: 'new+product',\n    $utm_content: 'logolink',\n    $gclid: 'TeSter-123',\n    $gad_source: 'google_ads',\n    $gclsrc: 'dsa',\n    $dclid: 'testDclid123',\n    $wbraid: 'testWbraid123',\n    $gbraid: 'testGbraid123',\n    $fbclid: 'testFbclid123',\n    $msclkid: 'testMsclkid123',\n    $twclid: 'testTwclid123',\n    $li_fat_id: 'testLiFatId123',\n    $mc_cid: 'testMcCid123',\n    $igshid: 'testIgshid123',\n    $ttclid: 'testTtclid123',\n    $plugins_succeeded: ['GeoIP (56578)'],\n    $plugins_failed: ['plugin3'],\n    $plugins_deferred: ['plugin4'],\n    $ip: '192.168.1.1'\n}"
+      "example": "// Properties is a Record<string, Property> \n// Below are PostHog's default properties, you can add your own properties during capture\n{\n    timestamp: '2024-05-29T17:32:07.202Z',\n    os: 'Mac OS X',\n    os_version: '10.15.7',\n    browser: 'Chrome',\n    browser_version: '125',\n    device_type: 'Desktop',\n    current_url: 'https://example.com/page',\n    host: 'example.com',\n    pathname: '/page',\n    screen_height: 1080,\n    screen_width: 1920,\n    viewport_height: 950,\n    viewport_width: 1903,\n    lib: 'web',\n    lib_version: '1.31.0',\n    search_engine: 'google',\n    referrer: 'https://google.com',\n    referring_domain: 'www.google.com',\n    active_feature_flags: ['beta_feature'],\n    event_type: 'click',\n    $utm_source: 'newsletter',\n    $utm_medium: 'email',\n    $utm_campaign: 'product_launch',\n    $utm_term: 'new+product',\n    $utm_content: 'logolink',\n    $gclid: 'TeSter-123',\n    $gad_source: 'google_ads',\n    $gclsrc: 'dsa',\n    $dclid: 'testDclid123',\n    $wbraid: 'testWbraid123',\n    $gbraid: 'testGbraid123',\n    $fbclid: 'testFbclid123',\n    $msclkid: 'testMsclkid123',\n    $twclid: 'testTwclid123',\n    $li_fat_id: 'testLiFatId123',\n    $mc_cid: 'testMcCid123',\n    $igshid: 'testIgshid123',\n    $ttclid: 'testTtclid123',\n    $plugins_succeeded: ['GeoIP (56578)'],\n    $plugins_failed: ['plugin3'],\n    $plugins_deferred: ['plugin4'],\n    $ip: '192.168.1.1'\n}"
     },
     {
       "id": "Property",
@@ -3602,7 +3602,7 @@
           "name": "editorParams"
         },
         {
-          "description": "Whether the `$elements_chain` property should be sent as a string or as an array\nfalse",
+          "description": "Whether the `elements_chain` property should be sent as a string or as an array\nfalse",
           "type": "boolean",
           "name": "elementsChainAsString"
         },
@@ -4269,7 +4269,7 @@
       "properties": [
         {
           "type": "string",
-          "name": "$el_text"
+          "name": "el_text"
         },
         {
           "type": "string[]",
@@ -4342,39 +4342,39 @@
       "name": "SurveyEventProperties",
       "properties": [
         {
-          "type": "\"$survey_completed\"",
+          "type": "\"survey_completed\"",
           "name": "SURVEY_COMPLETED"
         },
         {
-          "type": "\"$survey_id\"",
+          "type": "\"survey_id\"",
           "name": "SURVEY_ID"
         },
         {
-          "type": "\"$survey_iteration\"",
+          "type": "\"survey_iteration\"",
           "name": "SURVEY_ITERATION"
         },
         {
-          "type": "\"$survey_iteration_start_date\"",
+          "type": "\"survey_iteration_start_date\"",
           "name": "SURVEY_ITERATION_START_DATE"
         },
         {
-          "type": "\"$survey_name\"",
+          "type": "\"survey_name\"",
           "name": "SURVEY_NAME"
         },
         {
-          "type": "\"$survey_partially_completed\"",
+          "type": "\"survey_partially_completed\"",
           "name": "SURVEY_PARTIALLY_COMPLETED"
         },
         {
-          "type": "\"$survey_questions\"",
+          "type": "\"survey_questions\"",
           "name": "SURVEY_QUESTIONS"
         },
         {
-          "type": "\"$survey_response\"",
+          "type": "\"survey_response\"",
           "name": "SURVEY_RESPONSE"
         },
         {
-          "type": "\"$survey_submission_id\"",
+          "type": "\"survey_submission_id\"",
           "name": "SURVEY_SUBMISSION_ID"
         }
       ],

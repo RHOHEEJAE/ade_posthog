@@ -76,7 +76,7 @@ describe('PostHog Context', () => {
     })
   })
 
-  it('should set $session_id from context sessionId', async () => {
+  it('should set session_id from context sessionId', async () => {
     posthog.withContext({ sessionId: 'session-123', properties: { env: 'prod' } }, () => {
       posthog.capture({ distinctId: 'user-3', event: 'test_event' })
     })
@@ -85,7 +85,7 @@ describe('PostHog Context', () => {
 
     const events = getLastBatchEvents()
     expect(events?.[0].properties).toMatchObject({
-      $session_id: 'session-123',
+      session_id: 'session-123',
       env: 'prod',
     })
   })
@@ -151,7 +151,7 @@ describe('PostHog Context', () => {
 
     const events = getLastBatchEvents()
     expect(events?.[0].properties).toMatchObject({
-      $session_id: 'session-parent',
+      session_id: 'session-parent',
       level: '2',
     })
   })
@@ -169,7 +169,7 @@ describe('PostHog Context', () => {
     expect(events?.[0].distinct_id).toBeTruthy()
     expect(typeof events?.[0].distinct_id).toBe('string')
     expect(events?.[0].properties).toMatchObject({
-      $process_person_profile: false,
+      process_person_profile: false,
       plan: 'free',
     })
   })
@@ -497,9 +497,9 @@ describe('PostHog Context', () => {
 
       const events = getLastBatchEvents()
       expect(events).toHaveLength(1)
-      expect(events?.[0].event).toBe('$exception')
+      expect(events?.[0].event).toBe('edp_exception')
       expectedDistinctId(events?.[0].distinct_id)
-      expect(events?.[0].properties.$process_person_profile).toBe(expectedProcessPersonProfile)
+      expect(events?.[0].properties.process_person_profile).toBe(expectedProcessPersonProfile)
     }
   )
 })

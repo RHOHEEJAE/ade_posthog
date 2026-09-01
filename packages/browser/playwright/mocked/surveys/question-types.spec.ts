@@ -193,25 +193,25 @@ test.describe('surveys - core display logic', () => {
         await pollUntilEventCaptured(page, 'survey sent')
         const captures = await page.capturedEvents()
         expect(captures.map((c) => c.event)).toEqual([
-            '$pageview',
+            'edp_pageview',
             'survey shown',
-            '$autocapture',
-            '$autocapture',
-            '$autocapture',
-            '$autocapture',
-            '$rageclick',
-            '$autocapture',
+            'edp_autocapture',
+            'edp_autocapture',
+            'edp_autocapture',
+            'edp_autocapture',
+            'edp_rageclick',
+            'edp_autocapture',
             'survey sent',
-            '$autocapture',
+            'edp_autocapture',
         ])
         const surveySent = captures.find((c) => c.event === 'survey sent')
         expect(surveySent!.properties[getSurveyResponseKey('multiple_choice_1')]).toEqual(
             expect.arrayContaining(['Product Updates', 'Events'])
         )
-        expect(surveySent!.properties['$survey_id']).toEqual('12345')
+        expect(surveySent!.properties['survey_id']).toEqual('12345')
         expect(surveySent!.properties[getSurveyResponseKey('open_text_1')]).toEqual('Great job!')
         expect(surveySent!.properties[getSurveyResponseKey('nps_rating_1')]).toBeNull()
-        expect(surveySent!.properties['$survey_questions']).toEqual([
+        expect(surveySent!.properties['survey_questions']).toEqual([
             {
                 id: 'multiple_choice_1',
                 question: 'Which types of content would you like to see more of?',
@@ -259,16 +259,16 @@ test.describe('surveys - core display logic', () => {
         await pollUntilEventCaptured(page, 'survey sent')
         const captures = await page.capturedEvents()
         expect(captures.map((c) => c.event)).toEqual([
-            '$pageview',
+            'edp_pageview',
             'survey shown',
-            '$autocapture',
-            '$autocapture',
-            '$autocapture',
+            'edp_autocapture',
+            'edp_autocapture',
+            'edp_autocapture',
             'survey sent',
         ])
         const surveySent = captures.find((c) => c.event === 'survey sent')
         expect(surveySent!.properties[getSurveyResponseKey('multiple_choice_1')]).toEqual(['Tutorials', 'Newsletters'])
-        expect(surveySent!.properties['$survey_questions']).toEqual([
+        expect(surveySent!.properties['survey_questions']).toEqual([
             {
                 id: 'multiple_choice_1',
                 question: 'Which types of content would you like to see more of?',
@@ -312,16 +312,16 @@ test.describe('surveys - core display logic', () => {
         await pollUntilEventCaptured(page, 'survey sent')
         const captures = await page.capturedEvents()
         expect(captures.map((c) => c.event)).toEqual([
-            '$pageview',
+            'edp_pageview',
             'survey shown',
-            '$autocapture',
-            '$autocapture',
-            '$autocapture',
+            'edp_autocapture',
+            'edp_autocapture',
+            'edp_autocapture',
             'survey sent',
         ])
         const surveySent = captures.find((c) => c.event === 'survey sent')
         expect(surveySent!.properties[getSurveyResponseKey('single_choice_1')]).toEqual('Product engineer')
-        expect(surveySent!.properties['$survey_questions']).toEqual([
+        expect(surveySent!.properties['survey_questions']).toEqual([
             {
                 id: 'single_choice_1',
                 question: 'What is your occupation?',
@@ -371,11 +371,11 @@ test.describe('surveys - core display logic', () => {
         await pollUntilEventCaptured(page, 'survey sent')
         const captures = await page.capturedEvents()
         const surveySentEvent = captures.find(
-            (c) => c.event === 'survey sent' && c.properties['$survey_id'] === surveyId
+            (c) => c.event === 'survey sent' && c.properties['survey_id'] === surveyId
         )
         expect(surveySentEvent).toBeDefined()
         expect(surveySentEvent!.properties[getSurveyResponseKey(thumbsQuestion.id)]).toBe(1)
-        expect(surveySentEvent!.properties['$survey_questions']).toEqual(
+        expect(surveySentEvent!.properties['survey_questions']).toEqual(
             expect.arrayContaining([
                 {
                     id: thumbsQuestion.id,
@@ -449,7 +449,7 @@ test.describe('surveys - skipSubmitButton functionality', () => {
         await pollUntilEventCaptured(page, 'survey sent')
         const captures = await page.capturedEvents()
         const surveySentEvent = captures.find(
-            (c) => c.event === 'survey sent' && c.properties['$survey_id'] === surveyId
+            (c) => c.event === 'survey sent' && c.properties['survey_id'] === surveyId
         )
         expect(surveySentEvent).toBeDefined()
 
@@ -458,7 +458,7 @@ test.describe('surveys - skipSubmitButton functionality', () => {
         expect(surveySentEvent!.properties[getSurveyResponseKey(singleChoiceSkipButtonQuestion.id)]).toBe('Summer')
         expect(surveySentEvent!.properties[getSurveyResponseKey(thumbsQuestion.id)]).toBe(1)
 
-        expect(surveySentEvent!.properties['$survey_questions']).toEqual(
+        expect(surveySentEvent!.properties['survey_questions']).toEqual(
             expect.arrayContaining([
                 {
                     id: emojiRatingSkipButtonQuestion.id,

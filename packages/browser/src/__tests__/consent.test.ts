@@ -108,7 +108,7 @@ describe('consentManager', () => {
 
         it('should send opt in event if not disabled', () => {
             posthog.opt_in_capturing()
-            expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: '$opt_in' }))
+            expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: 'edp_opt_in' }))
         })
 
         it('should send opt in event with overrides', () => {
@@ -131,18 +131,18 @@ describe('consentManager', () => {
         it('should not send opt in event if false', () => {
             posthog.opt_in_capturing({ captureEventName: false })
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
-            expect(beforeSendMock).not.toHaveBeenCalledWith(expect.objectContaining({ event: '$opt_in' }))
-            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: '$pageview' }))
+            expect(beforeSendMock).not.toHaveBeenCalledWith(expect.objectContaining({ event: 'edp_opt_in' }))
+            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: 'edp_pageview' }))
         })
 
         it('should not send opt in event if false', () => {
             posthog.opt_in_capturing({ captureEventName: false })
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
-            expect(beforeSendMock).not.toHaveBeenCalledWith(expect.objectContaining({ event: '$opt_in' }))
-            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: '$pageview' }))
+            expect(beforeSendMock).not.toHaveBeenCalledWith(expect.objectContaining({ event: 'edp_opt_in' }))
+            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: 'edp_pageview' }))
         })
 
-        it('should not send $pageview on opt in if capturing is disabled', async () => {
+        it('should not send edp_pageview on opt in if capturing is disabled', async () => {
             posthog = await createPostHog({
                 opt_out_capturing_by_default: true,
                 before_send: beforeSendMock,
@@ -152,47 +152,47 @@ describe('consentManager', () => {
             expect(beforeSendMock).toHaveBeenCalledTimes(0)
         })
 
-        it('should not send $pageview on opt in if is has already been captured', async () => {
+        it('should not send edp_pageview on opt in if is has already been captured', async () => {
             posthog = await createPostHog({
                 before_send: beforeSendMock,
             })
-            // Wait for the initial $pageview to be captured
+            // Wait for the initial edp_pageview to be captured
             await new Promise((r) => setTimeout(r, 10))
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
-            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: '$pageview' }))
+            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: 'edp_pageview' }))
             posthog.opt_in_capturing()
             expect(beforeSendMock).toHaveBeenCalledTimes(2)
-            expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: '$opt_in' }))
+            expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: 'edp_opt_in' }))
         })
 
-        it('should send $pageview on opt in if is has not been captured', async () => {
+        it('should send edp_pageview on opt in if is has not been captured', async () => {
             // Some other tests might call setTimeout after they've passed, so creating a new instance here.
             const beforeSendMock = jest.fn().mockImplementation((e) => e)
             const posthog = await createPostHog({ before_send: beforeSendMock })
 
             posthog.opt_in_capturing()
             expect(beforeSendMock).toHaveBeenCalledTimes(2)
-            expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: '$opt_in' }))
-            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: '$pageview' }))
-            // Wait for the $pageview timeout to be called
+            expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: 'edp_opt_in' }))
+            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: 'edp_pageview' }))
+            // Wait for the edp_pageview timeout to be called
             await new Promise((r) => setTimeout(r, 10))
             expect(beforeSendMock).toHaveBeenCalledTimes(2)
         })
 
-        it('should not send $pageview on subsequent opt in', async () => {
+        it('should not send edp_pageview on subsequent opt in', async () => {
             // Some other tests might call setTimeout after they've passed, so creating a new instance here.
             const beforeSendMock = jest.fn().mockImplementation((e) => e)
             const posthog = await createPostHog({ before_send: beforeSendMock })
 
             posthog.opt_in_capturing()
             expect(beforeSendMock).toHaveBeenCalledTimes(2)
-            expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: '$opt_in' }))
-            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: '$pageview' }))
-            // Wait for the $pageview timeout to be called
+            expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: 'edp_opt_in' }))
+            expect(beforeSendMock).lastCalledWith(expect.objectContaining({ event: 'edp_pageview' }))
+            // Wait for the edp_pageview timeout to be called
             await new Promise((r) => setTimeout(r, 10))
             posthog.opt_in_capturing()
             expect(beforeSendMock).toHaveBeenCalledTimes(3)
-            expect(beforeSendMock).not.lastCalledWith(expect.objectContaining({ event: '$pageview' }))
+            expect(beforeSendMock).not.lastCalledWith(expect.objectContaining({ event: 'edp_pageview' }))
         })
     })
 
@@ -357,7 +357,7 @@ describe('consentManager', () => {
                     posthog.on('eventCaptured', beforeSendMock)
 
                     posthog.opt_in_capturing()
-                    expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: '$opt_in' }))
+                    expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: 'edp_opt_in' }))
 
                     beforeSendMock.mockClear()
                     const captureEventName = `єνєηт`

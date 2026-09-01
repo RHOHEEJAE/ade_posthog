@@ -85,7 +85,7 @@ describe('ClientPostHogProvider', () => {
             options: { __add_tracing_headers: ['api.example.com'] } as any,
             expectedOptions: { __add_tracing_headers: ['api.example.com'] },
         },
-    ])('$name', ({ options, expectedOptions }) => {
+    ])('name', ({ options, expectedOptions }) => {
         render(
             <ClientPostHogProvider apiKey="phc_test123" options={options}>
                 <div>Child</div>

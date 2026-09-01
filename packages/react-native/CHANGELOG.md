@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
-- [#4617](https://github.com/PostHog/posthog-js/pull/4617) [`b73d15e`](https://github.com/PostHog/posthog-js/commit/b73d15e80fbbf80a078b0fa7226541dea7c1b7e2) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - Add experimental event release mode to React Native builds. Set `releaseMode: 'event'` on the `posthog-react-native/expo` config plugin (or export `POSTHOG_RELEASE_MODE=event`, or set `posthog.releaseMode=event` in `android/gradle.properties`) and the build uploads its Hermes source maps, iOS dSYMs and Android R8 mappings without binding them to a release. Each exception then resolves its own release from the `$app_namespace` / `$app_version` / `$app_build` the SDK already sends, instead of inheriting the release of the symbols its frames resolved against. Use it when two releases can ship identical JavaScript or identical native code: symbol ids are derived from content, so the default `symbol-set` mode makes both releases report whichever one uploaded first. An unrecognized mode fails the build rather than falling back. The Hermes upload needs posthog-cli 0.16.0 or newer, which carries `--release-mode` on its `hermes` commands; an older one fails the build and names the upgrade.
+- [#4617](https://github.com/PostHog/posthog-js/pull/4617) [`b73d15e`](https://github.com/PostHog/posthog-js/commit/b73d15e80fbbf80a078b0fa7226541dea7c1b7e2) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - Add experimental event release mode to React Native builds. Set `releaseMode: 'event'` on the `posthog-react-native/expo` config plugin (or export `POSTHOG_RELEASE_MODE=event`, or set `posthog.releaseMode=event` in `android/gradle.properties`) and the build uploads its Hermes source maps, iOS dSYMs and Android R8 mappings without binding them to a release. Each exception then resolves its own release from the `app_namespace` / `app_version` / `app_build` the SDK already sends, instead of inheriting the release of the symbols its frames resolved against. Use it when two releases can ship identical JavaScript or identical native code: symbol ids are derived from content, so the default `symbol-set` mode makes both releases report whichever one uploaded first. An unrecognized mode fails the build rather than falling back. The Hermes upload needs posthog-cli 0.16.0 or newer, which carries `--release-mode` on its `hermes` commands; an older one fails the build and names the upgrade.
 
   The Android mapping upload needs the `com.posthog.android` gradle plugin 1.5.0 or newer, which reads `posthog.releaseMode`. A fresh prebuild now injects 1.5.1. A project whose `android/build.gradle` already has the classpath line keeps its version, so bump that line to 1.5.0 or newer by hand, or prebuild with `--clean`. On 1.4.0 the mapping stays bound to a release while the Hermes maps do not. (2026-08-27)
 
@@ -21,7 +21,7 @@
 
 ### Minor Changes
 
-- [#4643](https://github.com/PostHog/posthog-js/pull/4643) [`35dcb94`](https://github.com/PostHog/posthog-js/commit/35dcb94877c086cd7a2f4a49f6d9c20a8b178ab1) Thanks [@ioannisj](https://github.com/ioannisj)! - Autocapture touches and clicks on React Native Web (including expo-router on web). Touch events there carry no `_targetInst` and every touch was silently dropped, so the element chain is now resolved by walking up from `e.target` to the nearest node carrying a React fiber. `captureTouches` also registers a capture-phase `click` listener on the document on web, emitted with `$event_type: 'click'`, since browsers fire `touchend` only for touch input (react-native-web's `Pressable` stops propagation, and `Modal` renders outside the provider's subtree). Autocapture no longer lets an exception escape into the host app's event dispatch.
+- [#4643](https://github.com/PostHog/posthog-js/pull/4643) [`35dcb94`](https://github.com/PostHog/posthog-js/commit/35dcb94877c086cd7a2f4a49f6d9c20a8b178ab1) Thanks [@ioannisj](https://github.com/ioannisj)! - Autocapture touches and clicks on React Native Web (including expo-router on web). Touch events there carry no `_targetInst` and every touch was silently dropped, so the element chain is now resolved by walking up from `e.target` to the nearest node carrying a React fiber. `captureTouches` also registers a capture-phase `click` listener on the document on web, emitted with `event_type: 'click'`, since browsers fire `touchend` only for touch input (react-native-web's `Pressable` stops propagation, and `Modal` renders outside the provider's subtree). Autocapture no longer lets an exception escape into the host app's event dispatch.
   (2026-08-26)
 
 ### Patch Changes
@@ -32,7 +32,7 @@
 - [#4654](https://github.com/PostHog/posthog-js/pull/4654) [`aad1494`](https://github.com/PostHog/posthog-js/commit/aad14948feff3a62698d1e4321ba367b535ba448) Thanks [@marandaneto](https://github.com/marandaneto)! - Deduplicate unknown survey position warnings after normalizing equivalent position names.
   (2026-08-26)
 
-- [#4649](https://github.com/PostHog/posthog-js/pull/4649) [`ec78dec`](https://github.com/PostHog/posthog-js/commit/ec78decc4aa982556566b31cb5ae1342f00cb05d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Respect `ph-no-capture` on any ancestor of a touched or clicked element. Previously an interaction deep inside an opted-out subtree could still send an `$autocapture` event carrying that subtree's element text and props, so apps relying on a high-level `ph-no-capture` may see fewer `$autocapture` events after upgrading. Interactions more than 1000 elements deep in the view hierarchy now produce no `$autocapture` event rather than a truncated one. A non-numeric `maxElementsCaptured` now falls back to the default of 20 instead of being treated as no cap at all.
+- [#4649](https://github.com/PostHog/posthog-js/pull/4649) [`ec78dec`](https://github.com/PostHog/posthog-js/commit/ec78decc4aa982556566b31cb5ae1342f00cb05d) Thanks [@github-actions](https://github.com/apps/github-actions)! - Respect `ph-no-capture` on any ancestor of a touched or clicked element. Previously an interaction deep inside an opted-out subtree could still send an `edp_autocapture` event carrying that subtree's element text and props, so apps relying on a high-level `ph-no-capture` may see fewer `edp_autocapture` events after upgrading. Interactions more than 1000 elements deep in the view hierarchy now produce no `edp_autocapture` event rather than a truncated one. A non-numeric `maxElementsCaptured` now falls back to the default of 20 instead of being treated as no cap at all.
   (2026-08-26)
 - Updated dependencies [[`ab1383a`](https://github.com/PostHog/posthog-js/commit/ab1383a8471b003124161c5839c15debacbc1e28), [`0d2cf49`](https://github.com/PostHog/posthog-js/commit/0d2cf4941d0e6306f51666305fbdaa8669a631d2)]:
   - @posthog/types@1.406.2
@@ -218,7 +218,7 @@
 
 ### Patch Changes
 
-- [#4332](https://github.com/PostHog/posthog-js/pull/4332) [`b9a241e`](https://github.com/PostHog/posthog-js/commit/b9a241ec862ba5b753ef34d94c856257bdff2a2f) Thanks [@ioannisj](https://github.com/ioannisj)! - Fix `identify()` leaving a user anonymous when the supplied ID already matches the persisted distinct ID (for example after a non-identified bootstrap seeded the same ID). The user is now marked identified and a person-processed `$set` event is captured. Ports the same fix from posthog-js (browser) to the shared core used by React Native, Node, and posthog-js-lite.
+- [#4332](https://github.com/PostHog/posthog-js/pull/4332) [`b9a241e`](https://github.com/PostHog/posthog-js/commit/b9a241ec862ba5b753ef34d94c856257bdff2a2f) Thanks [@ioannisj](https://github.com/ioannisj)! - Fix `identify()` leaving a user anonymous when the supplied ID already matches the persisted distinct ID (for example after a non-identified bootstrap seeded the same ID). The user is now marked identified and a person-processed `edp_set` event is captured. Ports the same fix from posthog-js (browser) to the shared core used by React Native, Node, and posthog-js-lite.
   (2026-07-31)
 - Updated dependencies [[`b9a241e`](https://github.com/PostHog/posthog-js/commit/b9a241ec862ba5b753ef34d94c856257bdff2a2f)]:
   - @posthog/core@1.46.1
@@ -270,9 +270,9 @@
 
 ### Minor Changes
 
-- [#4172](https://github.com/PostHog/posthog-js/pull/4172) [`9621830`](https://github.com/PostHog/posthog-js/commit/9621830c359a9955ffec0db61164e5fc450e5443) Thanks [@haacked](https://github.com/haacked)! - send minimal `$feature_flag_called` events when the server enables it
+- [#4172](https://github.com/PostHog/posthog-js/pull/4172) [`9621830`](https://github.com/PostHog/posthog-js/commit/9621830c359a9955ffec0db61164e5fc450e5443) Thanks [@haacked](https://github.com/haacked)! - send minimal `edp_feature_flag_called` events when the server enables it
 
-  When the v2 `/flags` response carries `minimalFlagCalledEvents: true` (or, for posthog-node local evaluation, the flag-definitions payload carries `minimal_flag_called_events: true`) and the evaluated flag is not linked to an experiment (`$feature_flag_has_experiment === false`), `$feature_flag_called` events are rebuilt from a strict allowlist of flag-evaluation, processing-control, and SDK-identity properties. Super properties, `$set`/`$set_once`, the `$feature/<key>` enumeration, `$active_feature_flags`, and the context envelope are stripped. Any missing signal (no gate on the response, bootstrapped or locally injected flags, `has_experiment` unknown) falls back to the full event, and experiment-linked flags always send the full envelope. The gate is stored alongside the cached flags (posthog-js persistence, posthog-node poller state) and is server-controlled, with no SDK-side configuration. `before_send` runs after the filter and may re-add stripped properties. (2026-07-20)
+  When the v2 `/flags` response carries `minimalFlagCalledEvents: true` (or, for posthog-node local evaluation, the flag-definitions payload carries `minimal_flag_called_events: true`) and the evaluated flag is not linked to an experiment (`feature_flag_has_experiment === false`), `edp_feature_flag_called` events are rebuilt from a strict allowlist of flag-evaluation, processing-control, and SDK-identity properties. Super properties, `edp_set`/`edp_set_once`, the `feature/<key>` enumeration, `active_feature_flags`, and the context envelope are stripped. Any missing signal (no gate on the response, bootstrapped or locally injected flags, `has_experiment` unknown) falls back to the full event, and experiment-linked flags always send the full envelope. The gate is stored alongside the cached flags (posthog-js persistence, posthog-node poller state) and is server-controlled, with no SDK-side configuration. `before_send` runs after the filter and may re-add stripped properties. (2026-07-20)
 
 ### Patch Changes
 
@@ -283,9 +283,9 @@
 
 ### Minor Changes
 
-- [#4159](https://github.com/PostHog/posthog-js/pull/4159) [`fad6d9a`](https://github.com/PostHog/posthog-js/commit/fad6d9adae4163cd63859766916cdcbae629a110) Thanks [@haacked](https://github.com/haacked)! - add `$feature_flag_has_experiment` to `$feature_flag_called` events
+- [#4159](https://github.com/PostHog/posthog-js/pull/4159) [`fad6d9a`](https://github.com/PostHog/posthog-js/commit/fad6d9adae4163cd63859766916cdcbae629a110) Thanks [@haacked](https://github.com/haacked)! - add `feature_flag_has_experiment` to `edp_feature_flag_called` events
 
-  `$feature_flag_called` events now carry a `$feature_flag_has_experiment` boolean sourced from the server's `has_experiment` flag metadata (the `/flags?v=2` response for remote evaluation, the `/api/feature_flag/local_evaluation` definitions for posthog-node local evaluation). The property is only sent when the server explicitly reports `has_experiment`; it is omitted entirely when the value is unknown (older servers, missing metadata, bootstrapped or locally injected flags). (2026-07-16)
+  `edp_feature_flag_called` events now carry a `feature_flag_has_experiment` boolean sourced from the server's `has_experiment` flag metadata (the `/flags?v=2` response for remote evaluation, the `/api/feature_flag/local_evaluation` definitions for posthog-node local evaluation). The property is only sent when the server explicitly reports `has_experiment`; it is omitted entirely when the value is unknown (older servers, missing metadata, bootstrapped or locally injected flags). (2026-07-16)
 
 ### Patch Changes
 
@@ -362,7 +362,7 @@
 ### Patch Changes
 
 - [#4031](https://github.com/PostHog/posthog-js/pull/4031) [`94a0530`](https://github.com/PostHog/posthog-js/commit/94a053043847293a4427e315e67c798b58894107) Thanks [@posthog](https://github.com/apps/posthog)! - Improve survey display reliability:
-  - **posthog-js**: refresh the cached `$surveys` definitions after a short TTL (stale-while-revalidate) so server-side changes such as switching a survey from popover to API propagate to long-lived tabs without a page reload.
+  - **posthog-js**: refresh the cached `surveys` definitions after a short TTL (stale-while-revalidate) so server-side changes such as switching a survey from popover to API propagate to long-lived tabs without a page reload.
   - **posthog-js**: add `posthog.surveys.markSurveyAsSeen(surveyId, { iteration })` so custom integrators that render surveys through their own backend can honour the "already seen" and wait-period checks.
   - **posthog-react-native**: guarantee the survey `Modal` notifies its parent on close even when iOS `Modal.onDismiss` fails to fire, so the transparent full-screen modal can no longer stay mounted intercepting touches and freezing the app. (2026-07-03)
 
@@ -382,7 +382,7 @@
 
 ### Patch Changes
 
-- [#4048](https://github.com/PostHog/posthog-js/pull/4048) [`5e7e132`](https://github.com/PostHog/posthog-js/commit/5e7e132757682e4f91d40601506b635f346c7b67) Thanks [@turnipdabeets](https://github.com/turnipdabeets)! - fix: feature-flag properties (`$feature/*` and `$active_feature_flags`) passed explicitly to `capture()` now take precedence over the SDK's cached flag values, matching posthog-js (web) and posthog-android
+- [#4048](https://github.com/PostHog/posthog-js/pull/4048) [`5e7e132`](https://github.com/PostHog/posthog-js/commit/5e7e132757682e4f91d40601506b635f346c7b67) Thanks [@turnipdabeets](https://github.com/turnipdabeets)! - fix: feature-flag properties (`feature/*` and `active_feature_flags`) passed explicitly to `capture()` now take precedence over the SDK's cached flag values, matching posthog-js (web) and posthog-android
   (2026-07-02)
 - Updated dependencies [[`5e7e132`](https://github.com/PostHog/posthog-js/commit/5e7e132757682e4f91d40601506b635f346c7b67)]:
   - @posthog/core@1.39.5
@@ -435,7 +435,7 @@
 
 ### Minor Changes
 
-- [#3977](https://github.com/PostHog/posthog-js/pull/3977) [`6200888`](https://github.com/PostHog/posthog-js/commit/6200888e5741dea2e6e11a5da1c98b6c79e62a3f) Thanks [@turnipdabeets](https://github.com/turnipdabeets)! - Add `getAllFeatureFlags()`, which returns all currently loaded feature flags as structured `FeatureFlagResult`s (`key`, `enabled`, `variant`, `payload`). It is a synchronous read of the cached flags and does not send a `$feature_flag_called` event.
+- [#3977](https://github.com/PostHog/posthog-js/pull/3977) [`6200888`](https://github.com/PostHog/posthog-js/commit/6200888e5741dea2e6e11a5da1c98b6c79e62a3f) Thanks [@turnipdabeets](https://github.com/turnipdabeets)! - Add `getAllFeatureFlags()`, which returns all currently loaded feature flags as structured `FeatureFlagResult`s (`key`, `enabled`, `variant`, `payload`). It is a synchronous read of the cached flags and does not send a `edp_feature_flag_called` event.
   (2026-06-26)
 
 ### Patch Changes
@@ -471,7 +471,7 @@
 
 ### Minor Changes
 
-- [#3861](https://github.com/PostHog/posthog-js/pull/3861) [`c3a38fd`](https://github.com/PostHog/posthog-js/commit/c3a38fd9680c80f5115fababd610be7c17557b96) Thanks [@ioannisj](https://github.com/ioannisj)! - Add `addExceptionStep(message, properties?)` for breadcrumb-style exception steps. Steps accumulate in a rolling, byte-bounded buffer (configurable via `errorTracking.exceptionSteps`) and are attached to every captured `$exception` as `$exception_steps`, giving the error tracking UI a timeline of recent activity before each error. When native crash capture is enabled, steps are forwarded to the embedded native SDK so native crashes carry the same timeline.
+- [#3861](https://github.com/PostHog/posthog-js/pull/3861) [`c3a38fd`](https://github.com/PostHog/posthog-js/commit/c3a38fd9680c80f5115fababd610be7c17557b96) Thanks [@ioannisj](https://github.com/ioannisj)! - Add `addExceptionStep(message, properties?)` for breadcrumb-style exception steps. Steps accumulate in a rolling, byte-bounded buffer (configurable via `errorTracking.exceptionSteps`) and are attached to every captured `edp_exception` as `exception_steps`, giving the error tracking UI a timeline of recent activity before each error. When native crash capture is enabled, steps are forwarded to the embedded native SDK so native crashes carry the same timeline.
   (2026-06-19)
 
 ### Patch Changes
@@ -483,7 +483,7 @@
 
 ### Patch Changes
 
-- [#3886](https://github.com/PostHog/posthog-js/pull/3886) [`e6d7fe2`](https://github.com/PostHog/posthog-js/commit/e6d7fe2a5f10d29b3df69392f584970e7a7a4561) Thanks [@marandaneto](https://github.com/marandaneto)! - Stop sending deprecated no-op top-level `type`, `library`, and `library_version` fields in event batch payloads. Use `properties.$lib` and `properties.$lib_version` for SDK metadata; legacy queued `library` and `library_version` values are used as fallbacks when the official `$` properties are missing.
+- [#3886](https://github.com/PostHog/posthog-js/pull/3886) [`e6d7fe2`](https://github.com/PostHog/posthog-js/commit/e6d7fe2a5f10d29b3df69392f584970e7a7a4561) Thanks [@marandaneto](https://github.com/marandaneto)! - Stop sending deprecated no-op top-level `type`, `library`, and `library_version` fields in event batch payloads. Use `properties.lib` and `properties.lib_version` for SDK metadata; legacy queued `library` and `library_version` values are used as fallbacks when the official `$` properties are missing.
   (2026-06-18)
 - Updated dependencies [[`e6d7fe2`](https://github.com/PostHog/posthog-js/commit/e6d7fe2a5f10d29b3df69392f584970e7a7a4561)]:
   - @posthog/core@1.35.2
@@ -521,7 +521,7 @@
 
 ### Minor Changes
 
-- [#3709](https://github.com/PostHog/posthog-js/pull/3709) [`c6c163a`](https://github.com/PostHog/posthog-js/commit/c6c163aefb093d5609977ae243b056f96a2d3b4e) Thanks [@posthog](https://github.com/apps/posthog)! - Add `unsetPersonProperties()` to remove person properties, the counterpart to `setPersonProperties()`. Previously the only way to unset a person property was to hand-pass a `$unset` array inside a `capture()` call.
+- [#3709](https://github.com/PostHog/posthog-js/pull/3709) [`c6c163a`](https://github.com/PostHog/posthog-js/commit/c6c163aefb093d5609977ae243b056f96a2d3b4e) Thanks [@posthog](https://github.com/apps/posthog)! - Add `unsetPersonProperties()` to remove person properties, the counterpart to `setPersonProperties()`. Previously the only way to unset a person property was to hand-pass a `unset` array inside a `capture()` call.
   (2026-06-16)
 
 ### Patch Changes
@@ -838,7 +838,7 @@
 
 ### Patch Changes
 
-- [#3665](https://github.com/PostHog/posthog-js/pull/3665) [`5568f12`](https://github.com/PostHog/posthog-js/commit/5568f12f46b4ebb7539f261edddda2f695ba03a2) Thanks [@ioannisj](https://github.com/ioannisj)! - Don't autocapture PostHog's own `PostHogFetchNetworkError` (raised when the device is offline) as a `$exception`. These connectivity failures are expected and were flooding error tracking with internal SDK noise. Adds an `isPostHogFetchNetworkError` type guard to `@posthog/core` so SDKs can detect these errors.
+- [#3665](https://github.com/PostHog/posthog-js/pull/3665) [`5568f12`](https://github.com/PostHog/posthog-js/commit/5568f12f46b4ebb7539f261edddda2f695ba03a2) Thanks [@ioannisj](https://github.com/ioannisj)! - Don't autocapture PostHog's own `PostHogFetchNetworkError` (raised when the device is offline) as a `edp_exception`. These connectivity failures are expected and were flooding error tracking with internal SDK noise. Adds an `isPostHogFetchNetworkError` type guard to `@posthog/core` so SDKs can detect these errors.
   (2026-05-26)
 - Updated dependencies [[`5568f12`](https://github.com/PostHog/posthog-js/commit/5568f12f46b4ebb7539f261edddda2f695ba03a2)]:
   - @posthog/core@1.29.10
@@ -1208,7 +1208,7 @@
 
 ### Minor Changes
 
-- [#3302](https://github.com/PostHog/posthog-js/pull/3302) [`fc5589f`](https://github.com/PostHog/posthog-js/commit/fc5589fcc51bd53ba818822831867d3c00d83a11) Thanks [@dmarticus](https://github.com/dmarticus)! - preserve $set_once semantics in local flag evaluation cache
+- [#3302](https://github.com/PostHog/posthog-js/pull/3302) [`fc5589f`](https://github.com/PostHog/posthog-js/commit/fc5589fcc51bd53ba818822831867d3c00d83a11) Thanks [@dmarticus](https://github.com/dmarticus)! - preserve edp_set_once semantics in local flag evaluation cache
   (2026-04-07)
 
 ### Patch Changes
@@ -1453,7 +1453,7 @@
 
 ### Minor Changes
 
-- [#3023](https://github.com/PostHog/posthog-js/pull/3023) [`bb62809`](https://github.com/PostHog/posthog-js/commit/bb62809917845685ae7e2e6d5adad6be5528356e) Thanks [@marandaneto](https://github.com/marandaneto)! - feat: only capture $set events if the user properties have changed
+- [#3023](https://github.com/PostHog/posthog-js/pull/3023) [`bb62809`](https://github.com/PostHog/posthog-js/commit/bb62809917845685ae7e2e6d5adad6be5528356e) Thanks [@marandaneto](https://github.com/marandaneto)! - feat: only capture edp_set events if the user properties have changed
   (2026-02-04)
 
 ### Patch Changes
@@ -1560,7 +1560,7 @@
 
 ### Minor Changes
 
-- [#2897](https://github.com/PostHog/posthog-js/pull/2897) [`b7fa003`](https://github.com/PostHog/posthog-js/commit/b7fa003ef6ef74bdf4666be0748d89a5a6169054) Thanks [@matheus-vb](https://github.com/matheus-vb)! - Add $feature_flag_error to $feature_flag_called events to track flag evaluation failures
+- [#2897](https://github.com/PostHog/posthog-js/pull/2897) [`b7fa003`](https://github.com/PostHog/posthog-js/commit/b7fa003ef6ef74bdf4666be0748d89a5a6169054) Thanks [@matheus-vb](https://github.com/matheus-vb)! - Add feature_flag_error to edp_feature_flag_called events to track flag evaluation failures
   (2026-01-20)
 
 - [#2931](https://github.com/PostHog/posthog-js/pull/2931) [`f0cbc0d`](https://github.com/PostHog/posthog-js/commit/f0cbc0d8e4e5efc27d9595676e886d6d3d3892f4) Thanks [@marandaneto](https://github.com/marandaneto)! - chore: before_send support for web lite and react native
@@ -1787,7 +1787,7 @@
 
 ### Patch Changes
 
-- [#2575](https://github.com/PostHog/posthog-js/pull/2575) [`8acd88f`](https://github.com/PostHog/posthog-js/commit/8acd88f1b71d2c7e1222c43dd121abce78ef2bab) Thanks [@hpouillot](https://github.com/hpouillot)! - fix frame platform property for $exception events
+- [#2575](https://github.com/PostHog/posthog-js/pull/2575) [`8acd88f`](https://github.com/PostHog/posthog-js/commit/8acd88f1b71d2c7e1222c43dd121abce78ef2bab) Thanks [@hpouillot](https://github.com/hpouillot)! - fix frame platform property for edp_exception events
   (2025-11-19)
 - Updated dependencies [[`8acd88f`](https://github.com/PostHog/posthog-js/commit/8acd88f1b71d2c7e1222c43dd121abce78ef2bab)]:
   - @posthog/core@1.5.3
@@ -1885,7 +1885,7 @@
 
 ### Patch Changes
 
-- [#2431](https://github.com/PostHog/posthog-js/pull/2431) [`7d45a7a`](https://github.com/PostHog/posthog-js/commit/7d45a7a52c44ba768913d66a4c4363d107042682) Thanks [@marandaneto](https://github.com/marandaneto)! - fix: remove deprecated attribute $exception_personURL from exception events
+- [#2431](https://github.com/PostHog/posthog-js/pull/2431) [`7d45a7a`](https://github.com/PostHog/posthog-js/commit/7d45a7a52c44ba768913d66a4c4363d107042682) Thanks [@marandaneto](https://github.com/marandaneto)! - fix: remove deprecated attribute edp_exception_personURL from exception events
 
 - Updated dependencies [[`daf919b`](https://github.com/PostHog/posthog-js/commit/daf919be225527ee4ad026d806dec195b75e44aa), [`7d45a7a`](https://github.com/PostHog/posthog-js/commit/7d45a7a52c44ba768913d66a4c4363d107042682)]:
   - @posthog/core@1.3.0
@@ -2071,7 +2071,7 @@
 2. Remove deprecated `personProperties` and `groupProperties` in favor of `setPersonPropertiesForFlags` and `setGroupPropertiesForFlags`
 3. Rename `captureNativeAppLifecycleEvents` option to `captureAppLifecycleEvents`
    1. `captureAppLifecycleEvents` from `autocapture` is removed and replaced by `captureAppLifecycleEvents` from options
-4. Remove `version` and `build` from Lifecycle events in favor of `$app_version` and `$app_build`
+4. Remove `version` and `build` from Lifecycle events in favor of `app_version` and `app_build`
 5. Remove maskPhotoLibraryImages from the SDK config
 
 ## 3.16.1 – 2025-05-28
@@ -2137,7 +2137,7 @@ Do not use this version, please use [3.15.1](https://github.com/PostHog/posthog-
 
 ## Added
 
-1. `$feature_flag_called` event now includes additional properties such as `feature_flag_id`, `feature_flag_version`, `feature_flag_reason`, and `feature_flag_request_id`.
+1. `edp_feature_flag_called` event now includes additional properties such as `feature_flag_id`, `feature_flag_version`, `feature_flag_reason`, and `feature_flag_request_id`.
 
 ### Fixed
 
@@ -2222,7 +2222,7 @@ AppState.addEventListener('change', (state) => {
 
 ## 3.6.0 - 2024-12-12
 
-1. Add new debugging property `$feature_flag_bootstrapped_response`, `$feature_flag_bootstrapped_payload` and `$used_bootstrap_value` to `$feature_flag_called` event
+1. Add new debugging property `feature_flag_bootstrapped_response`, `feature_flag_bootstrapped_payload` and `used_bootstrap_value` to `edp_feature_flag_called` event
 
 ## 3.5.0 - 2024-12-03
 
@@ -2244,7 +2244,7 @@ export const posthog = new PostHog(
 
 ## 3.3.14 - 2024-11-21
 
-1. fix: identify method allows passing a $set_once object
+1. fix: identify method allows passing a edp_set_once object
 
 ## 3.3.13 - 2024-11-19
 
@@ -2428,7 +2428,7 @@ Or using the `PostHogProvider`
 
 ## 2.11.6 - 2024-02-22
 
-1. `$device_name` was set to the device's user name (eg Max's iPhone) for all events wrongly, it's now set to the device's name (eg iPhone 12), this happened only if using `react-native-device-info` library.
+1. `device_name` was set to the device's user name (eg Max's iPhone) for all events wrongly, it's now set to the device's name (eg iPhone 12), this happened only if using `react-native-device-info` library.
 2. Fixes an issue related to other dependencies patching the global Promise object that could lead to crashes
 
 ## 2.11.5 - 2024-02-20
@@ -2438,7 +2438,7 @@ Or using the `PostHogProvider`
 ## 2.11.4 - 2024-02-15
 
 1. fix: using `captureMode=form` won't throw an error and retry unnecessarily
-2. `$app_build` was returning the OS internal build number instead of the app's build number.
+2. `app_build` was returning the OS internal build number instead of the app's build number.
 3. This flag was used to track app versions, you might experience a sudden increase of `Application Updated` events, but only if you're using the `react-native-device-info` library.
 
 ## 2.11.3 - 2024-02-08
@@ -2469,7 +2469,7 @@ Or using the `PostHogProvider`
 
 ## 2.10.0 - 2024-01-08
 
-1. `$device_type` is now set to `Mobile`, `Desktop`, or `Web` for all events
+1. `device_type` is now set to `Mobile`, `Desktop`, or `Web` for all events
 
 ## 2.9.2 - 2023-12-21
 
@@ -2494,7 +2494,7 @@ Or using the `PostHogProvider`
 
 ## 2.7.1 - 2023-05-25
 
-1. The `$screen_name` property will be registered for all events whenever `screen` is called
+1. The `screen_name` property will be registered for all events whenever `screen` is called
 
 ## 2.7.0 - 2023-04-21
 

@@ -126,9 +126,9 @@ describe('concurrent request attribution', () => {
     const captureB = toolCalls.find((event) => event.properties.requestLabel === 'B')
 
     expect(captureA?.distinct_id).toBe('user-A')
-    expect(captureA?.properties.$set).toMatchObject({ requestLabel: 'A' })
+    expect(captureA?.properties.edp_set).toMatchObject({ requestLabel: 'A' })
     expect(captureB?.distinct_id).toBe('user-B')
-    expect(captureB?.properties.$set).toMatchObject({ requestLabel: 'B' })
+    expect(captureB?.properties.edp_set).toMatchObject({ requestLabel: 'B' })
   })
 
   it('snapshots token client metadata before an overlapping identify callback yields', async () => {
@@ -174,13 +174,13 @@ describe('concurrent request attribution', () => {
     const captureB = toolCalls.find((event) => event.distinct_id === 'user-B')
 
     expect(captureA?.properties).toMatchObject({
-      $session_id: 'ses_a',
+      session_id: 'ses_a',
       $mcp_client_name: 'client-a',
       $mcp_client_version: '1.0.0',
       $mcp_protocol_version: '2025-03-26',
     })
     expect(captureB?.properties).toMatchObject({
-      $session_id: 'ses_b',
+      session_id: 'ses_b',
       $mcp_client_name: 'client-b',
       $mcp_client_version: '2.0.0',
       $mcp_protocol_version: '2025-06-18',
@@ -316,12 +316,12 @@ describe('concurrent request attribution', () => {
     expect(listings).toHaveLength(1)
     expect(listings[0].distinct_id).toBe('ses_b')
     expect(listings[0].properties).toMatchObject({
-      $session_id: 'ses_b',
+      session_id: 'ses_b',
       $mcp_client_name: 'client-b',
       $mcp_client_version: '2.0.0',
-      $process_person_profile: false,
+      process_person_profile: false,
     })
-    expect(listings[0].properties.$set).toBeUndefined()
+    expect(listings[0].properties.edp_set).toBeUndefined()
   })
 
   it('stamps the listing client before a slow identify lets another handshake replace it', async () => {
@@ -391,7 +391,7 @@ describe('concurrent request attribution', () => {
     await requestA
     await flushCaptures()
 
-    const identifyCaptures = capture.findCapturesByEvent('$identify')
+    const identifyCaptures = capture.findCapturesByEvent('edp_identify')
     expect(identifyCaptures).toHaveLength(1)
     expect(identifyCaptures[0].distinct_id).toBe('user-A')
   })
@@ -456,7 +456,7 @@ describe('concurrent request attribution', () => {
     const initializeCaptures = capture.findCapturesByEvent('$mcp_initialize')
     expect(initializeCaptures).toHaveLength(1)
     expect(initializeCaptures[0].properties).toMatchObject({
-      $session_id: initialToken?.sessionId,
+      session_id: initialToken?.sessionId,
       $mcp_client_name: 'client-a',
       $mcp_client_version: '1.0.0',
       $mcp_protocol_version: '2025-06-18',
@@ -507,13 +507,13 @@ describe('concurrent request attribution', () => {
     const captureB = toolCalls.find((event) => event.properties.requestLabel === 'B')
 
     expect(captureA?.properties).toMatchObject({
-      $session_id: 'ses_a',
+      session_id: 'ses_a',
       $mcp_client_name: 'client-a',
       $mcp_client_version: '1.0.0',
       $mcp_protocol_version: '2025-03-26',
     })
     expect(captureB?.properties).toMatchObject({
-      $session_id: 'ses_b',
+      session_id: 'ses_b',
       $mcp_client_name: 'client-b',
       $mcp_client_version: '2.0.0',
       $mcp_protocol_version: '2025-06-18',
@@ -605,7 +605,7 @@ describe('concurrent request attribution', () => {
       .find((event) => event.properties.$mcp_is_error === true)
     expect(failedToolCall?.distinct_id).toBe('user-A')
     expect(failedToolCall?.properties).toMatchObject({
-      $session_id: 'ses_a',
+      session_id: 'ses_a',
       $mcp_client_name: 'client-a',
       $mcp_client_version: '1.0.0',
       $mcp_protocol_version: '2025-03-26',
@@ -648,7 +648,7 @@ describe('concurrent request attribution', () => {
     const failedList = capture.findCapturesByEvent('$mcp_tools_list')[0]
     expect(failedList?.distinct_id).toBe('ses_a')
     expect(failedList?.properties).toMatchObject({
-      $session_id: 'ses_a',
+      session_id: 'ses_a',
       $mcp_client_name: 'client-a',
       $mcp_client_version: '1.0.0',
       $mcp_protocol_version: '2025-03-26',

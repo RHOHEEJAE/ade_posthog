@@ -110,7 +110,7 @@ export default function ErrorTrackingScreen() {
                 <ThemedText type="subtitle">Exception Steps</ThemedText>
                 <ThemedText>
                     Record breadcrumb-style steps with addExceptionStep. Buffered steps attach to every captured
-                    $exception as $exception_steps — including the manual captures above and the native crash below.
+                    edp_exception as exception_steps — including the manual captures above and the native crash below.
                 </ThemedText>
                 {EXCEPTION_STEPS.map(({ label, message, properties }) => (
                     <Button

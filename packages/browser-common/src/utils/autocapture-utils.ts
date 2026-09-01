@@ -767,7 +767,7 @@ function extractElements(elements: Properties[]): PHElement[] {
     return elements.map((el) => {
         const attributes: { [id: string]: any } = {}
         const response = {
-            text: el['$el_text']?.slice(0, 400),
+            text: el['el_text']?.slice(0, 400),
             tag_name: el['tag_name'],
             href: el['attr__href']?.slice(0, 2048),
             attr_class: extractAttrClass(el),

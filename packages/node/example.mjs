@@ -172,13 +172,13 @@ if (choice === '1') {
   console.log('🔒 Setting properties once...')
   posthog.identify({
     distinctId: 'new_distinct_id',
-    properties: { $set_once: { self_serve_signup: true } },
+    properties: { edp_set_once: { self_serve_signup: true } },
   })
 
   // This will not change the property (because it was already set)
   posthog.identify({
     distinctId: 'new_distinct_id',
-    properties: { $set_once: { self_serve_signup: false } },
+    properties: { edp_set_once: { self_serve_signup: false } },
   })
 
   console.log('🔄 Updating properties...')

@@ -56,8 +56,8 @@ export function buildContextData(
 ): { distinctId: string | undefined; sessionId: string | undefined; properties: Record<string, string> | undefined } {
     const mergedProperties: Record<string, string> = {
         ...cookieStateToProperties(state),
-        ...(tracing.sessionId ? { $session_id: tracing.sessionId } : {}),
-        ...(tracing.windowId ? { $window_id: tracing.windowId } : {}),
+        ...(tracing.sessionId ? { session_id: tracing.sessionId } : {}),
+        ...(tracing.windowId ? { window_id: tracing.windowId } : {}),
     }
     return {
         distinctId: tracing.distinctId || state?.distinctId,

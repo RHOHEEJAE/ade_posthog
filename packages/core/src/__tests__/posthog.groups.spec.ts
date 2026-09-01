@@ -22,7 +22,7 @@ describe('PostHog Core', () => {
       posthog.groups(groups)
 
       expect(mocks.storage.setItem).toHaveBeenCalledWith('props', {
-        $groups: groups,
+        groups: groups,
       })
     })
   })
@@ -35,7 +35,7 @@ describe('PostHog Core', () => {
       posthog.group('posthog', 'team-2')
 
       expect(mocks.storage.setItem).toHaveBeenCalledWith('props', {
-        $groups: {
+        groups: {
           posthog: 'team-2',
           other: 'foo',
         },
@@ -52,12 +52,12 @@ describe('PostHog Core', () => {
       expect(parseBody(batchCall)).toMatchObject({
         batch: [
           {
-            event: '$groupidentify',
+            event: 'edp_groupidentify',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $group_type: 'other',
-              $group_key: 'team',
-              $group_set: { foo: 'bar' },
+              group_type: 'other',
+              group_key: 'team',
+              group_set: { foo: 'bar' },
             },
           },
         ],
@@ -74,11 +74,11 @@ describe('PostHog Core', () => {
       expect(parseBody(batchCall)).toMatchObject({
         batch: [
           {
-            event: '$groupidentify',
+            event: 'edp_groupidentify',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $group_type: 'other',
-              $group_key: 'team',
+              group_type: 'other',
+              group_key: 'team',
             },
           },
         ],
@@ -97,7 +97,7 @@ describe('PostHog Core', () => {
       const groupIdentifyCalls = mocks.fetch.mock.calls.filter((call) => {
         try {
           const body = parseBody(call)
-          return body.batch?.some((e: any) => e.event === '$groupidentify')
+          return body.batch?.some((e: any) => e.event === 'edp_groupidentify')
         } catch {
           return false
         }
@@ -116,7 +116,7 @@ describe('PostHog Core', () => {
       const groupIdentifyCalls = mocks.fetch.mock.calls.filter((call) => {
         try {
           const body = parseBody(call)
-          return body.batch?.some((e: any) => e.event === '$groupidentify')
+          return body.batch?.some((e: any) => e.event === 'edp_groupidentify')
         } catch {
           return false
         }
@@ -125,11 +125,11 @@ describe('PostHog Core', () => {
       expect(parseBody(groupIdentifyCalls[0])).toMatchObject({
         batch: [
           {
-            event: '$groupidentify',
+            event: 'edp_groupidentify',
             properties: {
-              $group_type: 'other',
-              $group_key: 'team',
-              $group_set: { name: 'My Team' },
+              group_type: 'other',
+              group_key: 'team',
+              group_set: { name: 'My Team' },
             },
           },
         ],
@@ -146,14 +146,14 @@ describe('PostHog Core', () => {
         api_key: 'TEST_API_KEY',
         batch: [
           {
-            event: '$groupidentify',
+            event: 'edp_groupidentify',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $lib: 'posthog-core-tests',
-              $lib_version: '2.0.0-alpha',
-              $group_type: 'posthog',
-              $group_key: 'team-1',
-              $group_set: { analytics: true },
+              lib: 'posthog-core-tests',
+              lib_version: '2.0.0-alpha',
+              group_type: 'posthog',
+              group_key: 'team-1',
+              group_set: { analytics: true },
             },
             timestamp: '2022-01-01T00:00:00.000Z',
           },

@@ -33,7 +33,7 @@ export function setupPostHogNitroPlugin({ useRuntimeConfig, onError, onClose }: 
   if (posthogServerConfig.enableExceptionAutocapture) {
     onError((error, request) => {
       const props: JsonType = {
-        $process_person_profile: false,
+        process_person_profile: false,
       }
       if (request?.path) {
         props.path = request.path

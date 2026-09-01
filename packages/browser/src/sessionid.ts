@@ -105,7 +105,7 @@ export class SessionIdManager {
                 DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS
             ) * 1000
 
-        instance.register({ $configured_session_timeout_ms: this._sessionTimeoutMs })
+        instance.register({ configured_session_timeout_ms: this._sessionTimeoutMs })
         this._resetIdleTimer()
 
         this._window_id_storage_key = 'ph_' + persistenceName + '_window_id'
@@ -491,7 +491,7 @@ export class SessionIdManager {
             if (crossTabAdoption) {
                 // We took a sibling tab's session id (keeping our own window
                 // id). Fire handlers so downstream consumers (session
-                // recorder, session-scoped props, $pageview) follow the new
+                // recorder, session-scoped props, edp_pageview) follow the new
                 // session.
                 logger.info('adopted cross-tab session id', { sessionId, windowId })
                 valuesChanged = true

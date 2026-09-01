@@ -45,7 +45,7 @@ export interface PostHogProviderProps {
 }
 
 // One document click listener per client, shared across sibling providers, so one interaction
-// enqueues exactly one $autocapture event (sdk-specs autocapture). `owners` maps each mounted
+// enqueues exactly one edp_autocapture event (sdk-specs autocapture). `owners` maps each mounted
 // provider's host node to its own options, so a click is scoped to the owning subtree AND
 // captured with that provider's config; its size doubles as the refcount.
 type WebClickOwners = Map<unknown, React.MutableRefObject<PostHogAutocaptureOptions>>

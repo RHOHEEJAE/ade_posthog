@@ -1066,10 +1066,10 @@ describe('PostHogAnthropic', () => {
       const { distinctId, properties } = captureArgs[0]
 
       expect(distinctId).toBe('trace-789')
-      expect(properties['$process_person_profile']).toBe(false)
+      expect(properties['process_person_profile']).toBe(false)
     })
 
-    conditionalTest('should handle identified users without setting $process_person_profile', async () => {
+    conditionalTest('should handle identified users without setting process_person_profile', async () => {
       await client.messages.create({
         model: 'claude-3-opus-20240229',
         messages: [{ role: 'user', content: 'Hello' }],
@@ -1083,7 +1083,7 @@ describe('PostHogAnthropic', () => {
       const { distinctId, properties } = captureArgs[0]
 
       expect(distinctId).toBe('user-456')
-      expect(properties['$process_person_profile']).toBeUndefined()
+      expect(properties['process_person_profile']).toBeUndefined()
     })
   })
 

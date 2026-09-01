@@ -202,16 +202,16 @@ export class PostHog {
     args: {
       distinctId?: string
       properties?: Record<string, unknown> & {
-        $set?: Record<string, unknown>
-        $set_once?: Record<string, unknown>
-        $anon_distinct_id?: string
+        edp_set?: Record<string, unknown>
+        edp_set_once?: Record<string, unknown>
+        anon_distinct_id?: string
       }
       disableGeoip?: boolean
     }
   ) {
     const distinctId = await this.resolveDistinctId(ctx, args.distinctId)
     const result = this.runBeforeSend({
-      event: '$identify',
+      event: 'edp_identify',
       distinctId,
       properties: args.properties,
     })
@@ -235,7 +235,7 @@ export class PostHog {
     }
   ) {
     const result = this.runBeforeSend({
-      event: '$groupidentify',
+      event: 'edp_groupidentify',
       distinctId: args.distinctId ?? '',
       properties: args.properties,
     })
@@ -263,7 +263,7 @@ export class PostHog {
   ) {
     const distinctId = await this.resolveDistinctId(ctx, args.distinctId)
     const result = this.runBeforeSend({
-      event: '$create_alias',
+      event: 'edp_create_alias',
       distinctId,
     })
     if (!result) return
@@ -293,7 +293,7 @@ export class PostHog {
     }
 
     const result = this.runBeforeSend({
-      event: '$exception',
+      event: 'edp_exception',
       distinctId: distinctId ?? '',
       properties: args.additionalProperties,
     })

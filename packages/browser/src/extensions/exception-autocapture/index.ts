@@ -161,7 +161,7 @@ export class ExceptionObserver {
     }
 
     captureException(errorProperties: ErrorTracking.ErrorProperties) {
-        const exceptionType = errorProperties?.$exception_list?.[0]?.type ?? 'Exception'
+        const exceptionType = errorProperties?.exception_list?.[0]?.type ?? 'Exception'
         const isRateLimited = this._rateLimiter.consumeRateLimit(exceptionType)
 
         if (isRateLimited) {

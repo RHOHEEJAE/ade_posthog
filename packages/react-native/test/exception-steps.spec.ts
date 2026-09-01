@@ -16,7 +16,7 @@ import { createMockLogger, createMockPostHog } from './test-utils'
 
 const mockPostHog = createMockPostHog()
 
-const messagesOf = (et: ErrorTracking): unknown[] => et.getAttachableExceptionSteps().map((s) => s.$message)
+const messagesOf = (et: ErrorTracking): unknown[] => et.getAttachableExceptionSteps().map((s) => s.message)
 
 describe('ErrorTracking exception steps', () => {
   let logger: ReturnType<typeof createMockLogger>
@@ -29,15 +29,15 @@ describe('ErrorTracking exception steps', () => {
   const newErrorTracking = (exceptionSteps?: { enabled?: boolean; maxBytes?: number }): ErrorTracking =>
     new ErrorTracking(mockPostHog, { exceptionSteps }, logger as any)
 
-  it('records a step with $message, $timestamp and user properties', () => {
+  it('records a step with message, timestamp and user properties', () => {
     const et = newErrorTracking()
     et.addExceptionStep('User tapped Checkout', { screen: 'cart' })
 
     const steps = et.getAttachableExceptionSteps()
     expect(steps).toHaveLength(1)
-    expect(steps[0].$message).toBe('User tapped Checkout')
+    expect(steps[0].message).toBe('User tapped Checkout')
     expect(steps[0].screen).toBe('cart')
-    expect(typeof steps[0].$timestamp).toBe('string')
+    expect(typeof steps[0].timestamp).toBe('string')
   })
 
   it('preserves FIFO order across multiple steps', () => {
@@ -62,11 +62,11 @@ describe('ErrorTracking exception steps', () => {
 
   it('strips reserved keys from user properties with a warning', () => {
     const et = newErrorTracking()
-    et.addExceptionStep('step', { $message: 'spoofed', $timestamp: 'spoofed', keep: 'me' })
+    et.addExceptionStep('step', { message: 'spoofed', timestamp: 'spoofed', keep: 'me' })
 
     const steps = et.getAttachableExceptionSteps()
-    expect(steps[0].$message).toBe('step')
-    expect(steps[0].$timestamp).not.toBe('spoofed')
+    expect(steps[0].message).toBe('step')
+    expect(steps[0].timestamp).not.toBe('spoofed')
     expect(steps[0].keep).toBe('me')
     expect(logger.warn).toHaveBeenCalledWith('Ignoring reserved exception step fields', {
       droppedKeys: expect.any(Array),
@@ -81,7 +81,7 @@ describe('ErrorTracking exception steps', () => {
   })
 
   it('evicts the oldest steps when the byte budget is exceeded', () => {
-    // Each serialized step is ~56 bytes ($message + ISO $timestamp), so a 130-byte budget holds
+    // Each serialized step is ~56 bytes (message + ISO timestamp), so a 130-byte budget holds
     // at most two and forces the oldest to be evicted on the third add.
     const et = newErrorTracking({ maxBytes: 130 })
     et.addExceptionStep('A')

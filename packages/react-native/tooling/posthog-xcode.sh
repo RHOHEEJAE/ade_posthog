@@ -72,7 +72,7 @@ fi
 #   symbol-set (the default) stamps the release onto the uploaded source maps, and an exception
 #     inherits the release of the maps its frames resolved against.
 #   event uploads the maps release-independent, and each event resolves its own release from the
-#     $app_namespace / $app_version / $app_build the SDK already sends. Xcode's build settings
+#     app_namespace / app_version / app_build the SDK already sends. Xcode's build settings
 #     supply matching coordinates below, so nothing has to be injected into the app.
 POSTHOG_RELEASE_MODE_ARGS=()
 if [ -n "$POSTHOG_RELEASE_MODE_VALUE" ]; then
@@ -211,7 +211,7 @@ resolve_posthog_ios_release_info() {
     while [[ "$value" =~ (\$\(([A-Za-z_][A-Za-z0-9_]*)\)|\$\{([A-Za-z_][A-Za-z0-9_]*)\}) ]]; do
       token=${BASH_REMATCH[1]}
       name=${BASH_REMATCH[2]:-${BASH_REMATCH[3]}}
-      replacement=$(printenv "$name" 2>/dev/null) || return
+      replacement=$(printenv "name" 2>/dev/null) || return
       prefix=${value%%"$token"*}
       suffix=${value#*"$token"}
       value="${prefix}${replacement}${suffix}"

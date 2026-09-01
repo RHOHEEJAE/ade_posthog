@@ -186,7 +186,7 @@ describe('provider promise compatibility with real SDK resources', () => {
       distinctId: 'stream-user',
       event: '$ai_generation',
       properties: {
-        $ai_trace_id: 'stream-trace',
+        ai_trace_id: 'stream-trace',
         $ai_completion_id: responsesResult.id,
       },
     })

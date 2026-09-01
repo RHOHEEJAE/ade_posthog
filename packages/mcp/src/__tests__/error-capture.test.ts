@@ -49,7 +49,7 @@ describe('error capture on the tool-call path', () => {
     await new Promise((r) => setTimeout(r, 50))
 
     const event = capture.findEventsByResourceName('complete_todo').find((e) => e.isError)
-    const exception = event?.error?.$exception_list?.[0]
+    const exception = event?.error?.exception_list?.[0]
     expect(exception?.value).toContain('not found')
     expect(exception?.type).toBe('Error')
     expect(exception?.stacktrace?.frames?.length).toBeGreaterThan(0)
@@ -80,10 +80,10 @@ describe('error capture on the tool-call path', () => {
       .findCapturesByEvent('$mcp_tool_call')
       .find((event) => event.properties.$mcp_tool_name === 'secret_error')
     const exception = capture
-      .findCapturesByEvent('$exception')
+      .findCapturesByEvent('edp_exception')
       .find((event) => event.properties.$mcp_tool_name === 'secret_error')
     const expected = 'Project token [redacted] and personal token [redacted]'
-    const exceptionList = exception?.properties.$exception_list as Array<{ value: string }> | undefined
+    const exceptionList = exception?.properties.exception_list as Array<{ value: string }> | undefined
 
     expect(toolCall?.properties.$mcp_error_message).toBe(expected)
     expect(exceptionList?.[0].value).toBe(expected)
@@ -142,7 +142,7 @@ describe('error capture on the tool-call path', () => {
       'add_todo',
       { context: 'test' },
     ],
-  ])('captures Zod validation failures (%s) as $exception events', async (_, register, toolName, args) => {
+  ])('captures Zod validation failures (%s) as edp_exception events', async (_, register, toolName, args) => {
     register()
     instrument(server, fakePostHog())
 
@@ -153,7 +153,7 @@ describe('error capture on the tool-call path', () => {
 
     await new Promise((r) => setTimeout(r, 50))
     const event = capture.findEventsByResourceName(toolName).find((e) => e.isError)
-    const exception = event?.error?.$exception_list?.[0]
+    const exception = event?.error?.exception_list?.[0]
     expect(exception?.value).toMatch(/Invalid|required/i)
     expect(['McpError', 'Error', undefined]).toContain(exception?.type)
   })
@@ -170,6 +170,6 @@ describe('error capture on the tool-call path', () => {
 
     await new Promise((r) => setTimeout(r, 50))
     const event = capture.findEventsByResourceName('nonexistent_tool').find((e) => e.isError)
-    expect(event?.error?.$exception_list?.[0]?.value).toContain('not found')
+    expect(event?.error?.exception_list?.[0]?.value).toContain('not found')
   })
 })

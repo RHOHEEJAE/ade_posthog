@@ -29,10 +29,10 @@ describe('property utils', () => {
             expect(
                 matchTriggerPropertyFilters(
                     [
-                        { key: '$browser', value: 'Chrome', operator: 'exact' },
-                        { key: '$current_url', value: '/checkout', operator: 'icontains' },
+                        { key: 'browser', value: 'Chrome', operator: 'exact' },
+                        { key: 'current_url', value: '/checkout', operator: 'icontains' },
                     ],
-                    { $browser: 'Chrome', $current_url: 'https://example.com/checkout' },
+                    { browser: 'Chrome', current_url: 'https://example.com/checkout' },
                     undefined
                 )
             ).toBe(true)

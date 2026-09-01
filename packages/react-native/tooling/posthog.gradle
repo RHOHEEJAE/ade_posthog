@@ -100,8 +100,8 @@ plugins.withId('com.android.application') {
                         // How the release a build belongs to gets associated with the exceptions
                         // it reports. `symbol-set` (the default) stamps the release onto the
                         // uploaded source maps; `event` uploads them release-independent and lets
-                        // each event resolve its own release from the $app_namespace /
-                        // $app_version / $app_build the SDK already sends, which the release
+                        // each event resolve its own release from the app_namespace /
+                        // app_version / app_build the SDK already sends, which the release
                         // coordinates below are built from. Passed only outside the default mode,
                         // so a symbol-set build keeps working against a posthog-cli predating the
                         // flag.

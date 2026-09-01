@@ -582,7 +582,7 @@ describe('posthog-xcode.sh posthog-cli invocation', () => {
     expect(output).toContain("must be 'symbol-set' or 'event'")
   })
 
-  // The SDK reports $app_version and $app_build from Info.plist, and event release mode resolves
+  // The SDK reports app_version and app_build from Info.plist, and event release mode resolves
   // an exception's release from exactly those. Expo writes literal versions there and leaves
   // MARKETING_VERSION at the Xcode template default of 1.0, so a release keyed on the build
   // setting never matches an event and the exception silently reports no release. posthog-cli

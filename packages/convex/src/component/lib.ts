@@ -6,7 +6,7 @@ import { version } from './version.js'
 
 /**
  * Brand events sent through this component as `posthog-convex` rather than `posthog-edge` in the
- * `$lib` / `$lib_version` properties — makes them filterable in PostHog and lets us attribute
+ * `lib` / `lib_version` properties — makes them filterable in PostHog and lets us attribute
  * issues to the integration vs. raw `posthog-node` usage.
  */
 class PostHog extends PostHogEdge {
@@ -118,21 +118,21 @@ export const identify = action({
     const client = getClient(projectToken, host)
     // posthog-node's `identifyImmediate` is missing an `await` on `identifyStatelessImmediate`
     // (packages/node/src/client.ts:674), so the returned promise resolves before the event hits
-    // the wire. We sidestep that by composing the `$identify` event the same way `identifyImmediate`
+    // the wire. We sidestep that by composing the `edp_identify` event the same way `identifyImmediate`
     // does and routing it through `captureImmediate`, which awaits correctly.
     const properties = parseProperties(args.properties) ?? {}
-    const { $set, $set_once, $anon_distinct_id, ...rest } = properties as {
-      $set?: Record<string, unknown>
-      $set_once?: Record<string, unknown>
-      $anon_distinct_id?: string
+    const { edp_set, edp_set_once, anon_distinct_id, ...rest } = properties as {
+      edp_set?: Record<string, unknown>
+      edp_set_once?: Record<string, unknown>
+      anon_distinct_id?: string
     } & Record<string, unknown>
     await client.captureImmediate({
       distinctId: args.distinctId,
-      event: '$identify',
+      event: 'edp_identify',
       properties: {
-        $set: $set ?? rest,
-        $set_once: $set_once ?? {},
-        $anon_distinct_id,
+        edp_set: edp_set ?? rest,
+        edp_set_once: edp_set_once ?? {},
+        anon_distinct_id,
       },
       disableGeoip: args.disableGeoip,
     })

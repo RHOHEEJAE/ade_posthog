@@ -58,22 +58,22 @@ export class SiteApps implements Extension {
             throw new Error('Event payload is required')
         }
         const groups: SiteAppGlobals['groups'] = {}
-        const groupIds = this._instance.get_property('$groups') || []
+        const groupIds = this._instance.get_property('groups') || []
         const groupProperties: Record<string, Properties> =
-            this._instance.get_property('$stored_group_properties') || {}
+            this._instance.get_property('stored_group_properties') || {}
         for (const [type, properties] of Object.entries(groupProperties)) {
             groups[type] = { id: groupIds[type], type, properties }
         }
-        const { $set_once, $set, ..._event } = event
+        const { edp_set_once, edp_set, ..._event } = event
         const globals = {
             event: {
                 ..._event,
                 properties: {
                     ...event.properties,
-                    ...($set ? { $set: { ...(event.properties?.$set ?? {}), ...$set } } : {}),
-                    ...($set_once ? { $set_once: { ...(event.properties?.$set_once ?? {}), ...$set_once } } : {}),
+                    ...(edp_set ? { edp_set: { ...(event.properties?.edp_set ?? {}), ...edp_set } } : {}),
+                    ...(edp_set_once ? { edp_set_once: { ...(event.properties?.edp_set_once ?? {}), ...edp_set_once } } : {}),
                 },
-                elements_chain: event.properties?.['$elements_chain'] ?? '',
+                elements_chain: event.properties?.['elements_chain'] ?? '',
                 // TODO:
                 // - elements_chain_href: '',
                 // - elements_chain_texts: [] as string[],
@@ -82,7 +82,7 @@ export class SiteApps implements Extension {
                 distinct_id: event.properties?.['distinct_id'],
             },
             person: {
-                properties: this._instance.get_property('$stored_person_properties'),
+                properties: this._instance.get_property('stored_person_properties'),
             },
             groups,
         }

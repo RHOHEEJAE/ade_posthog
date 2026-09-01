@@ -254,7 +254,7 @@ describe('LangChainCallbackHandler', () => {
       expectedStopReason: 'end_turn',
     },
   ])(
-    'should extract usage and stop reason from AIMessage $name without llmOutput',
+    'should extract usage and stop reason from AIMessage name without llmOutput',
     ({
       serializedId,
       runId,
@@ -1676,7 +1676,7 @@ describe('LangChainCallbackHandler', () => {
       expected5m: undefined,
       expected1h: undefined,
     },
-  ])('$name', async ({ aggregate, cacheDetails, expected5m, expected1h }) => {
+  ])('name', async ({ aggregate, cacheDetails, expected5m, expected1h }) => {
     const serialized = {
       lc: 1,
       type: 'constructor' as const,

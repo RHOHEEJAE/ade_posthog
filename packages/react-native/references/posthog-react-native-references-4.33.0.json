@@ -545,9 +545,9 @@
               "code": "\n\n// Basic identify\nposthog.identify('distinctID', {\n  email: 'user@posthog.com',\n  name: 'My Name'\n})\n\n\n"
             },
             {
-              "id": "using_$set_and_$set_once",
-              "name": "Using $set and $set_once",
-              "code": "\n\n// Using $set and $set_once\nposthog.identify('distinctID', {\n  $set: {\n    email: 'user@posthog.com',\n    name: 'My Name'\n  },\n  $set_once: {\n    date_of_first_log_in: '2024-03-01'\n  }\n})\n\n\n\n"
+              "id": "using_edp_set_and_edp_set_once",
+              "name": "Using edp_set and edp_set_once",
+              "code": "\n\n// Using edp_set and edp_set_once\nposthog.identify('distinctID', {\n  edp_set: {\n    email: 'user@posthog.com',\n    name: 'My Name'\n  },\n  edp_set_once: {\n    date_of_first_log_in: '2024-03-01'\n  }\n})\n\n\n\n"
             }
           ],
           "releaseTag": "public",
@@ -993,9 +993,9 @@
               "code": "\n\n// set user properties\nposthog.setPersonProperties({\n    email: 'user@example.com',\n    plan: 'premium'\n})\n\n\n"
             },
             {
-              "id": "set_properties_with_$set_once",
-              "name": "set properties with $set_once",
-              "code": "\n\n// set properties with $set_once\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // $set properties\n    { initial_url: '/blog' }   // $set_once properties\n)\n\n\n"
+              "id": "set_properties_with_edp_set_once",
+              "name": "set properties with edp_set_once",
+              "code": "\n\n// set properties with edp_set_once\nposthog.setPersonProperties(\n    { name: 'Max Hedgehog' },  // edp_set properties\n    { initial_url: '/blog' }   // edp_set_once properties\n)\n\n\n"
             },
             {
               "id": "set_properties_without_reloading_feature_flags",
@@ -1653,7 +1653,7 @@
         },
         {
           "category": "",
-          "description": "Override processBeforeEnqueue to run before_send hooks. This runs after prepareMessage, giving users full control over the final event.\nThe internal message contains many fields (event, distinct_id, properties, type, library, library_version, timestamp, uuid). CaptureEvent exposes a subset matching the web SDK's CaptureResult: uuid, event, properties, $set, $set_once, timestamp. Note: $set/$set_once are extracted from properties.$set and properties.$set_once.",
+          "description": "Override processBeforeEnqueue to run before_send hooks. This runs after prepareMessage, giving users full control over the final event.\nThe internal message contains many fields (event, distinct_id, properties, type, library, library_version, timestamp, uuid). CaptureEvent exposes a subset matching the web SDK's CaptureResult: uuid, event, properties, edp_set, edp_set_once, timestamp. Note: edp_set/edp_set_once are extracted from properties.edp_set and properties.edp_set_once.",
           "details": null,
           "id": "processBeforeEnqueue",
           "showDocs": true,
@@ -2973,7 +2973,7 @@
       "name": "CaptureEvent",
       "properties": [],
       "path": "../core/src/types.ts",
-      "example": "{\n    uuid?: string;\n    event: string;\n    properties?: PostHogEventProperties;\n    $set?: PostHogEventProperties;\n    $set_once?: PostHogEventProperties;\n    timestamp?: Date;\n}"
+      "example": "{\n    uuid?: string;\n    event: string;\n    properties?: PostHogEventProperties;\n    edp_set?: PostHogEventProperties;\n    edp_set_once?: PostHogEventProperties;\n    timestamp?: Date;\n}"
     },
     {
       "id": "Compression",
@@ -3125,7 +3125,7 @@
       "name": "PostHogAutocaptureElement",
       "properties": [],
       "path": "../core/src/types.ts",
-      "example": "{\n    $el_text?: string;\n    tag_name: string;\n    href?: string;\n    nth_child?: number;\n    nth_of_type?: number;\n    order?: number;\n} & PostHogEventProperties"
+      "example": "{\n    el_text?: string;\n    tag_name: string;\n    href?: string;\n    nth_child?: number;\n    nth_of_type?: number;\n    order?: number;\n} & PostHogEventProperties"
     },
     {
       "id": "PostHogAutocaptureNavigationTrackerOptions",
@@ -3162,42 +3162,42 @@
         {
           "description": "Build number like \"1.2.2\" or \"122\"",
           "type": "string | null",
-          "name": "$app_build"
+          "name": "app_build"
         },
         {
           "description": "Name of the app as displayed below the icon like \"PostHog\"",
           "type": "string | null",
-          "name": "$app_name"
+          "name": "app_name"
         },
         {
           "description": "Namespace of the app usually like \"com.posthog.app\"",
           "type": "string | null",
-          "name": "$app_namespace"
+          "name": "app_namespace"
         },
         {
           "description": "Human friendly app version like what a user would see in the app store like \"1.2.2\"",
           "type": "string | null",
-          "name": "$app_version"
+          "name": "app_version"
         },
         {
           "description": "Manufacturer like \"Apple\", \"Samsung\" or \"Android\"",
           "type": "string | null",
-          "name": "$device_manufacturer"
+          "name": "device_manufacturer"
         },
         {
           "description": "Model identifier like \"iPhone13,2\" or \"SM-S921B\"",
           "type": "string | null",
-          "name": "$device_model"
+          "name": "device_model"
         },
         {
           "description": "Readable model name like \"iPhone 12\" or \"Samsung Galaxy S24\"",
           "type": "string | null",
-          "name": "$device_name"
+          "name": "device_name"
         },
         {
           "description": "Device type (\"Mobile\" | \"Desktop\")",
           "type": "string | null",
-          "name": "$device_type"
+          "name": "device_type"
         },
         {
           "description": "Locale (language) of the device like \"en-US\"",
@@ -3207,17 +3207,17 @@
         {
           "description": "Operating system name like iOS or Android",
           "type": "string | null",
-          "name": "$os_name"
+          "name": "os_name"
         },
         {
           "description": "Operating system version \"14.0\"",
           "type": "string | null",
-          "name": "$os_version"
+          "name": "os_version"
         },
         {
           "description": "Timezone of the device like \"Europe/Berlin\"",
           "type": "string | null",
-          "name": "$timezone"
+          "name": "timezone"
         }
       ],
       "path": "dist/types.d.ts"
@@ -3242,7 +3242,7 @@
       "name": "PostHogEventProperties",
       "properties": [],
       "path": "../core/src/types.ts",
-      "example": "// Properties for React Native events\n{\n    event: 'user_signed_up',\n    userId: 'user123',\n    timestamp: new Date().toISOString(),\n    distinct_id: 'user123',\n    $set: {\n        email: 'user@example.com',\n        name: 'John Doe'\n    }\n}"
+      "example": "// Properties for React Native events\n{\n    event: 'user_signed_up',\n    userId: 'user123',\n    timestamp: new Date().toISOString(),\n    distinct_id: 'user123',\n    edp_set: {\n        email: 'user@example.com',\n        name: 'John Doe'\n    }\n}"
     },
     {
       "id": "PostHogFeatureFlagDetails",
@@ -3325,7 +3325,7 @@
           "name": "customStorage"
         },
         {
-          "description": "If enabled, the session id ($session_id) will be persisted across app restarts. This is an option for back compatibility, so your current data isn't skewed with the new version of the SDK. If this is false, the session id will be always reset on app restart. Defaults to false",
+          "description": "If enabled, the session id (session_id) will be persisted across app restarts. This is an option for back compatibility, so your current data isn't skewed with the new version of the SDK. If this is false, the session id will be always reset on app restart. Defaults to false",
           "type": "boolean",
           "name": "enablePersistSessionIdAcrossRestart"
         },
@@ -3350,7 +3350,7 @@
           "name": "sessionReplayConfig"
         },
         {
-          "description": "Automatically include common device and app properties in feature flag evaluation.\nWhen enabled, the following properties are sent with every /flags request: - $app_version: App version - $app_build: App build number - $app_namespace: App bundle identifier / namespace - $os_name: Operating system name - $os_version: Operating system version - $device_type: Device type (Mobile, Desktop) - $lib: Name of the SDK library - $lib_version: Version of the SDK library\nThis ensures feature flags that rely on these properties work correctly without waiting for server-side processing of identify() calls.\ntrue",
+          "description": "Automatically include common device and app properties in feature flag evaluation.\nWhen enabled, the following properties are sent with every /flags request: - app_version: App version - app_build: App build number - app_namespace: App bundle identifier / namespace - os_name: Operating system name - os_version: Operating system version - device_type: Device type (Mobile, Desktop) - lib: Name of the SDK library - lib_version: Version of the SDK library\nThis ensures feature flags that rely on these properties work correctly without waiting for server-side processing of identify() calls.\ntrue",
           "type": "boolean",
           "name": "setDefaultPersonProperties"
         }

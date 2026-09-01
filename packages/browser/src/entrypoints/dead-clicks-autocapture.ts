@@ -33,9 +33,9 @@ function swipeDirection(dx: number, dy: number): 'left' | 'right' | 'up' | 'down
     return dy >= 0 ? 'down' : 'up'
 }
 
-// the event name doubles as the property prefix ($dead_click_* / $dead_swipe_*)
-function deadEventName(candidate: DeadClickCandidate): '$dead_click' | '$dead_swipe' {
-    return candidate.type === 'swipe' ? '$dead_swipe' : '$dead_click'
+// the event name doubles as the property prefix (edp_dead_click_* / edp_dead_swipe_*)
+function deadEventName(candidate: DeadClickCandidate): 'edp_dead_click' | 'edp_dead_swipe' {
+    return candidate.type === 'swipe' ? 'edp_dead_swipe' : 'edp_dead_click'
 }
 
 // surfaces that respond to a gesture without anything our observers can see — a canvas or
@@ -77,7 +77,7 @@ function priorLivenessDelay(clickTimestamp: number, lastSeenAt: number | undefin
 // How dead-click detection works
 // ================================
 // A click (or swipe) is queued as a candidate, then re-examined ~1s later in `_checkClicks`. It is
-// reported as a `$dead_click` only if — after the click — NO liveness/suppression signal fired
+// reported as a `edp_dead_click` only if — after the click — NO liveness/suppression signal fired
 // within its window AND at least one timeout signal fired. In short: something-happened-fast wins
 // (alive), otherwise nothing-happened-in-time loses (dead).
 //
@@ -524,7 +524,7 @@ class LazyLoadedDeadClicksAutocapture implements LazyLoadedDeadClicksAutocapture
 
             if (scrollTimeout || mutationTimeout || absoluteTimeout || selectionChangedTimeout) {
                 const prefix = deadEventName(click)
-                if (prefix === '$dead_swipe') {
+                if (prefix === 'edp_dead_swipe') {
                     if (this._deadSwipesCaptured >= this._config.max_dead_swipes_per_page_load) {
                         // the page-load budget for dead swipes is spent — drop, don't requeue
                         continue
@@ -575,8 +575,8 @@ class LazyLoadedDeadClicksAutocapture implements LazyLoadedDeadClicksAutocapture
                 [`${prefix}_visibility_changed_delay_ms`]: click.visibilityChangedDelayMs,
                 [`${prefix}_focus_changed_delay_ms`]: click.focusChangedDelayMs,
                 // undefined for clicks (stripped on serialization), like the delay fields above
-                $dead_swipe_direction: click.swipeDirection,
-                $dead_swipe_distance_px: click.swipeDistancePx,
+                dead_swipe_direction: click.swipeDirection,
+                dead_swipe_distance_px: click.swipeDistancePx,
             },
             {
                 timestamp: new Date(click.timestamp),

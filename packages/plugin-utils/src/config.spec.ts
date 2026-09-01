@@ -16,7 +16,7 @@ describe('resolveConfig', () => {
             expectedPersonalApiKey: 'phx_personal_key',
             expectedHost: 'https://us.i.posthog.com',
         },
-    ])('{$name}', ({ personalApiKey, host, expectedPersonalApiKey, expectedHost }) => {
+    ])('{name}', ({ personalApiKey, host, expectedPersonalApiKey, expectedHost }) => {
         const config = resolveConfig(
             {
                 personalApiKey,
@@ -52,7 +52,7 @@ describe('resolveConfig', () => {
                 env: undefined,
                 expected: 'event',
             },
-        ])('$name', ({ option, env, expected }) => {
+        ])('name', ({ option, env, expected }) => {
             if (env === undefined) {
                 delete process.env.POSTHOG_RELEASE_MODE
             } else {

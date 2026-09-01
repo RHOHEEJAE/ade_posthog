@@ -223,55 +223,55 @@ describe('PostHog React Native', () => {
 
   it('should allow customising of native app properties', async () => {
     posthog = new PostHog('test-token', {
-      customAppProperties: { $app_name: 'custom' },
+      customAppProperties: { app_name: 'custom' },
       flushInterval: 0,
     })
     // await posthog.ready()
 
     expect(posthog.getCommonEventProperties()).toEqual({
-      $lib: 'posthog-react-native',
-      $lib_version: expect.any(String),
-      $screen_height: expect.any(Number),
-      $screen_width: expect.any(Number),
+      lib: 'posthog-react-native',
+      lib_version: expect.any(String),
+      screen_height: expect.any(Number),
+      screen_width: expect.any(Number),
 
-      $app_name: 'custom',
+      app_name: 'custom',
     })
 
     const posthog2 = new PostHog('test-token2', {
       flushInterval: 0,
       customAppProperties: (properties) => {
-        properties.$app_name = 'customised!'
-        delete properties.$device_name
+        properties.app_name = 'customised!'
+        delete properties.device_name
         return properties
       },
     })
     await posthog.ready()
 
     expect(posthog2.getCommonEventProperties()).toEqual({
-      $lib: 'posthog-react-native',
-      $lib_version: expect.any(String),
-      $screen_height: expect.any(Number),
-      $screen_width: expect.any(Number),
+      lib: 'posthog-react-native',
+      lib_version: expect.any(String),
+      screen_height: expect.any(Number),
+      screen_width: expect.any(Number),
 
-      $app_build: 'mock',
-      $app_name: 'customised!', // changed
-      $app_namespace: 'mock',
-      $app_version: 'mock',
-      $device_manufacturer: 'mock',
-      $device_type: 'Mobile',
-      // $device_name: 'mock', (deleted)
+      app_build: 'mock',
+      app_name: 'customised!', // changed
+      app_namespace: 'mock',
+      app_version: 'mock',
+      device_manufacturer: 'mock',
+      device_type: 'Mobile',
+      // device_name: 'mock', (deleted)
       $is_emulator: false,
-      $os_name: 'mock',
-      $os_version: 'mock',
+      os_name: 'mock',
+      os_version: 'mock',
       $locale: 'mock',
-      $timezone: 'mock',
+      timezone: 'mock',
     })
 
     await posthog2.shutdown()
   })
 
   describe('screen', () => {
-    it('should set a $screen_name property on screen', async () => {
+    it('should set a screen_name property on screen', async () => {
       posthog = new PostHog('test-token', {
         customStorage: mockStorage,
         flushInterval: 0,
@@ -280,7 +280,7 @@ describe('PostHog React Native', () => {
       await posthog.screen('test-screen')
 
       expect((posthog as any).sessionProps).toMatchObject({
-        $screen_name: 'test-screen',
+        screen_name: 'test-screen',
       })
 
       expect(posthog.getPersistedProperty(PostHogPersistedProperty.Props)).toEqual(undefined)
@@ -297,8 +297,8 @@ describe('PostHog React Native', () => {
         customStorage: mockStorage,
         captureAppLifecycleEvents: true,
         customAppProperties: {
-          $app_build: '1',
-          $app_version: '1.0.0',
+          app_build: '1',
+          app_version: '1.0.0',
         },
       })
       posthog.on('capture', onCapture)
@@ -308,15 +308,15 @@ describe('PostHog React Native', () => {
         expect(onCapture.mock.calls[0][0]).toMatchObject({
           event: 'Application Installed',
           properties: {
-            $app_build: '1',
-            $app_version: '1.0.0',
+            app_build: '1',
+            app_version: '1.0.0',
           },
         })
         expect(onCapture.mock.calls[1][0]).toMatchObject({
           event: 'Application Opened',
           properties: {
-            $app_build: '1',
-            $app_version: '1.0.0',
+            app_build: '1',
+            app_version: '1.0.0',
           },
         })
       })
@@ -329,8 +329,8 @@ describe('PostHog React Native', () => {
         customStorage: mockStorage,
         captureAppLifecycleEvents: true,
         customAppProperties: {
-          $app_build: '1',
-          $app_version: '1.0.0',
+          app_build: '1',
+          app_version: '1.0.0',
         },
       })
       posthog.on('capture', onCapture)
@@ -349,8 +349,8 @@ describe('PostHog React Native', () => {
         customStorage: mockStorage,
         captureAppLifecycleEvents: true,
         customAppProperties: {
-          $app_build: '2',
-          $app_version: '2.0.0',
+          app_build: '2',
+          app_version: '2.0.0',
         },
       })
       posthog.on('capture', onCapture)
@@ -361,8 +361,8 @@ describe('PostHog React Native', () => {
         expect(onCapture.mock.calls[0][0]).toMatchObject({
           event: 'Application Updated',
           properties: {
-            $app_build: '2',
-            $app_version: '2.0.0',
+            app_build: '2',
+            app_version: '2.0.0',
             previous_build: '1',
             previous_version: '1.0.0',
           },
@@ -370,8 +370,8 @@ describe('PostHog React Native', () => {
         expect(onCapture.mock.calls[1][0]).toMatchObject({
           event: 'Application Opened',
           properties: {
-            $app_build: '2',
-            $app_version: '2.0.0',
+            app_build: '2',
+            app_version: '2.0.0',
           },
         })
       })
@@ -386,8 +386,8 @@ describe('PostHog React Native', () => {
         customStorage: mockStorage,
         captureAppLifecycleEvents: true,
         customAppProperties: {
-          $app_build: '1',
-          $app_version: '1.0.0',
+          app_build: '1',
+          app_version: '1.0.0',
         },
       })
       posthog.on('capture', onCapture)
@@ -406,8 +406,8 @@ describe('PostHog React Native', () => {
         customStorage: mockStorage,
         captureAppLifecycleEvents: true,
         customAppProperties: {
-          $app_build: '1',
-          $app_version: '1.0.0',
+          app_build: '1',
+          app_version: '1.0.0',
         },
       })
       posthog.on('capture', onCapture)
@@ -418,8 +418,8 @@ describe('PostHog React Native', () => {
         expect(onCapture.mock.calls[0][0]).toMatchObject({
           event: 'Application Opened',
           properties: {
-            $app_build: '1',
-            $app_version: '1.0.0',
+            app_build: '1',
+            app_version: '1.0.0',
             url: 'https://example.com',
           },
         })
@@ -433,8 +433,8 @@ describe('PostHog React Native', () => {
         customStorage: mockStorage,
         captureAppLifecycleEvents: true,
         customAppProperties: {
-          $app_build: '1',
-          $app_version: '1.0.0',
+          app_build: '1',
+          app_version: '1.0.0',
         },
       })
       posthog.on('capture', onCapture)
@@ -455,15 +455,15 @@ describe('PostHog React Native', () => {
         expect(onCapture.mock.calls[2][0]).toMatchObject({
           event: 'Application Backgrounded',
           properties: {
-            $app_build: '1',
-            $app_version: '1.0.0',
+            app_build: '1',
+            app_version: '1.0.0',
           },
         })
         expect(onCapture.mock.calls[3][0]).toMatchObject({
           event: 'Application Became Active',
           properties: {
-            $app_build: '1',
-            $app_version: '1.0.0',
+            app_build: '1',
+            app_version: '1.0.0',
           },
         })
       })
@@ -511,10 +511,10 @@ describe('PostHog React Native', () => {
         })
 
         expect(onCapture.mock.calls[1][0]).toMatchObject({
-          event: '$identify',
+          event: 'edp_identify',
           distinct_id: 'identified-id',
           properties: {
-            $anon_distinct_id: 'my-anonymous-id',
+            anon_distinct_id: 'my-anonymous-id',
           },
         })
         expect(onCapture.mock.calls[2][0]).toMatchObject({
@@ -666,7 +666,7 @@ describe('PostHog React Native', () => {
       posthog.setPersistedProperty(PostHogPersistedProperty.LogsQueue, [{ message: 'log' }])
       ;(storage.setItem as jest.Mock).mockClear()
 
-      posthog.captureException(new Error('boom'), { $exception_level: 'fatal' })
+      posthog.captureException(new Error('boom'), { exception_level: 'fatal' })
 
       // A fatal exception can crash the app within the debounce window, so both
       // pipelines reach disk synchronously: the events file (holding the
@@ -677,12 +677,12 @@ describe('PostHog React Native', () => {
       expect(wroteLogs).toBe(true)
       expect(eventsWrite).toBeDefined()
       // Assert on the parsed queue, not a substring — the actual exception event
-      // must be in the persisted queue, not just the $exception_level tag.
+      // must be in the persisted queue, not just the exception_level tag.
       const queue =
         (JSON.parse(eventsWrite![1] as string).content[PostHogPersistedProperty.Queue] as Array<{
           message?: { event?: string }
         }>) ?? []
-      expect(queue.some((item) => item.message?.event === '$exception')).toBe(true)
+      expect(queue.some((item) => item.message?.event === 'edp_exception')).toBe(true)
     })
 
     it('does not flush synchronously on a non-fatal exception (uses the debounce)', () => {
@@ -864,17 +864,17 @@ describe('PostHog React Native', () => {
 
       it('should set default person properties on initialization when enabled', async () => {
         jest.spyOn(PostHog.prototype, 'getCommonEventProperties').mockReturnValue({
-          $lib: 'posthog-react-native',
-          $lib_version: '1.2.3',
+          lib: 'posthog-react-native',
+          lib_version: '1.2.3',
         })
 
         posthog = new PostHog('test-api-key', {
           setDefaultPersonProperties: true,
           customAppProperties: {
-            $app_version: '1.0.0',
-            $app_namespace: 'com.example.app',
-            $device_type: 'Mobile',
-            $os_name: 'iOS',
+            app_version: '1.0.0',
+            app_namespace: 'com.example.app',
+            device_type: 'Mobile',
+            os_name: 'iOS',
           },
         })
 
@@ -882,12 +882,12 @@ describe('PostHog React Native', () => {
 
         const cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
 
-        expect(cachedProps).toHaveProperty('$app_version', '1.0.0')
-        expect(cachedProps).toHaveProperty('$app_namespace', 'com.example.app')
-        expect(cachedProps).toHaveProperty('$device_type', 'Mobile')
-        expect(cachedProps).toHaveProperty('$os_name', 'iOS')
-        expect(cachedProps.$lib).toBe('posthog-react-native')
-        expect(cachedProps.$lib_version).toBe('1.2.3')
+        expect(cachedProps).toHaveProperty('app_version', '1.0.0')
+        expect(cachedProps).toHaveProperty('app_namespace', 'com.example.app')
+        expect(cachedProps).toHaveProperty('device_type', 'Mobile')
+        expect(cachedProps).toHaveProperty('os_name', 'iOS')
+        expect(cachedProps.lib).toBe('posthog-react-native')
+        expect(cachedProps.lib_version).toBe('1.2.3')
       })
 
       it('should not set default person properties when disabled', async () => {
@@ -904,7 +904,7 @@ describe('PostHog React Native', () => {
       it('should set default person properties by default (true)', async () => {
         posthog = new PostHog('test-api-key', {
           customAppProperties: {
-            $device_type: 'Mobile',
+            device_type: 'Mobile',
           },
         })
         await posthog.ready()
@@ -912,59 +912,59 @@ describe('PostHog React Native', () => {
         const cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
 
         expect(cachedProps).toBeTruthy()
-        expect(cachedProps).toHaveProperty('$device_type', 'Mobile')
+        expect(cachedProps).toHaveProperty('device_type', 'Mobile')
       })
 
       it('should only include defined properties', async () => {
         posthog = new PostHog('test-api-key', {
           setDefaultPersonProperties: true,
           customAppProperties: {
-            $app_version: '1.0.0',
-            $app_namespace: 'com.example.app',
-            $device_type: 'Mobile',
-            $os_name: null,
+            app_version: '1.0.0',
+            app_namespace: 'com.example.app',
+            device_type: 'Mobile',
+            os_name: null,
           },
         })
         await posthog.ready()
 
         const cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
 
-        expect(cachedProps).toHaveProperty('$app_version', '1.0.0')
-        expect(cachedProps).toHaveProperty('$app_namespace', 'com.example.app')
-        expect(cachedProps).toHaveProperty('$device_type', 'Mobile')
-        expect(cachedProps).not.toHaveProperty('$os_name')
+        expect(cachedProps).toHaveProperty('app_version', '1.0.0')
+        expect(cachedProps).toHaveProperty('app_namespace', 'com.example.app')
+        expect(cachedProps).toHaveProperty('device_type', 'Mobile')
+        expect(cachedProps).not.toHaveProperty('os_name')
       })
 
       it('should restore default properties after reset()', async () => {
         posthog = new PostHog('test-api-key', {
           setDefaultPersonProperties: true,
           customAppProperties: {
-            $device_type: 'Mobile',
+            device_type: 'Mobile',
           },
         })
         await posthog.ready()
 
         let cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
         expect(cachedProps).toBeTruthy()
-        expect(cachedProps).toHaveProperty('$device_type', 'Mobile')
+        expect(cachedProps).toHaveProperty('device_type', 'Mobile')
 
         posthog.reset()
 
         cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
         expect(cachedProps).toBeTruthy()
-        expect(cachedProps).toHaveProperty('$device_type', 'Mobile')
+        expect(cachedProps).toHaveProperty('device_type', 'Mobile')
       })
 
       it('should set default properties synchronously during reset without extra reload', async () => {
         jest.spyOn(PostHog.prototype, 'getCommonEventProperties').mockReturnValue({
-          $lib: 'posthog-react-native',
-          $lib_version: '1.2.3',
+          lib: 'posthog-react-native',
+          lib_version: '1.2.3',
         })
         posthog = new PostHog('test-api-key', {
           setDefaultPersonProperties: true,
           customAppProperties: {
-            $device_type: 'Mobile',
-            $os_name: 'iOS',
+            device_type: 'Mobile',
+            os_name: 'iOS',
           },
           preloadFeatureFlags: false,
         })
@@ -984,10 +984,10 @@ describe('PostHog React Native', () => {
 
         const flagsCallBody = JSON.parse(flagsCalls[0][1].body)
         expect(flagsCallBody.person_properties).toEqual({
-          $device_type: 'Mobile',
-          $os_name: 'iOS',
-          $lib: 'posthog-react-native',
-          $lib_version: '1.2.3',
+          device_type: 'Mobile',
+          os_name: 'iOS',
+          lib: 'posthog-react-native',
+          lib_version: '1.2.3',
         })
       })
 
@@ -995,20 +995,20 @@ describe('PostHog React Native', () => {
         posthog = new PostHog('test-api-key', {
           setDefaultPersonProperties: true,
           customAppProperties: {
-            $device_type: 'Mobile',
-            $app_version: '1.0.0',
+            device_type: 'Mobile',
+            app_version: '1.0.0',
           },
         })
         await posthog.ready()
 
         let cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
-        expect(cachedProps.$device_type).toBe('Mobile')
+        expect(cachedProps.device_type).toBe('Mobile')
 
-        posthog.identify('user-123', { $device_type: 'Tablet', email: 'test@example.com' })
+        posthog.identify('user-123', { device_type: 'Tablet', email: 'test@example.com' })
 
         cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
-        expect(cachedProps.$device_type).toBe('Tablet')
-        expect(cachedProps.$app_version).toBe('1.0.0')
+        expect(cachedProps.device_type).toBe('Tablet')
+        expect(cachedProps.app_version).toBe('1.0.0')
         expect(cachedProps.email).toBe('test@example.com')
       })
     })
@@ -1068,9 +1068,9 @@ describe('PostHog React Native', () => {
         expect(posthog.getPersistedProperty(PostHogPersistedProperty.SurveyLastSeenDate)).toBeFalsy()
       })
 
-      it('should cache properties from $set when provided', async () => {
+      it('should cache properties from edp_set when provided', async () => {
         posthog.identify('user-123', {
-          $set: { email: 'test@example.com', plan: 'premium' },
+          edp_set: { email: 'test@example.com', plan: 'premium' },
         })
 
         const cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
@@ -1078,9 +1078,9 @@ describe('PostHog React Native', () => {
       })
 
       it.each(typePreservationCases)(
-        'preserves $name in $set person properties (no String() coercion)',
+        'preserves name in edp_set person properties (no String() coercion)',
         ({ value, buggyString }) => {
-          posthog.identify('user-123', { $set: { prop: value } })
+          posthog.identify('user-123', { edp_set: { prop: value } })
 
           const cachedProps = posthog.getPersistedProperty<Record<string, JsonType>>(
             PostHogPersistedProperty.PersonProperties
@@ -1091,9 +1091,9 @@ describe('PostHog React Native', () => {
       )
 
       it.each(typePreservationCases)(
-        'preserves $name in $set_once person properties (no String() coercion)',
+        'preserves name in edp_set_once person properties (no String() coercion)',
         ({ value, buggyString }) => {
-          posthog.identify('user-123', { $set_once: { prop: value } })
+          posthog.identify('user-123', { edp_set_once: { prop: value } })
 
           const cachedProps = posthog.getPersistedProperty<Record<string, JsonType>>(
             PostHogPersistedProperty.PersonProperties
@@ -1103,25 +1103,25 @@ describe('PostHog React Native', () => {
         }
       )
 
-      it('should cache $set_once properties with set-once semantics', async () => {
+      it('should cache edp_set_once properties with set-once semantics', async () => {
         posthog.identify('user-123', {
-          $set: { email: 'test@example.com' },
-          $set_once: { created_at: '2024-01-01' },
+          edp_set: { email: 'test@example.com' },
+          edp_set_once: { created_at: '2024-01-01' },
         })
 
         const cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
         expect(cachedProps).toEqual({ email: 'test@example.com', created_at: '2024-01-01' })
       })
 
-      it('should not overwrite existing keys via $set_once on subsequent identify calls', async () => {
+      it('should not overwrite existing keys via edp_set_once on subsequent identify calls', async () => {
         posthog.identify('user-123', {
-          $set: { email: 'test@example.com' },
-          $set_once: { created_at: '2024-01-01' },
+          edp_set: { email: 'test@example.com' },
+          edp_set_once: { created_at: '2024-01-01' },
         })
 
         posthog.identify('user-123', {
-          $set: { email: 'new@example.com' },
-          $set_once: { created_at: '2025-06-15', new_key: 'hello' },
+          edp_set: { email: 'new@example.com' },
+          edp_set_once: { created_at: '2025-06-15', new_key: 'hello' },
         })
 
         const cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
@@ -1132,9 +1132,9 @@ describe('PostHog React Native', () => {
         })
       })
 
-      it('should merge properties from multiple identify() calls with $set', async () => {
-        posthog.identify('user-123', { $set: { email: 'test@example.com' } })
-        posthog.identify('user-123', { $set: { plan: 'premium' } })
+      it('should merge properties from multiple identify() calls with edp_set', async () => {
+        posthog.identify('user-123', { edp_set: { email: 'test@example.com' } })
+        posthog.identify('user-123', { edp_set: { plan: 'premium' } })
 
         const cachedProps = posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)
         expect(cachedProps).toEqual({ email: 'test@example.com', plan: 'premium' })
@@ -1210,7 +1210,7 @@ describe('PostHog React Native', () => {
       })
 
       it.each(typePreservationCases)(
-        'preserves $name in group properties (no String() coercion)',
+        'preserves name in group properties (no String() coercion)',
         ({ value, buggyString }) => {
           posthog.group('company', 'acme-inc', { prop: value })
 
@@ -1354,7 +1354,7 @@ describe('PostHog React Native', () => {
         // Wait for any async operations
         await new Promise((resolve) => setTimeout(resolve, 100))
 
-        // Should have the batch call for $set event, but not a flags call
+        // Should have the batch call for edp_set event, but not a flags call
         const allCalls = (globalThis as any).window.fetch.mock.calls
         const flagsCalls = allCalls.filter((call: any) => call[0].includes('/flags/'))
         expect(flagsCalls.length).toBe(0)
@@ -1480,8 +1480,8 @@ describe('PostHog React Native', () => {
           customStorage: storage,
           captureAppLifecycleEvents: true,
           customAppProperties: {
-            $app_build: '1',
-            $app_version: '1.0.0',
+            app_build: '1',
+            app_version: '1.0.0',
           },
         })
         posthog.on('capture', onCapture2)
@@ -1586,7 +1586,7 @@ describe('PostHog React Native', () => {
       })
     })
 
-    it('should send $device_id in feature flag requests', async () => {
+    it('should send device_id in feature flag requests', async () => {
       posthog = new PostHog('test-token', {
         customStorage: mockStorage,
         captureAppLifecycleEvents: false,
@@ -1601,12 +1601,12 @@ describe('PostHog React Native', () => {
         expect.stringContaining('/flags/'),
         expect.objectContaining({
           method: 'POST',
-          body: expect.stringContaining(`"$device_id":"${deviceId}"`),
+          body: expect.stringContaining(`"device_id":"${deviceId}"`),
         })
       )
     })
 
-    it('should send the same $device_id after identify()', async () => {
+    it('should send the same device_id after identify()', async () => {
       posthog = new PostHog('test-token', {
         customStorage: mockStorage,
         captureAppLifecycleEvents: false,
@@ -1622,7 +1622,7 @@ describe('PostHog React Native', () => {
         expect.stringContaining('/flags/'),
         expect.objectContaining({
           method: 'POST',
-          body: expect.stringContaining(`"$device_id":"${deviceId}"`),
+          body: expect.stringContaining(`"device_id":"${deviceId}"`),
         })
       )
     })
@@ -2129,13 +2129,13 @@ describe('PostHog React Native', () => {
       await posthog.ready()
       await (posthog as any)._logsStorage.preloadPromise
 
-      // posthog.screen() registers $screen_name as a session-scoped property;
+      // posthog.screen() registers screen_name as a session-scoped property;
       // the logs context-builder reads it at capture time.
       await posthog.screen('checkout')
       posthog.captureLog({ body: 'on-checkout-screen' })
 
       const queue = posthog.getPersistedProperty(PostHogPersistedProperty.LogsQueue) as any[]
-      // posthog.screen() emits a $screen event which goes to events queue.
+      // posthog.screen() emits a screen event which goes to events queue.
       // The captureLog goes to logs queue. Find ours by body.
       const target = queue.find((e) => e.record.body.stringValue === 'on-checkout-screen')
       expect(target).toBeDefined()
@@ -2202,7 +2202,7 @@ describe('PostHog React Native', () => {
       await (posthog as any)._logsStorage.preloadPromise
 
       // Logs gates `[]` to save bytes — same as browser logs. Distinct from
-      // events, which emit `$active_feature_flags: []` for back-compat (the
+      // events, which emit `active_feature_flags: []` for back-compat (the
       // shared helper preserves the empty array; only the caller's gate
       // differs).
       jest.spyOn(posthog, 'getFeatureFlags').mockReturnValue({} as any)
@@ -2321,7 +2321,7 @@ describe('Feature flag error tracking', () => {
     await posthog.shutdown()
   })
 
-  it('should set $feature_flag_error to flag_missing when flag is not in response', async () => {
+  it('should set feature_flag_error to flag_missing when flag is not in response', async () => {
     ;(globalThis as any).window.fetch = jest.fn().mockImplementation((url: string) => {
       if (url.includes('/flags/')) {
         return Promise.resolve({
@@ -2357,12 +2357,12 @@ describe('Feature flag error tracking', () => {
     const captureCall = calls.find((call: any[]) => call[0].includes('/batch'))
     expect(captureCall).toBeDefined()
     const body = JSON.parse(captureCall[1].body)
-    const featureFlagEvent = body.batch.find((e: any) => e.event === '$feature_flag_called')
+    const featureFlagEvent = body.batch.find((e: any) => e.event === 'edp_feature_flag_called')
     expect(featureFlagEvent).toBeDefined()
-    expect(featureFlagEvent.properties.$feature_flag_error).toBe(FeatureFlagError.FLAG_MISSING)
+    expect(featureFlagEvent.properties.feature_flag_error).toBe(FeatureFlagError.FLAG_MISSING)
   })
 
-  it('should set $feature_flag_error to errors_while_computing_flags when server returns that flag', async () => {
+  it('should set feature_flag_error to errors_while_computing_flags when server returns that flag', async () => {
     ;(globalThis as any).window.fetch = jest.fn().mockImplementation((url: string) => {
       if (url.includes('/flags/')) {
         return Promise.resolve({
@@ -2398,12 +2398,12 @@ describe('Feature flag error tracking', () => {
     const captureCall = calls.find((call: any[]) => call[0].includes('/batch'))
     expect(captureCall).toBeDefined()
     const body = JSON.parse(captureCall[1].body)
-    const featureFlagEvent = body.batch.find((e: any) => e.event === '$feature_flag_called')
+    const featureFlagEvent = body.batch.find((e: any) => e.event === 'edp_feature_flag_called')
     expect(featureFlagEvent).toBeDefined()
-    expect(featureFlagEvent.properties.$feature_flag_error).toBe(FeatureFlagError.ERRORS_WHILE_COMPUTING)
+    expect(featureFlagEvent.properties.feature_flag_error).toBe(FeatureFlagError.ERRORS_WHILE_COMPUTING)
   })
 
-  it('should set $feature_flag_error to quota_limited when quota limited', async () => {
+  it('should set feature_flag_error to quota_limited when quota limited', async () => {
     ;(globalThis as any).window.fetch = jest.fn().mockImplementation((url: string) => {
       if (url.includes('/flags/')) {
         return Promise.resolve({
@@ -2433,13 +2433,13 @@ describe('Feature flag error tracking', () => {
     const captureCall = calls.find((call: any[]) => call[0].includes('/batch'))
     expect(captureCall).toBeDefined()
     const body = JSON.parse(captureCall[1].body)
-    const featureFlagEvent = body.batch.find((e: any) => e.event === '$feature_flag_called')
+    const featureFlagEvent = body.batch.find((e: any) => e.event === 'edp_feature_flag_called')
     expect(featureFlagEvent).toBeDefined()
     // FLAG_MISSING is not tracked when quota limited since we cannot determine if the flag is truly missing
-    expect(featureFlagEvent.properties.$feature_flag_error).toBe(FeatureFlagError.QUOTA_LIMITED)
+    expect(featureFlagEvent.properties.feature_flag_error).toBe(FeatureFlagError.QUOTA_LIMITED)
   })
 
-  it('should set $feature_flag_error to api_error_500 when request fails with 500', async () => {
+  it('should set feature_flag_error to api_error_500 when request fails with 500', async () => {
     // First, let the initial setup succeed
     ;(globalThis as any).window.fetch = jest.fn().mockImplementation((url: string) => {
       if (url.includes('/flags/')) {
@@ -2462,9 +2462,9 @@ describe('Feature flag error tracking', () => {
     const captureCall = calls.find((call: any[]) => call[0].includes('/batch'))
     expect(captureCall).toBeDefined()
     const body = JSON.parse(captureCall[1].body)
-    const featureFlagEvent = body.batch.find((e: any) => e.event === '$feature_flag_called')
+    const featureFlagEvent = body.batch.find((e: any) => e.event === 'edp_feature_flag_called')
     expect(featureFlagEvent).toBeDefined()
-    expect(featureFlagEvent.properties.$feature_flag_error).toBe(FeatureFlagError.apiError(500))
+    expect(featureFlagEvent.properties.feature_flag_error).toBe(FeatureFlagError.apiError(500))
   })
 
   it('should join multiple errors with commas', async () => {
@@ -2495,14 +2495,14 @@ describe('Feature flag error tracking', () => {
     const captureCall = calls.find((call: any[]) => call[0].includes('/batch'))
     expect(captureCall).toBeDefined()
     const body = JSON.parse(captureCall[1].body)
-    const featureFlagEvent = body.batch.find((e: any) => e.event === '$feature_flag_called')
+    const featureFlagEvent = body.batch.find((e: any) => e.event === 'edp_feature_flag_called')
     expect(featureFlagEvent).toBeDefined()
-    expect(featureFlagEvent.properties.$feature_flag_error).toBe(
+    expect(featureFlagEvent.properties.feature_flag_error).toBe(
       `${FeatureFlagError.ERRORS_WHILE_COMPUTING},${FeatureFlagError.FLAG_MISSING}`
     )
   })
 
-  it('should not set $feature_flag_error when flag is found successfully', async () => {
+  it('should not set feature_flag_error when flag is found successfully', async () => {
     ;(globalThis as any).window.fetch = jest.fn().mockImplementation((url: string) => {
       if (url.includes('/flags/')) {
         return Promise.resolve({
@@ -2539,16 +2539,16 @@ describe('Feature flag error tracking', () => {
     const captureCall = calls.find((call: any[]) => call[0].includes('/batch'))
     expect(captureCall).toBeDefined()
     const body = JSON.parse(captureCall[1].body)
-    const featureFlagEvent = body.batch.find((e: any) => e.event === '$feature_flag_called')
+    const featureFlagEvent = body.batch.find((e: any) => e.event === 'edp_feature_flag_called')
     expect(featureFlagEvent).toBeDefined()
-    // $feature_flag_error should not be present
-    expect(featureFlagEvent.properties.$feature_flag_error).toBeUndefined()
+    // feature_flag_error should not be present
+    expect(featureFlagEvent.properties.feature_flag_error).toBeUndefined()
   })
 
   it.each([
     ['getFeatureFlag', (client: PostHog) => client.getFeatureFlag('my-flag', { sendEvent: false })],
     ['isFeatureEnabled', (client: PostHog) => client.isFeatureEnabled('my-flag', { sendEvent: false })],
-  ] as const)('should not send $feature_flag_called from %s when sendEvent is false', async (_, callFn) => {
+  ] as const)('should not send edp_feature_flag_called from %s when sendEvent is false', async (_, callFn) => {
     ;(globalThis as any).window.fetch = jest.fn().mockImplementation((url: string) => {
       if (url.includes('/flags/')) {
         return Promise.resolve({

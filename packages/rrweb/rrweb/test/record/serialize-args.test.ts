@@ -252,7 +252,7 @@ describe('serializeArg with dataURLOptions', () => {
     { type: 'image/webp', quality: 0.5, description: 'WebP at 50% quality' },
     { type: 'image/png', quality: undefined, description: 'PNG (lossless)' },
   ])(
-    'HTMLCanvasElement with $description',
+    'HTMLCanvasElement with description',
     ({ type, quality, description }) => {
       it(`should serialize with ${description}`, () => {
         const canvas = document.createElement('canvas');

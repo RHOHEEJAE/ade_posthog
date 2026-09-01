@@ -68,7 +68,7 @@ describe('PostHogWeb', () => {
           groups: {},
           person_properties: {},
           group_properties: {},
-          $anon_distinct_id: posthog.getAnonymousId(),
+          anon_distinct_id: posthog.getAnonymousId(),
         }),
         method: 'POST',
         headers: {
@@ -157,7 +157,7 @@ describe('PostHogWeb', () => {
       window.history.pushState({}, '', '/test-page')
 
       expect(captureSpy).toHaveBeenCalledWith(
-        '$pageview',
+        'edp_pageview',
         expect.objectContaining({
           navigation_type: 'pushState',
         })
@@ -192,7 +192,7 @@ describe('PostHogWeb', () => {
       window.history.replaceState({}, '', '/replaced-page')
 
       expect(captureSpy).toHaveBeenCalledWith(
-        '$pageview',
+        'edp_pageview',
         expect.objectContaining({
           navigation_type: 'replaceState',
         })
@@ -227,7 +227,7 @@ describe('PostHogWeb', () => {
       window.dispatchEvent(new Event('popstate'))
 
       expect(captureSpy).toHaveBeenCalledWith(
-        '$pageview',
+        'edp_pageview',
         expect.objectContaining({
           navigation_type: 'popstate',
         })
@@ -255,7 +255,7 @@ describe('PostHogWeb', () => {
         flushAt: 1,
       })
 
-      const commonEventProps = { $lib: 'posthog-js-lite', $lib_version: '1.0.0' }
+      const commonEventProps = { lib: 'posthog-js-lite', lib_version: '1.0.0' }
       const getCommonEventPropertiesSpy = jest
         .spyOn(posthog, 'getCommonEventProperties')
         .mockImplementation(() => commonEventProps)
@@ -270,7 +270,7 @@ describe('PostHogWeb', () => {
       expect(getCommonEventPropertiesSpy).toHaveBeenCalled()
 
       const captureCall = coreCaptureMethod.mock.calls.find(
-        (call) => call[0] === '$pageview' && call[1] && call[1].navigation_type === 'pushState'
+        (call) => call[0] === 'edp_pageview' && call[1] && call[1].navigation_type === 'pushState'
       )
 
       expect(captureCall).toBeDefined()

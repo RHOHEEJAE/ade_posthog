@@ -25,7 +25,7 @@ const posthog = withSdk
 
 if (posthog) {
   posthog._capturePreparedEvent = (event) => {
-    const exception = event.properties.$exception_list[0]
+    const exception = event.properties.exception_list[0]
     process.stdout.write(`posthog-capture:${exception.mechanism.type}:${exception.value}\n`)
     return Promise.resolve()
   }

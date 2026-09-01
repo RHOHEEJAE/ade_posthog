@@ -11,11 +11,11 @@ import { isUndefined } from '@posthog/core'
 
 describe(`event-utils`, () => {
     describe('properties', () => {
-        it('should have $host and $pathname in properties', () => {
+        it('should have host and pathname in properties', () => {
             const properties = getEventProperties()
-            expect(properties['$current_url']).toBeDefined()
-            expect(properties['$host']).toBeDefined()
-            expect(properties['$pathname']).toBeDefined()
+            expect(properties['current_url']).toBeDefined()
+            expect(properties['host']).toBeDefined()
+            expect(properties['pathname']).toBeDefined()
         })
 
         it('should have user agent in properties', () => {
@@ -24,7 +24,7 @@ describe(`event-utils`, () => {
             // @ts-ignore
             globals['userAgent'] = 'blah'
             const properties = getEventProperties()
-            expect(properties['$raw_user_agent']).toBe('blah')
+            expect(properties['raw_user_agent']).toBe('blah')
         })
 
         it('should truncate very long user agents in properties', () => {
@@ -33,22 +33,22 @@ describe(`event-utils`, () => {
             // @ts-ignore
             globals['userAgent'] = 'a'.repeat(1001)
             const properties = getEventProperties()
-            expect(properties['$raw_user_agent'].length).toBe(1000)
-            expect(properties['$raw_user_agent'].substring(995)).toBe('aa...')
+            expect(properties['raw_user_agent'].length).toBe(1000)
+            expect(properties['raw_user_agent'].substring(995)).toBe('aa...')
         })
 
         it('should mask out personal data from URL', () => {
             // @ts-expect-error ok to set global in test
             globals.location = { href: 'https://www.example.com/path?gclid=12345&other=true' }
             const properties = getEventProperties(true)
-            expect(properties['$current_url']).toEqual('https://www.example.com/path?gclid=<masked>&other=true')
+            expect(properties['current_url']).toEqual('https://www.example.com/path?gclid=<masked>&other=true')
         })
 
         it('should mask out custom personal data', () => {
             // @ts-expect-error ok to set global in test
             globals.location = { href: 'https://www.example.com/path?gclid=12345&other=true' }
             const properties = getEventProperties(true, ['other'])
-            expect(properties['$current_url']).toEqual('https://www.example.com/path?gclid=<masked>&other=<masked>')
+            expect(properties['current_url']).toEqual('https://www.example.com/path?gclid=<masked>&other=<masked>')
         })
 
         it.each([
@@ -59,13 +59,13 @@ describe(`event-utils`, () => {
             // @ts-expect-error ok to set global in test
             globals.location = { href: 'https://www.example.com/path?gclid=12345#section' }
             const properties = getEventProperties(false, undefined, undefined, disableCaptureUrlHashes)
-            expect(properties['$current_url']).toEqual(expectedUrl)
+            expect(properties['current_url']).toEqual(expectedUrl)
         })
 
         it('should have timezone and timezone offset', () => {
             const properties = getEventProperties()
-            expect(properties).toHaveProperty('$timezone')
-            expect(properties).toHaveProperty('$timezone_offset')
+            expect(properties).toHaveProperty('timezone')
+            expect(properties).toHaveProperty('timezone_offset')
         })
     })
 
@@ -131,7 +131,7 @@ describe(`event-utils`, () => {
             mockScreen(1280, 800)
 
             const properties = getEventProperties()
-            expect(properties['$device_type']).toBe('Tablet')
+            expect(properties['device_type']).toBe('Tablet')
         })
 
         it('should detect Android phone when screen short side is under 600px', () => {
@@ -139,7 +139,7 @@ describe(`event-utils`, () => {
             mockScreen(412, 915)
 
             const properties = getEventProperties()
-            expect(properties['$device_type']).toBe('Mobile')
+            expect(properties['device_type']).toBe('Mobile')
         })
 
         it('should normalize screen size by devicePixelRatio for accurate dp classification', () => {
@@ -148,28 +148,28 @@ describe(`event-utils`, () => {
             mockScreen(1200, 800, 2)
 
             const properties = getEventProperties()
-            expect(properties['$device_type']).toBe('Mobile')
+            expect(properties['device_type']).toBe('Mobile')
         })
 
         it('should remain Desktop when Client Hints platform is not Android', () => {
             mockNavigator({ platform: 'Linux' }, 0)
 
             const properties = getEventProperties()
-            expect(properties['$device_type']).toBe('Desktop')
+            expect(properties['device_type']).toBe('Desktop')
         })
 
         it('should remain Desktop when maxTouchPoints is 0', () => {
             mockNavigator({ platform: 'Android' }, 0)
 
             const properties = getEventProperties()
-            expect(properties['$device_type']).toBe('Desktop')
+            expect(properties['device_type']).toBe('Desktop')
         })
 
         it('should remain Desktop when userAgentData is unavailable', () => {
             mockNavigator(undefined, 5)
 
             const properties = getEventProperties()
-            expect(properties['$device_type']).toBe('Desktop')
+            expect(properties['device_type']).toBe('Desktop')
         })
     })
 
@@ -216,20 +216,20 @@ describe(`event-utils`, () => {
             }
         })
 
-        it('reports $browser as Brave when navigator.brave exists, even on a Chrome UA', () => {
+        it('reports browser as Brave when navigator.brave exists, even on a Chrome UA', () => {
             Object.defineProperty(window.navigator, 'brave', { value: {}, configurable: true })
             const properties = getEventProperties()
-            expect(properties['$browser']).toBe('Brave')
+            expect(properties['browser']).toBe('Brave')
             // Desktop Brave has no UA version marker, so honest null beats a
             // Chrome version stamped under `Brave`.
-            expect(properties['$browser_version']).toBeNull()
+            expect(properties['browser_version']).toBeNull()
         })
 
-        it('reports $browser as Chrome when navigator.brave is absent', () => {
+        it('reports browser as Chrome when navigator.brave is absent', () => {
             delete (window.navigator as any).brave
             const properties = getEventProperties()
-            expect(properties['$browser']).toBe('Chrome')
-            expect(properties['$browser_version']).toBe(120.0)
+            expect(properties['browser']).toBe('Chrome')
+            expect(properties['browser_version']).toBe(120.0)
         })
     })
 

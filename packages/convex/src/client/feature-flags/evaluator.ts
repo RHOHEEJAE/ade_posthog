@@ -230,10 +230,10 @@ export class LocalFeatureFlagEvaluator {
     if (bucketingValue === undefined) {
       this.logMsgIfDebug(() =>
         console.warn(
-          `[FEATURE FLAGS] Can't compute feature flag: ${flag.key} without $device_id, falling back to server evaluation`
+          `[FEATURE FLAGS] Can't compute feature flag: ${flag.key} without device_id, falling back to server evaluation`
         )
       )
-      throw new InconclusiveMatchError(`Can't compute feature flag: ${flag.key} without $device_id`)
+      throw new InconclusiveMatchError(`Can't compute feature flag: ${flag.key} without device_id`)
     }
     return await this.matchFeatureFlagProperties(flag, bucketingValue, personProperties, ctx)
   }
@@ -245,7 +245,7 @@ export class LocalFeatureFlagEvaluator {
   ): string | undefined {
     if (flag.filters?.aggregation_group_type_index != undefined) return distinctId
     if (flag.bucketing_identifier === 'device_id') {
-      const deviceId = properties?.$device_id
+      const deviceId = properties?.device_id
       if (deviceId === undefined || deviceId === null || deviceId === '') return undefined
       return deviceId
     }

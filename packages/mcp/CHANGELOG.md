@@ -147,7 +147,7 @@
   work that hit it. (2026-08-06)
 
 - [#4428](https://github.com/PostHog/posthog-js/pull/4428) [`7322893`](https://github.com/PostHog/posthog-js/commit/732289369cdfeee30b0c6dcbed9957b60e8c630f) Thanks [@gesh](https://github.com/gesh)! - Use an agent-supplied `conversation_id` as the session anchor, so tool calls in one
-  conversation share a `$session_id` across reconnects, restarts, and per-request server
+  conversation share a `session_id` across reconnects, restarts, and per-request server
   instances. Only a handle the SDK could have minted is accepted; a value the agent invented
   is replaced with a fresh one, so two callers cannot land in the same session by sending the
   same string. (2026-08-06)
@@ -224,7 +224,7 @@
 
 - [#4210](https://github.com/PostHog/posthog-js/pull/4210) [`e732595`](https://github.com/PostHog/posthog-js/commit/e7325959c4c365895945ae06091fd74439ecb2db) Thanks [@gesh](https://github.com/gesh)! - feat(mcp): capture the negotiated MCP protocol version as `$mcp_protocol_version`
 
-  The SDK now stamps `$mcp_protocol_version` — the MCP spec version negotiated at `initialize` (read off the server's initialize response) — on the `$mcp_initialize` event and on **every** subsequent event for the session (tool calls, listings, and the `$exception` sibling). It's persisted in per-server session info and, on stateless / multi-pod deployments, recovered on other pods from the session token, which now carries the client's requested version in a new `pv` field. Use it to track MCP spec-revision adoption and to break event metrics (error rate, latency) down by spec version.
+  The SDK now stamps `$mcp_protocol_version` — the MCP spec version negotiated at `initialize` (read off the server's initialize response) — on the `$mcp_initialize` event and on **every** subsequent event for the session (tool calls, listings, and the `edp_exception` sibling). It's persisted in per-server session info and, on stateless / multi-pod deployments, recovered on other pods from the session token, which now carries the client's requested version in a new `pv` field. Use it to track MCP spec-revision adoption and to break event metrics (error rate, latency) down by spec version.
 
   `SessionTokenPayload` gains an optional `protocolVersion`, and `PostHogMCP.captureInitialize` accepts an optional `protocolVersion`. (2026-07-21) (2026-07-22)
 
@@ -232,9 +232,9 @@
 
 ### Patch Changes
 
-- [#4144](https://github.com/PostHog/posthog-js/pull/4144) [`3c8e17e`](https://github.com/PostHog/posthog-js/commit/3c8e17e5a8c83083a15e8075f766b7b75cebdcc5) Thanks [@gesh](https://github.com/gesh)! - fix(mcp): publish `$identify` at most once per session instead of before every tool call
+- [#4144](https://github.com/PostHog/posthog-js/pull/4144) [`3c8e17e`](https://github.com/PostHog/posthog-js/commit/3c8e17e5a8c83083a15e8075f766b7b75cebdcc5) Thanks [@gesh](https://github.com/gesh)! - fix(mcp): publish `edp_identify` at most once per session instead of before every tool call
 
-  On stateless / multi-pod deployments the SDK rebuilds its per-server identity cache on every request, so the dedupe check saw an empty cache each time and emitted a standalone `$identify` before every `$mcp_tool_call`. The SDK now publishes `$identify` at most once per session — at `initialize`, when a long-lived server first sees the identity, or when the identity materially changes. Every event still carries `distinct_id`/`$set`, so no person data is lost when a standalone `$identify` is suppressed. (2026-07-15)
+  On stateless / multi-pod deployments the SDK rebuilds its per-server identity cache on every request, so the dedupe check saw an empty cache each time and emitted a standalone `edp_identify` before every `$mcp_tool_call`. The SDK now publishes `edp_identify` at most once per session — at `initialize`, when a long-lived server first sees the identity, or when the identity materially changes. Every event still carries `distinct_id`/`edp_set`, so no person data is lost when a standalone `edp_identify` is suppressed. (2026-07-15)
 
 ## 0.9.0
 
@@ -250,21 +250,21 @@
 
 ### Minor Changes
 
-- [#4032](https://github.com/PostHog/posthog-js/pull/4032) [`93bbc4b`](https://github.com/PostHog/posthog-js/commit/93bbc4b96967db3eb9d1632d2ca273f3a8f1e907) Thanks [@lucasheriques](https://github.com/lucasheriques)! - Stamp `$mcp_error_type` and `$mcp_error_message` on `$mcp_tool_call` (and `$mcp_tools_list`) when a call fails. Previously the only failure signal on the primary event was the `$mcp_is_error` boolean, so breaking failures down by reason meant joining to the `$exception` sibling (which can be disabled, and isn't emitted when no error value is passed). `$mcp_error_type` defaults to the thrown error's type, and `captureToolCall`/`captureToolsList` accept an explicit low-cardinality `errorType` label (e.g. `validation`, `permission`, `timeout`, `rate_limited`) for hosts that classify their own failures.
+- [#4032](https://github.com/PostHog/posthog-js/pull/4032) [`93bbc4b`](https://github.com/PostHog/posthog-js/commit/93bbc4b96967db3eb9d1632d2ca273f3a8f1e907) Thanks [@lucasheriques](https://github.com/lucasheriques)! - Stamp `$mcp_error_type` and `$mcp_error_message` on `$mcp_tool_call` (and `$mcp_tools_list`) when a call fails. Previously the only failure signal on the primary event was the `$mcp_is_error` boolean, so breaking failures down by reason meant joining to the `edp_exception` sibling (which can be disabled, and isn't emitted when no error value is passed). `$mcp_error_type` defaults to the thrown error's type, and `captureToolCall`/`captureToolsList` accept an explicit low-cardinality `errorType` label (e.g. `validation`, `permission`, `timeout`, `rate_limited`) for hosts that classify their own failures.
   (2026-07-03)
 
 ## 0.7.0
 
 ### Minor Changes
 
-- [#4025](https://github.com/PostHog/posthog-js/pull/4025) [`5590094`](https://github.com/PostHog/posthog-js/commit/5590094403a1f9484f3e08a5e21311f6adb0cc60) Thanks [@gesh](https://github.com/gesh)! - Stamp the standard PostHog `$lib` / `$lib_version` (value `posthog-node-mcp`) on every event, so MCP events self-identify the same way every other PostHog SDK does. Both emit paths are covered: `PostHogMCP` overrides its library id, and `instrument()` applies it to the client you pass in. Note that posthog-node sets `$lib` at the client level, so for `instrument()` this relabels every event that client sends as `posthog-node-mcp` — pass a client dedicated to your MCP server's analytics.
+- [#4025](https://github.com/PostHog/posthog-js/pull/4025) [`5590094`](https://github.com/PostHog/posthog-js/commit/5590094403a1f9484f3e08a5e21311f6adb0cc60) Thanks [@gesh](https://github.com/gesh)! - Stamp the standard PostHog `lib` / `lib_version` (value `posthog-node-mcp`) on every event, so MCP events self-identify the same way every other PostHog SDK does. Both emit paths are covered: `PostHogMCP` overrides its library id, and `instrument()` applies it to the client you pass in. Note that posthog-node sets `lib` at the client level, so for `instrument()` this relabels every event that client sends as `posthog-node-mcp` — pass a client dedicated to your MCP server's analytics.
   (2026-06-30)
 
 ## 0.6.0
 
 ### Minor Changes
 
-- [#4022](https://github.com/PostHog/posthog-js/pull/4022) [`d9e19e0`](https://github.com/PostHog/posthog-js/commit/d9e19e020b5e5306887793b80ce861e9ea5097d8) Thanks [@gesh](https://github.com/gesh)! - Emit `$mcp_lib` (`@posthog/mcp`) and `$mcp_lib_version` on every `$mcp_*` event (and the `$exception` sibling) so you can tell which analytics SDK release produced the data. The version was already resolved at runtime but never mapped to a property. Namespaced like `@posthog/ai`'s `$ai_lib` rather than overriding `$lib`, which stays the transport SDK (`posthog-node`).
+- [#4022](https://github.com/PostHog/posthog-js/pull/4022) [`d9e19e0`](https://github.com/PostHog/posthog-js/commit/d9e19e020b5e5306887793b80ce861e9ea5097d8) Thanks [@gesh](https://github.com/gesh)! - Emit `$mcp_lib` (`@posthog/mcp`) and `$mcp_lib_version` on every `$mcp_*` event (and the `edp_exception` sibling) so you can tell which analytics SDK release produced the data. The version was already resolved at runtime but never mapped to a property. Namespaced like `@posthog/ai`'s `$ai_lib` rather than overriding `lib`, which stays the transport SDK (`posthog-node`).
   (2026-06-30)
 
 ## 0.5.1
@@ -285,7 +285,7 @@
 
 ### Patch Changes
 
-- [#3896](https://github.com/PostHog/posthog-js/pull/3896) [`606ef43`](https://github.com/PostHog/posthog-js/commit/606ef43d69fd09a00a67df2a404d8739cc50c654) Thanks [@GauthierPLM](https://github.com/GauthierPLM)! - Forward $groups as a first-class groups field from the MCP analytics sink so the group association is no longer dropped on $mcp\_\* events (fixes #3888).
+- [#3896](https://github.com/PostHog/posthog-js/pull/3896) [`606ef43`](https://github.com/PostHog/posthog-js/commit/606ef43d69fd09a00a67df2a404d8739cc50c654) Thanks [@GauthierPLM](https://github.com/GauthierPLM)! - Forward groups as a first-class groups field from the MCP analytics sink so the group association is no longer dropped on $mcp\_\* events (fixes #3888).
   (2026-06-26)
 - Updated dependencies [[`606ef43`](https://github.com/PostHog/posthog-js/commit/606ef43d69fd09a00a67df2a404d8739cc50c654)]:
   - posthog-node@5.38.6
@@ -358,7 +358,7 @@
 
 ### Minor Changes
 
-- [#3781](https://github.com/PostHog/posthog-js/pull/3781) [`b732ecb`](https://github.com/PostHog/posthog-js/commit/b732ecb0ce83b656782b525eefbdfde42555d9c9) Thanks [@lucasheriques](https://github.com/lucasheriques)! - Add `PostHogMCP`, a `posthog-node` client subclass with first-class MCP analytics for servers that have no `Server`/`McpServer` to wrap (e.g. custom hono/HTTP dispatchers). It extends `PostHog` — so `capture`, `identify`, `flush`, `shutdown`, and feature flags all work unchanged — and adds `captureToolCall` / `captureInitialize`, which build the canonical `$mcp_*` events and run them through the same sanitize → truncate → `$exception` fan-out pipeline as `instrument()` before handing them to the inherited `capture()` (so the client's own `beforeSend` applies). The caller passes `distinctId`/`sessionId`/`groups`/`properties` per call. `$session_id` is now omitted from events when no session is supplied (previously always set), so stateless captures don't bucket into a non-existent Session Replay session.
+- [#3781](https://github.com/PostHog/posthog-js/pull/3781) [`b732ecb`](https://github.com/PostHog/posthog-js/commit/b732ecb0ce83b656782b525eefbdfde42555d9c9) Thanks [@lucasheriques](https://github.com/lucasheriques)! - Add `PostHogMCP`, a `posthog-node` client subclass with first-class MCP analytics for servers that have no `Server`/`McpServer` to wrap (e.g. custom hono/HTTP dispatchers). It extends `PostHog` — so `capture`, `identify`, `flush`, `shutdown`, and feature flags all work unchanged — and adds `captureToolCall` / `captureInitialize`, which build the canonical `$mcp_*` events and run them through the same sanitize → truncate → `edp_exception` fan-out pipeline as `instrument()` before handing them to the inherited `capture()` (so the client's own `beforeSend` applies). The caller passes `distinctId`/`sessionId`/`groups`/`properties` per call. `session_id` is now omitted from events when no session is supplied (previously always set), so stateless captures don't bucket into a non-existent Session Replay session.
   (2026-06-11)
 
 ## 0.1.28
@@ -461,7 +461,7 @@
 
 ### Patch Changes
 
-- [#3772](https://github.com/PostHog/posthog-js/pull/3772) [`e243ea4`](https://github.com/PostHog/posthog-js/commit/e243ea42e93bf3b80236d6a166c05c99fcfda2ff) Thanks [@lucasheriques](https://github.com/lucasheriques)! - First release of `@posthog/mcp` from the posthog-js monorepo. Instrument an MCP server with a single `instrument(server, posthog)` call to auto-capture tool calls, tool listings, initialize, identity, and exceptions to PostHog. BYO `posthog-node` client; `beforeSend` hook; `identify({ distinctId, properties, groups })`; `$mcp_missing_capability`; anonymous sessions sent with `$process_person_profile: false`.
+- [#3772](https://github.com/PostHog/posthog-js/pull/3772) [`e243ea4`](https://github.com/PostHog/posthog-js/commit/e243ea42e93bf3b80236d6a166c05c99fcfda2ff) Thanks [@lucasheriques](https://github.com/lucasheriques)! - First release of `@posthog/mcp` from the posthog-js monorepo. Instrument an MCP server with a single `instrument(server, posthog)` call to auto-capture tool calls, tool listings, initialize, identity, and exceptions to PostHog. BYO `posthog-node` client; `beforeSend` hook; `identify({ distinctId, properties, groups })`; `$mcp_missing_capability`; anonymous sessions sent with `process_person_profile: false`.
   (2026-06-08)
 
 ## 0.1.15

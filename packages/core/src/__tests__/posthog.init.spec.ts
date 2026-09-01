@@ -114,7 +114,7 @@ describe('PostHog Core', () => {
         expectedApiKey: 'TEST_API_KEY',
         expectedHost: 'https://us.i.posthog.com',
       },
-    ])('should $name', ({ apiKey, host, expectedApiKey, expectedHost }) => {
+    ])('should name', ({ apiKey, host, expectedApiKey, expectedHost }) => {
       ;[posthog, mocks] = createTestClient(apiKey, { host })
 
       expect((posthog as any).apiKey).toEqual(expectedApiKey)

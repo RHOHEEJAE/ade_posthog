@@ -37,7 +37,7 @@ export function applyUrlTargetingOverride(instance: UrlTargetingInstance | undef
  * experiment URL conditions.
  *
  * Defaults to `window.location.href`, but honors the `get_current_url` config hook so apps
- * that rewrite their URL (e.g. Electron/desktop builds, or `$current_url` rewrites in
+ * that rewrite their URL (e.g. Electron/desktop builds, or `current_url` rewrites in
  * `before_send`) can make targeting match the logical URL instead of the raw browser URL.
  *
  * Returns `undefined` when there is no URL available (e.g. non-browser environments).

@@ -26,7 +26,7 @@ describe('product-tour-event-receiver', () => {
     const tourEventPayload = (tourId: string, event: string): CaptureResult =>
         ({
             event,
-            properties: { $product_tour_id: tourId },
+            properties: { product_tour_id: tourId },
         }) as unknown as CaptureResult
 
     const setup = (tour: ProductTour) => {

@@ -595,7 +595,7 @@ describe('browser-next session state', () => {
             await posthog.capture('malformed')
             expect(posthog.session).toEqual(first)
         }
-        expect(observed.mock.calls.every(([payload]) => payload.properties.$session_id !== '')).toBe(true)
+        expect(observed.mock.calls.every(([payload]) => payload.properties.session_id !== '')).toBe(true)
     })
 
     it('retries a failed initial state read before exposing or overwriting state', async () => {

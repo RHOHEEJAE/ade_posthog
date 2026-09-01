@@ -40,7 +40,7 @@ describe('HistoryAutocapture', () => {
         })
 
         capture = jest.fn()
-        pageViewManagerDoPageView = jest.fn().mockReturnValue({ $pageview_id: 'test-id' })
+        pageViewManagerDoPageView = jest.fn().mockReturnValue({ pageview_id: 'test-id' })
         scrollManagerResetContext = jest.fn()
 
         posthog = {
@@ -147,7 +147,7 @@ describe('HistoryAutocapture', () => {
             mockLocation.hash = '#section'
             window.dispatchEvent(new Event('hashchange'))
 
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'hashchange' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'hashchange' })
 
             posthog.config.capture_pageview = false
             historyAutocapture.startIfEnabledOrStop()
@@ -168,7 +168,7 @@ describe('HistoryAutocapture', () => {
             window.history.pushState({ page: 1 }, 'Test Page', '/new-path')
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
 
         it('should not capture when only the query string changes with history_change', () => {
@@ -198,7 +198,7 @@ describe('HistoryAutocapture', () => {
             window.history.replaceState({ page: 2 }, 'Test Page 2', '/replaced-path')
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'replaceState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'replaceState' })
         })
 
         it('should not capture when only the hash changes with history_change', () => {
@@ -219,7 +219,7 @@ describe('HistoryAutocapture', () => {
             window.dispatchEvent(new PopStateEvent('popstate', { state: { page: 3 } }))
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'popstate' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'popstate' })
         })
 
         it('should not capture pageview when pathname does not change with popstate', () => {
@@ -238,7 +238,7 @@ describe('HistoryAutocapture', () => {
             mockLocation.pathname = '/new-path'
             window.history.pushState({ page: 1 }, 'Test Page', '/new-path')
 
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
 
         it('should capture query string changes when search is enabled', () => {
@@ -247,7 +247,7 @@ describe('HistoryAutocapture', () => {
             mockLocation.search = '?param=value'
             window.history.pushState({ page: 1 }, 'Test Page', '/initial?param=value')
 
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
 
         it('should capture hash changes through the history API when hash is enabled', () => {
@@ -256,7 +256,7 @@ describe('HistoryAutocapture', () => {
             mockLocation.hash = '#section'
             window.history.replaceState({ page: 1 }, 'Test Page', '/initial#section')
 
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'replaceState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'replaceState' })
         })
 
         it('should capture selected URL changes on popstate', () => {
@@ -265,7 +265,7 @@ describe('HistoryAutocapture', () => {
             mockLocation.search = '?page=2'
             window.dispatchEvent(new PopStateEvent('popstate', { state: { page: 2 } }))
 
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'popstate' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'popstate' })
         })
 
         it('should ignore changes to URL components that are not enabled', () => {
@@ -324,7 +324,7 @@ describe('HistoryAutocapture', () => {
             mockLocation.hash = '#section'
             window.dispatchEvent(new Event('hashchange'))
 
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'hashchange' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'hashchange' })
         })
 
         it('should not capture a false pageview on a no-op history call after a direct hash change', () => {
@@ -349,7 +349,7 @@ describe('HistoryAutocapture', () => {
             window.dispatchEvent(new Event('hashchange'))
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'popstate' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'popstate' })
         })
 
         it('should not capture on hashchange when disable_capture_url_hashes is set', () => {
@@ -372,7 +372,7 @@ describe('HistoryAutocapture', () => {
             window.history.pushState({ page: 1 }, 'Products', '/products?category=electronics')
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
 
         it('should capture pageview when pathname changes even with hash changes', () => {
@@ -383,7 +383,7 @@ describe('HistoryAutocapture', () => {
             window.history.pushState({ page: 1 }, 'About', '/about#team')
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
 
         it('should capture pageview when pathname changes with query and hash changes', () => {
@@ -395,7 +395,7 @@ describe('HistoryAutocapture', () => {
             window.history.pushState({ page: 1 }, 'Blog', '/blog?author=john#comments')
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
 
         it('should not capture with history_change when only query and hash change together', () => {
@@ -421,7 +421,7 @@ describe('HistoryAutocapture', () => {
             window.history.pushState({ page: 1 }, 'Home', '/')
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
 
         it('should capture pageview when changing from root path', () => {
@@ -437,7 +437,7 @@ describe('HistoryAutocapture', () => {
             window.history.pushState({ page: 1 }, 'Dashboard', '/dashboard')
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
 
         it('should capture pageview for trailing slash differences in the same path', () => {
@@ -459,7 +459,7 @@ describe('HistoryAutocapture', () => {
             // Based on current implementation this SHOULD capture a pageview
             // because pathnames are directly compared without normalization
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
         })
     })
 
@@ -468,7 +468,7 @@ describe('HistoryAutocapture', () => {
             // Setup capture to call pageViewManagerDoPageView to simulate
             // what would happen in the actual implementation
             capture.mockImplementation((eventName, properties) => {
-                if (eventName === '$pageview') {
+                if (eventName === 'edp_pageview') {
                     pageViewManagerDoPageView(new Date(), 'test-uuid')
                 }
                 return { event: eventName, properties }
@@ -478,7 +478,7 @@ describe('HistoryAutocapture', () => {
             mockLocation.pathname = '/pageviewmanager-test'
             window.history.pushState({ page: 1 }, 'Test Page', '/pageviewmanager-test')
 
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
             expect(pageViewManagerDoPageView).toHaveBeenCalledTimes(1)
         })
 
@@ -488,16 +488,16 @@ describe('HistoryAutocapture', () => {
 
             // Setup pageview sequence with proper ID tracking
             capture.mockImplementation((eventName, properties) => {
-                if (eventName === '$pageview') {
+                if (eventName === 'edp_pageview') {
                     if (capture.mock.calls.length === 1) {
                         pageViewManagerDoPageView.mockReturnValueOnce({
-                            $pageview_id: firstPageviewId,
+                            pageview_id: firstPageviewId,
                         })
                     } else {
                         pageViewManagerDoPageView.mockReturnValueOnce({
-                            $pageview_id: secondPageviewId,
-                            $prev_pageview_id: firstPageviewId,
-                            $prev_pageview_pathname: '/page-1',
+                            pageview_id: secondPageviewId,
+                            prev_pageview_id: firstPageviewId,
+                            prev_pageview_pathname: '/page-1',
                         })
                     }
 
@@ -518,7 +518,7 @@ describe('HistoryAutocapture', () => {
             window.history.pushState({ page: 2 }, 'Page 2', '/page-2')
 
             expect(capture).toHaveBeenCalledTimes(1)
-            expect(capture).toHaveBeenCalledWith('$pageview', { navigation_type: 'pushState' })
+            expect(capture).toHaveBeenCalledWith('edp_pageview', { navigation_type: 'pushState' })
             expect(pageViewManagerDoPageView).toHaveBeenCalledTimes(1)
         })
     })

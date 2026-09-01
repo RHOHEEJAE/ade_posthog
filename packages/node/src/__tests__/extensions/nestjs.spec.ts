@@ -111,7 +111,7 @@ describe('PostHogInterceptor', () => {
       expect(capturedContext).toBeDefined()
       expect(capturedContext.sessionId).toBe('session-123')
       expect(capturedContext.distinctId).toBe('user-456')
-      expect(capturedContext.properties.$current_url).toBe('/api/test')
+      expect(capturedContext.properties.current_url).toBe('/api/test')
       expect(capturedContext.properties.$request_method).toBe('POST')
       expect(capturedContext.properties.$request_path).toBe('/api/test')
       expect(capturedContext.properties.$user_agent).toBe('TestAgent/1.0')
@@ -131,7 +131,7 @@ describe('PostHogInterceptor', () => {
         expectedCurrentUrl: '/api/test?token=secret',
         expectedRequestPath: '/api/test',
       },
-    ])('should $name', async ({ options, expectedCurrentUrl, expectedRequestPath }) => {
+    ])('should name', async ({ options, expectedCurrentUrl, expectedRequestPath }) => {
       await posthog.shutdown()
       posthog = createPostHog(options)
       const interceptor = new PostHogInterceptor(posthog)
@@ -150,7 +150,7 @@ describe('PostHogInterceptor', () => {
 
       await lastValueFrom(interceptor.intercept(context, handler))
 
-      expect(capturedContext.properties.$current_url).toBe(expectedCurrentUrl)
+      expect(capturedContext.properties.current_url).toBe(expectedCurrentUrl)
       expect(capturedContext.properties.$request_path).toBe(expectedRequestPath)
     })
 
@@ -228,7 +228,7 @@ describe('PostHogInterceptor', () => {
       const event = batchEvents!.find((e: any) => e.event === 'handler_event')
       expect(event).toBeDefined()
       expect(event.distinct_id).toBe('user-xyz')
-      expect(event.properties.$session_id).toBe('session-abc')
+      expect(event.properties.session_id).toBe('session-abc')
     })
 
     it('should isolate request contexts when observables are created before subscription', async () => {
@@ -395,16 +395,16 @@ describe('PostHogInterceptor', () => {
       expect(batchEvents!.length).toBe(1)
 
       const event = batchEvents![0]
-      expect(event.event).toBe('$exception')
+      expect(event.event).toBe('edp_exception')
       expect(event.distinct_id).toBe('user-456')
-      expect(event.properties.$session_id).toBe('session-123')
-      expect(event.properties.$current_url).toBe('/api/test')
+      expect(event.properties.session_id).toBe('session-123')
+      expect(event.properties.current_url).toBe('/api/test')
       expect(event.properties.$request_method).toBe('POST')
       expect(event.properties.$request_path).toBe('/api/test')
       expect(event.properties.$user_agent).toBe('TestAgent/1.0')
       expect(event.properties.$response_status_code).toBe(500)
       expect(event.properties.$ip).toBe('192.168.1.1')
-      expect(event.properties.$exception_list).toBeDefined()
+      expect(event.properties.exception_list).toBeDefined()
     })
 
     it('should skip previously captured errors', async () => {
@@ -438,9 +438,9 @@ describe('PostHogInterceptor', () => {
       expect(batchEvents!.length).toBe(1)
 
       const event = batchEvents![0]
-      expect(event.event).toBe('$exception')
+      expect(event.event).toBe('edp_exception')
       expect(event.distinct_id).toBeDefined()
-      expect(event.properties.$session_id).toBeUndefined()
+      expect(event.properties.session_id).toBeUndefined()
       expect(event.properties.$user_agent).toBeUndefined()
     })
 
@@ -493,7 +493,7 @@ describe('PostHogInterceptor', () => {
 
       const batchEvents = getLastBatchEvents()
       expect(batchEvents).toBeDefined()
-      expect(batchEvents![0].event).toBe('$exception')
+      expect(batchEvents![0].event).toBe('edp_exception')
       expect(batchEvents![0].properties.$response_status_code).toBe(500)
     })
   })
@@ -512,7 +512,7 @@ describe('PostHogInterceptor', () => {
 
       const batchEvents = getLastBatchEvents()
       expect(batchEvents).toBeDefined()
-      expect(batchEvents![0].event).toBe('$exception')
+      expect(batchEvents![0].event).toBe('edp_exception')
     })
   })
 })

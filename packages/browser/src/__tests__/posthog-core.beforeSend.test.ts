@@ -17,8 +17,8 @@ const editingEventFn = (captureResult: CaptureResult): CaptureResult => {
             ...captureResult.properties,
             edited: true,
         },
-        $set: {
-            ...captureResult.$set,
+        edp_set: {
+            ...captureResult.edp_set,
             edited: true,
         },
     }
@@ -73,7 +73,7 @@ describe('posthog core - before send', () => {
         const capturedData = posthog.capture(eventName, {}, {})
 
         expect(capturedData).toHaveProperty(['properties', 'edited'], true)
-        expect(capturedData).toHaveProperty(['$set', 'edited'], true)
+        expect(capturedData).toHaveProperty(['edp_set', 'edited'], true)
         expect(posthog._send_request).toHaveBeenCalledWith({
             batchKey: undefined,
             callback: expect.any(Function),
@@ -180,18 +180,18 @@ describe('posthog core - before send', () => {
         expect(mockLogger.error).toHaveBeenCalledWith(`Error in beforeSend function for event '${eventName}':`, error)
     })
 
-    it('can sanitize $set event', () => {
+    it('can sanitize edp_set event', () => {
         const posthog = posthogWith({
             before_send: (cr) => {
-                cr.$set = { value: 'edited' }
+                cr.edp_set = { value: 'edited' }
                 return cr
             },
         })
         ;(posthog._send_request as jest.Mock).mockClear()
 
-        const capturedData = posthog.capture('$set', {}, { $set: { value: 'provided' } })
+        const capturedData = posthog.capture('edp_set', {}, { edp_set: { value: 'provided' } })
 
-        expect(capturedData).toHaveProperty(['$set', 'value'], 'edited')
+        expect(capturedData).toHaveProperty(['edp_set', 'value'], 'edited')
         expect(posthog._send_request).toHaveBeenCalledWith({
             batchKey: undefined,
             callback: expect.any(Function),

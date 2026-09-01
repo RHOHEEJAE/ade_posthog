@@ -67,7 +67,7 @@ const createSegmentIntegration = (posthog: PostHog): SegmentPlugin => {
         track: (ctx) => enrichEvent(ctx, ctx.event.event),
         page: (ctx) => enrichEvent(ctx, EVENT_PAGEVIEW),
         identify: (ctx) => enrichEvent(ctx, EVENT_IDENTIFY),
-        screen: (ctx) => enrichEvent(ctx, '$screen'),
+        screen: (ctx) => enrichEvent(ctx, 'screen'),
     }
 }
 
@@ -86,7 +86,7 @@ function setupPostHogFromSegment(posthog: PostHog, done: () => void) {
         if (user.id()) {
             posthog.register({
                 distinct_id: user.id(),
-                $device_id: getSegmentAnonymousId(),
+                device_id: getSegmentAnonymousId(),
             })
             posthog.persistence!.set_property(USER_STATE, USER_STATE_IDENTIFIED)
         }

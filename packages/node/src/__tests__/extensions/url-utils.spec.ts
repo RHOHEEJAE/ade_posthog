@@ -27,7 +27,7 @@ describe('url-utils', () => {
         disableCaptureUrlHashes: true,
         expected: undefined,
       },
-    ])('$name', ({ input, disableCaptureUrlHashes, expected }) => {
+    ])('name', ({ input, disableCaptureUrlHashes, expected }) => {
       expect(normalizeRequestCurrentUrl(input, disableCaptureUrlHashes)).toBe(expected)
     })
   })
@@ -70,7 +70,7 @@ describe('url-utils', () => {
         disableCaptureUrlHashes: true,
         expected: undefined,
       },
-    ])('$name', ({ input, disableCaptureUrlHashes, expected }) => {
+    ])('name', ({ input, disableCaptureUrlHashes, expected }) => {
       expect(normalizeRequestPath(input, disableCaptureUrlHashes)).toBe(expected)
     })
   })

@@ -53,7 +53,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
                 },
             })
             await waitForRemoteConfig(page)
-            await page.expectCapturedEventsToBe(['$pageview'])
+            await page.expectCapturedEventsToBe(['edp_pageview'])
             await page.resetCapturedEvents()
         })
 
@@ -71,7 +71,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
             })
 
             const events = await page.capturedEvents()
-            expect(events.some((e) => e.event === '$snapshot')).toBeTruthy()
+            expect(events.some((e) => e.event === 'edp_snapshot')).toBeTruthy()
             expect(events.find((e) => e.event === 'example')).toBeTruthy()
         })
     })
@@ -96,7 +96,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
                 },
             })
             await waitForRemoteConfig(page)
-            await page.expectCapturedEventsToBe(['$pageview'])
+            await page.expectCapturedEventsToBe(['edp_pageview'])
             await page.resetCapturedEvents()
         })
 
@@ -117,7 +117,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
 
             // Note: We can't deterministically test the 30% sampling here,
             // but we can verify that after a delay there was an event but no snapshot
-            const snapshotEvent = events.find((e) => e.event === '$snapshot')
+            const snapshotEvent = events.find((e) => e.event === 'edp_snapshot')
             expect(events.find((e) => e.event === 'example')).toBeTruthy()
             expect(snapshotEvent).toBeFalsy()
 
@@ -131,7 +131,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
             await page.locator('[data-cy-input]').fill('hello posthog!')
 
             // Poll for snapshot event instead of fixed timeout
-            await pollUntilEventCaptured(page, '$snapshot')
+            await pollUntilEventCaptured(page, 'edp_snapshot')
         })
     })
 })
@@ -175,7 +175,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
                 },
             })
             await waitForRemoteConfig(page)
-            await page.expectCapturedEventsToBe(['$pageview'])
+            await page.expectCapturedEventsToBe(['edp_pageview'])
             await page.resetCapturedEvents()
         })
 
@@ -193,7 +193,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
             })
 
             const events = await page.capturedEvents()
-            expect(events.some((e) => e.event === '$snapshot')).toBeTruthy()
+            expect(events.some((e) => e.event === 'edp_snapshot')).toBeTruthy()
             expect(events.find((e) => e.event === 'example')).toBeTruthy()
         })
 
@@ -210,7 +210,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
             })
 
             const events = await page.capturedEvents()
-            expect(events.some((e) => e.event === '$snapshot')).toBeTruthy()
+            expect(events.some((e) => e.event === 'edp_snapshot')).toBeTruthy()
         })
     })
 
@@ -234,7 +234,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
                 },
             })
             await waitForRemoteConfig(page)
-            await page.expectCapturedEventsToBe(['$pageview'])
+            await page.expectCapturedEventsToBe(['edp_pageview'])
             await page.resetCapturedEvents()
         })
 
@@ -254,7 +254,7 @@ test.describe('Session recording - trigger match types 0% sampling + event trigg
 
             // Note: We can't deterministically test the 30% sampling here,
             // but we can verify that after a delay there was an event but no snapshot
-            const snapshotEvent = events.find((e) => e.event === '$snapshot')
+            const snapshotEvent = events.find((e) => e.event === 'edp_snapshot')
             expect(events.find((e) => e.event === 'example')).toBeTruthy()
             expect(snapshotEvent).toBeFalsy()
         })

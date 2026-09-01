@@ -23,30 +23,30 @@ describe('PostHogPageView', () => {
         mockSearchParams = new URLSearchParams()
     })
 
-    it('captures a $pageview event on mount', () => {
+    it('captures a edp_pageview event on mount', () => {
         render(<PostHogPageView />)
-        expect(mockCapture).toHaveBeenCalledWith('$pageview', {
-            $current_url: 'http://localhost/initial',
+        expect(mockCapture).toHaveBeenCalledWith('edp_pageview', {
+            current_url: 'http://localhost/initial',
         })
     })
 
     it('includes search params in the captured URL', () => {
         mockSearchParams = new URLSearchParams('q=hello&page=2')
         render(<PostHogPageView />)
-        expect(mockCapture).toHaveBeenCalledWith('$pageview', {
-            $current_url: 'http://localhost/initial?q=hello&page=2',
+        expect(mockCapture).toHaveBeenCalledWith('edp_pageview', {
+            current_url: 'http://localhost/initial?q=hello&page=2',
         })
     })
 
-    it('captures a new $pageview when pathname changes', () => {
+    it('captures a new edp_pageview when pathname changes', () => {
         const { rerender } = render(<PostHogPageView />)
         expect(mockCapture).toHaveBeenCalledTimes(1)
 
         mockPathname = '/new-page'
         rerender(<PostHogPageView />)
         expect(mockCapture).toHaveBeenCalledTimes(2)
-        expect(mockCapture).toHaveBeenLastCalledWith('$pageview', {
-            $current_url: 'http://localhost/new-page',
+        expect(mockCapture).toHaveBeenLastCalledWith('edp_pageview', {
+            current_url: 'http://localhost/new-page',
         })
     })
 
