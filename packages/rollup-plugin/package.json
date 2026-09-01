@@ -1,0 +1,48 @@
+{
+    "name": "@posthog/rollup-plugin",
+    "version": "1.5.1",
+    "bugs": {
+        "url": "https://github.com/PostHog/posthog-js/issues"
+    },
+    "description": "PostHog Rollup plugin",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/PostHog/posthog-js.git",
+        "directory": "packages/rollup-plugin"
+    },
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "rslib build",
+        "clean": "rimraf dist",
+        "lint": "eslint src 'test/*.mjs'",
+        "lint:fix": "eslint src 'test/*.mjs' --fix",
+        "test:unit": "jest --passWithNoTests",
+        "test:functional": "node --test test/*.test.mjs",
+        "dev": "rslib build --watch",
+        "package": "pnpm pack --out $PACKAGE_DEST/%s.tgz"
+    },
+    "files": [
+        "src",
+        "dist",
+        "!src/**/*.spec.ts"
+    ],
+    "dependencies": {
+        "@posthog/cli": "catalog:",
+        "@posthog/plugin-utils": "workspace:^",
+        "magic-string": "^0.30.17"
+    },
+    "peerDependencies": {
+        "rollup": ">= 4.0.0"
+    },
+    "devDependencies": {
+        "@posthog-tooling/tsconfig-base": "workspace:*",
+        "@rslib/core": "catalog:",
+        "@types/jest": "catalog:",
+        "jest": "catalog:",
+        "rollup": "~4.53.2",
+        "vite": "^8.0.16"
+    }
+}

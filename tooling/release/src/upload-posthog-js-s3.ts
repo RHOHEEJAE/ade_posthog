@@ -1,0 +1,287 @@
+import fs from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import path from 'node:path'
+import { parseSemver } from './release-utils.ts'
+import { putS3ObjectFromFile, s3ObjectExists } from './s3.ts'
+
+const require = createRequire(import.meta.url)
+const mimeTypes = require('mime-types') as {
+    lookup(filePath: string): string | false
+}
+
+const IMMUTABLE_ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable'
+const MUTABLE_ALIAS_CACHE_CONTROL = 'public, max-age=300'
+const COMPATIBILITY_VERSION_NAMESPACE_COLLISION_PATH = /^\d+(?:\.\d+){0,2}(?:-[0-9A-Za-z.]+)?(?:\/|$)/
+const DIST_DIR = path.resolve('packages/browser/dist')
+
+export type ReleaseAsset = {
+    relativeKey: string
+    filePath: string
+    contentType?: string
+}
+
+export type PlannedAssetUpload = {
+    key: string
+    filePath: string
+    contentType?: string
+    cacheControl: string
+}
+
+export function inferContentType(filePath: string): string | undefined {
+    const inferred = mimeTypes.lookup(filePath)
+    return inferred || undefined
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+    try {
+        await fs.access(filePath)
+        return true
+    } catch {
+        return false
+    }
+}
+
+async function listFilesRecursively(root: string): Promise<string[]> {
+    const entries = await fs.readdir(root, { withFileTypes: true })
+    const files = await Promise.all(
+        entries.map(async (entry) => {
+            const fullPath = path.join(root, entry.name)
+            if (entry.isDirectory()) {
+                return await listFilesRecursively(fullPath)
+            }
+            return [fullPath]
+        })
+    )
+
+    return files.flat()
+}
+
+export async function collectReleaseAssets(distDir = DIST_DIR): Promise<ReleaseAsset[]> {
+    const distEntries = (await fs.readdir(distDir)).sort()
+    const assets: ReleaseAsset[] = distEntries
+        .filter((name) => name.endsWith('.js') || name.endsWith('.js.map'))
+        .map((entry) => ({
+            relativeKey: entry,
+            filePath: path.join(distDir, entry),
+            contentType: entry.endsWith('.js.map') ? 'application/json' : 'application/javascript',
+        }))
+
+    const toolbarCssPath = path.join(distDir, 'toolbar.css')
+    if (await fileExists(toolbarCssPath)) {
+        assets.push({
+            relativeKey: 'toolbar.css',
+            filePath: toolbarCssPath,
+            contentType: 'text/css',
+        })
+    }
+
+    const assetsDir = path.join(distDir, 'assets')
+    if (await fileExists(assetsDir)) {
+        const files = await listFilesRecursively(assetsDir)
+        assets.push(
+            ...files.map((filePath) => ({
+                relativeKey: `assets/${path.relative(assetsDir, filePath).replaceAll(path.sep, '/')}`,
+                filePath,
+                contentType: inferContentType(filePath),
+            }))
+        )
+    }
+
+    // The toolbar is moving from a single-file IIFE to a code-split ESM
+    // bundle: `toolbar.js` becomes a small loader that dynamic-import()s
+    // content-hashed chunks from a sibling `toolbar/` directory, resolved
+    // relative to the loader's own URL. Publish that directory whenever the
+    // build emits it — a loader without its chunks is a broken toolbar for
+    // strict_script_versioning users. No-op while posthog/posthog still
+    // produces the single-file build.
+    const toolbarDir = path.join(distDir, 'toolbar')
+    if (await fileExists(toolbarDir)) {
+        const files = (await listFilesRecursively(toolbarDir)).sort()
+        assets.push(
+            ...files.map((filePath) => ({
+                relativeKey: `toolbar/${path.relative(toolbarDir, filePath).replaceAll(path.sep, '/')}`,
+                filePath,
+                contentType: filePath.endsWith('.js.map')
+                    ? 'application/json'
+                    : filePath.endsWith('.js')
+                      ? 'application/javascript'
+                      : inferContentType(filePath),
+            }))
+        )
+    }
+
+    return assets
+}
+
+function getAssetKey(prefix: string, asset: ReleaseAsset): string {
+    return `${prefix}${asset.relativeKey}`
+}
+
+export function assertNoCompatibilityVersionNamespaceCollisions(assets: ReleaseAsset[]): void {
+    for (const asset of assets) {
+        if (COMPATIBILITY_VERSION_NAMESPACE_COLLISION_PATH.test(asset.relativeKey)) {
+            throw new Error(
+                `Compatibility asset path '${asset.relativeKey}' would collide with a reserved version namespace under /static/`
+            )
+        }
+    }
+}
+
+export function buildAssetUploadPlans(
+    version: string,
+    assets: ReleaseAsset[],
+    publishMutableAliases = true
+): {
+    immutable: PlannedAssetUpload[]
+    majorAlias: PlannedAssetUpload[]
+    compatibility: PlannedAssetUpload[]
+} {
+    const parsedVersion = parseSemver(version)
+    if (!parsedVersion) {
+        throw new Error(`Invalid version format: '${version}'`)
+    }
+
+    const versionPrefix = `static/${version}/`
+    const majorPrefix = `static/${parsedVersion.major}/`
+    const compatibilityPrefix = 'static/'
+    const shouldPublishMutableAliases = publishMutableAliases && !parsedVersion.prerelease
+
+    assertNoCompatibilityVersionNamespaceCollisions(assets)
+
+    return {
+        immutable: assets.map((asset) => ({
+            key: getAssetKey(versionPrefix, asset),
+            filePath: asset.filePath,
+            contentType: asset.contentType,
+            cacheControl: IMMUTABLE_ASSET_CACHE_CONTROL,
+        })),
+        majorAlias: shouldPublishMutableAliases
+            ? assets.map((asset) => ({
+                  key: getAssetKey(majorPrefix, asset),
+                  filePath: asset.filePath,
+                  contentType: asset.contentType,
+                  cacheControl: MUTABLE_ALIAS_CACHE_CONTROL,
+              }))
+            : [],
+        compatibility: shouldPublishMutableAliases
+            ? assets.map((asset) => ({
+                  key: getAssetKey(compatibilityPrefix, asset),
+                  filePath: asset.filePath,
+                  contentType: asset.contentType,
+                  cacheControl: MUTABLE_ALIAS_CACHE_CONTROL,
+              }))
+            : [],
+    }
+}
+
+async function uploadReleaseAssets(
+    bucket: string,
+    uploads: PlannedAssetUpload[],
+    label: string,
+    options: { ifNoneMatch?: string } = {}
+): Promise<string[]> {
+    if (uploads.length === 0) {
+        return []
+    }
+
+    console.log(`==> Uploading ${label} to s3://${bucket}`)
+
+    await Promise.all(
+        uploads.map((upload) =>
+            putS3ObjectFromFile(bucket, upload.key, upload.filePath, {
+                cacheControl: upload.cacheControl,
+                contentType: upload.contentType,
+                ifNoneMatch: options.ifNoneMatch,
+            })
+        )
+    )
+
+    return uploads.map((upload) => upload.key)
+}
+
+async function verifyUploadedObject(bucket: string, key: string): Promise<void> {
+    if (!(await s3ObjectExists(bucket, key))) {
+        throw new Error(`Expected uploaded object s3://${bucket}/${key} to exist`)
+    }
+}
+
+async function verifyUploadedAssets(bucket: string, keys: string[], label: string): Promise<void> {
+    console.log(`==> Verifying ${label} exist in s3://${bucket}`)
+    await Promise.all(keys.map((key) => verifyUploadedObject(bucket, key)))
+}
+
+export async function assertCanUploadImmutableAssets(
+    bucket: string,
+    uploads: PlannedAssetUpload[],
+    forceOverwrite: boolean,
+    objectExists: (bucket: string, key: string) => Promise<boolean> = s3ObjectExists
+): Promise<void> {
+    if (forceOverwrite) {
+        return
+    }
+
+    const existingKeys = (
+        await Promise.all(uploads.map(async ({ key }) => ((await objectExists(bucket, key)) ? key : undefined)))
+    ).filter((key): key is string => key !== undefined)
+
+    if (existingKeys.length > 0) {
+        const examples = existingKeys.slice(0, 3).map((key) => `s3://${bucket}/${key}`)
+        const remaining = existingKeys.length - examples.length
+        const suffix = remaining > 0 ? ` (and ${remaining} more)` : ''
+        throw new Error(
+            `Refusing to overwrite existing immutable release assets: ${examples.join(', ')}${suffix}. Retry with force overwrite enabled (CLI: --force-overwrite) to replace this S3 release.`
+        )
+    }
+}
+
+export async function uploadPostHogJsS3(
+    bucket: string,
+    version: string,
+    options: { publishMutableAliases?: boolean; forceOverwrite?: boolean } = {}
+): Promise<void> {
+    const parsedVersion = parseSemver(version)
+    if (!parsedVersion) {
+        throw new Error(`Invalid version format: '${version}'`)
+    }
+
+    const assets = await collectReleaseAssets()
+    const publishMutableAliases = options.publishMutableAliases ?? true
+    const forceOverwrite = options.forceOverwrite ?? false
+    const uploadPlans = buildAssetUploadPlans(version, assets, publishMutableAliases)
+
+    await assertCanUploadImmutableAssets(bucket, uploadPlans.immutable, forceOverwrite)
+
+    console.log(`==> Uploading posthog-js v${version}`)
+    console.log(`    immutable prefix: s3://${bucket}/static/${version}/`)
+    if (!publishMutableAliases) {
+        console.log('    mutable aliases: skipped by request')
+    } else if (parsedVersion.prerelease) {
+        console.log('    mutable aliases: skipped for prerelease publish')
+    } else {
+        console.log(`    major alias prefix: s3://${bucket}/static/${parsedVersion.major}/`)
+        console.log(`    compatibility prefix: s3://${bucket}/static/`)
+    }
+
+    const immutableKeys = await uploadReleaseAssets(bucket, uploadPlans.immutable, 'immutable release assets', {
+        ifNoneMatch: forceOverwrite ? undefined : '*',
+    })
+    await verifyUploadedAssets(bucket, immutableKeys, 'immutable assets')
+
+    const majorAliasKeys = await uploadReleaseAssets(bucket, uploadPlans.majorAlias, 'major-version alias assets')
+    await verifyUploadedAssets(bucket, majorAliasKeys, 'major-version alias assets')
+
+    const compatibilityKeys = await uploadReleaseAssets(
+        bucket,
+        uploadPlans.compatibility,
+        'top-level compatibility assets'
+    )
+    await verifyUploadedAssets(bucket, compatibilityKeys, 'top-level compatibility assets')
+
+    if (uploadPlans.majorAlias.length > 0 || uploadPlans.compatibility.length > 0) {
+        console.log(
+            `==> Finished publishing immutable, major-version alias, and top-level compatibility assets for v${version}`
+        )
+    } else {
+        console.log(`==> Finished publishing immutable assets for v${version}`)
+    }
+}

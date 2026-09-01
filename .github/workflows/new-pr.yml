@@ -1,0 +1,46 @@
+name: New PR
+
+on:
+    pull_request:
+        types: [opened, edited, reopened]
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check-description:
+        name: Check that PR has description
+        runs-on: ubuntu-22.04
+        permissions:
+            contents: read
+            pull-requests: write
+        steps:
+            - name: Check if PR is shame-worthy
+              id: is-shame-worthy
+              run: |
+                  FILTERED_BODY=$( \
+                      sed -r -e \
+                      '/^[[:space:]]*(\.\.\.|##?[[:space:]]|-[[:space:]]*\[)/d' \
+                      <<< "$RAW_BODY" \
+                  )
+                  echo "::debug::Filtered PR body to $FILTERED_BODY"
+                  if [[ -z "${FILTERED_BODY//[[:space:]]/}" ]]; then
+                      echo "is-shame-worthy=true" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "is-shame-worthy=false" >> "$GITHUB_OUTPUT"
+                  fi
+              env:
+                  RAW_BODY: ${{ github.event.pull_request.body || '' }}
+
+            - name: Skip shame comment for fork PR
+              if: ${{ steps.is-shame-worthy.outputs.is-shame-worthy == 'true' && github.event.pull_request.head.repo.full_name != github.repository }}
+              run: echo "Skipping no-description PR comment for fork PR because GitHub tokens are read-only."
+
+            - name: Shame if PR has no description
+              if: ${{ steps.is-shame-worthy.outputs.is-shame-worthy == 'true' && github.event.pull_request.head.repo.full_name == github.repository }}
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  SHAME_BODY="Hey @${{ github.actor }}! 👋\nThis pull request seems to contain no description. Please add useful context, rationale, and/or any other information that will help make sense of this change now and in the distant Mars-based future."
+                  gh pr comment ${{ github.event.pull_request.number }} --body "$SHAME_BODY"

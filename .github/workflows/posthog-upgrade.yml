@@ -1,0 +1,261 @@
+name: 'PostHog Upgrade'
+
+on:
+    workflow_dispatch:
+        inputs:
+            package_name:
+                type: choice
+                description: 'Package name to upgrade'
+                required: true
+                options:
+                    - posthog-js
+                    - '@posthog/react'
+                    - posthog-node
+                    - posthog-js-lite
+                    - posthog-react-native
+                    - '@posthog/react-native-plugin'
+                    - '@posthog/mcp'
+                    - '@posthog/rollup-plugin'
+            package_version:
+                description: 'Package version to upgrade to'
+                required: true
+                type: string
+
+permissions:
+    contents: read
+
+jobs:
+    posthog-upgrade:
+        name: Upgrade PostHog Package
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Get upgrader token
+              id: upgrader
+              uses: getsentry/action-github-app-token@5c1e90706fe007857338ac1bfbd7a4177db2f789 # v4.0.0
+              with:
+                  app_id: ${{ secrets.GH_APP_POSTHOG_JS_UPGRADER_APP_ID }}
+                  private_key: ${{ secrets.GH_APP_POSTHOG_JS_UPGRADER_PRIVATE_KEY }}
+
+            - name: Check out main repo
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  repository: 'PostHog/posthog'
+                  token: ${{ steps.upgrader.outputs.token }}
+
+            - name: Setup Node.js
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: 24
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+              with:
+                  cache: false
+                  run_install: false
+
+            - name: Wait for package to become available on npm
+              shell: bash
+              timeout-minutes: 16
+              env:
+                  PACKAGE_NAME: ${{ github.event.inputs.package_name }}
+                  PACKAGE_VERSION: ${{ github.event.inputs.package_version }}
+              run: |
+                  for attempt in $(seq 1 30); do
+                      published_version=$(pnpm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null || true)
+                      if [ "$published_version" = "$PACKAGE_VERSION" ]; then
+                          echo "$PACKAGE_NAME@$PACKAGE_VERSION is available on npm."
+                          exit 0
+                      fi
+
+                      if [ "$attempt" -eq 30 ]; then
+                          echo "::error::$PACKAGE_NAME@$PACKAGE_VERSION did not become available on npm within 15 minutes."
+                          exit 1
+                      fi
+
+                      echo "$PACKAGE_NAME@$PACKAGE_VERSION is not available on npm yet (attempt $attempt/30). Retrying in 30 seconds..."
+                      sleep 30
+                  done
+
+            - name: Install new package version in main repo
+              id: pnpm-upgrade
+              shell: bash
+              env:
+                  PACKAGE_NAME: ${{ github.event.inputs.package_name }}
+                  PACKAGE_VERSION: ${{ github.event.inputs.package_version }}
+              run: |
+                  set -euo pipefail
+
+                  package_spec="${PACKAGE_NAME}@${PACKAGE_VERSION}"
+                  root_package_spec="$package_spec"
+
+                  case "$PACKAGE_NAME" in
+                      posthog-js)
+                          sed -i "s|    posthog-js:.*|    posthog-js: ^${PACKAGE_VERSION}|" pnpm-workspace.yaml
+                          pnpm install --no-frozen-lockfile
+                          ;;
+                      @posthog/react)
+                          sed -i "s|    '@posthog/react':.*|    '@posthog/react': ^${PACKAGE_VERSION}|" pnpm-workspace.yaml
+                          pnpm install --no-frozen-lockfile
+                          ;;
+                      @posthog/mcp)
+                          root_package_spec="@posthog/mcp-analytics@npm:@posthog/mcp@${PACKAGE_VERSION}"
+                          pnpm update --recursive "$root_package_spec"
+                          ;;
+                      posthog-react-native|@posthog/react-native-plugin|@posthog/rollup-plugin)
+                          # These packages are used only by the standalone Desktop workspace.
+                          ;;
+                      *)
+                          pnpm update --recursive "$root_package_spec"
+                          ;;
+                  esac
+
+                  desktop_manifests_updated=$(node <<'NODE'
+                  const { globSync, readFileSync, writeFileSync } = require('node:fs')
+
+                  const packageName = process.env.PACKAGE_NAME
+                  const packageVersion = process.env.PACKAGE_VERSION
+                  let updated = 0
+
+                  for (const manifestPath of globSync('products/desktop/{apps,packages,tooling,tools}/*/package.json')) {
+                      const manifestText = readFileSync(manifestPath, 'utf8')
+                      const manifest = JSON.parse(manifestText)
+                      let updatedText = manifestText
+
+                      for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+                          const currentVersion = manifest[section]?.[packageName]
+                          if (!currentVersion) {
+                              continue
+                          }
+
+                          const prefix = currentVersion.startsWith('^') ? '^' : currentVersion.startsWith('~') ? '~' : ''
+                          const nextVersion = `${prefix}${packageVersion}`
+                          updatedText = updatedText.replace(
+                              `${JSON.stringify(packageName)}: ${JSON.stringify(currentVersion)}`,
+                              `${JSON.stringify(packageName)}: ${JSON.stringify(nextVersion)}`
+                          )
+                      }
+
+                      if (updatedText !== manifestText) {
+                          writeFileSync(manifestPath, updatedText)
+                          updated++
+                      }
+                  }
+
+                  process.stdout.write(String(updated))
+                  NODE
+                  )
+
+                  if [ "$desktop_manifests_updated" -gt 0 ]; then
+                      # Desktop is a standalone workspace with its own lockfile. semver@6.3.1 is
+                      # already locked there, but its npm metadata triggers pnpm's trust downgrade
+                      # check whenever the lockfile is regenerated. Keep the check for every other
+                      # dependency while allowing this existing version.
+                      pnpm --dir products/desktop install --no-frozen-lockfile \
+                          --trust-policy-exclude='semver@6.3.1' \
+                          --config.minimum-release-age-exclude="$PACKAGE_NAME posthog-js posthog-js-lite posthog-node @posthog/*"
+                  fi
+
+            - name: Generate pull request details
+              id: generate-pr-details
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ steps.upgrader.outputs.token }}
+                  PACKAGE_NAME: ${{ github.event.inputs.package_name }}
+                  PACKAGE_VERSION: ${{ github.event.inputs.package_version }}
+              run: |
+                  PACKAGE_NAME_SANITIZED=$(echo "$PACKAGE_NAME" | sed 's/@//g' | sed 's/\//-/g')
+                  TITLE_PREFIX="chore(deps): Update ${PACKAGE_NAME} to "
+                  PR_TITLE="${TITLE_PREFIX}${PACKAGE_VERSION}"
+                  EXISTING_BRANCH=$(gh pr list \
+                      --repo PostHog/posthog \
+                      --state open \
+                      --limit 100 \
+                      --json title,headRefName,headRepositoryOwner \
+                      --jq ".[] | select(.title | startswith(\"${TITLE_PREFIX}\")) | select(.headRepositoryOwner.login == \"PostHog\") | .headRefName" | head -n 1)
+
+                  if [ -n "$EXISTING_BRANCH" ]; then
+                      BRANCH_NAME="$EXISTING_BRANCH"
+                  else
+                      BRANCH_NAME="${PACKAGE_NAME_SANITIZED}-upgrade"
+                  fi
+
+                  echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+                  echo "title=$PR_TITLE" >> "$GITHUB_OUTPUT"
+                  {
+                      echo 'body<<EOF'
+                      echo '## Changes'
+                      echo
+                      echo "$PACKAGE_NAME version $PACKAGE_VERSION has been released. This updates PostHog to use it."
+                      echo
+                      echo "[GitHub releases](https://github.com/PostHog/posthog-js/releases) • [npm releases](https://www.npmjs.com/package/${PACKAGE_NAME}?activeTab=version)"
+                      echo 'EOF'
+                  } >> "$GITHUB_OUTPUT"
+
+            - name: Create main repo pull request
+              id: main-repo-pr
+              uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+              env:
+                  HUSKY: '0'
+              with:
+                  token: ${{ steps.upgrader.outputs.token }}
+                  # Commit through the GitHub API so the bump is GPG-verified by GitHub and
+                  # attributed to the upgrader app, instead of an unsigned github-actions[bot] commit.
+                  sign-commits: true
+                  commit-message: ${{ steps.generate-pr-details.outputs.title }}
+                  branch: ${{ steps.generate-pr-details.outputs.branch_name }}
+                  delete-branch: true
+                  title: ${{ steps.generate-pr-details.outputs.title }}
+                  body: ${{ steps.generate-pr-details.outputs.body }}
+
+            - name: Output pull request result
+              shell: bash
+              env:
+                  PACKAGE_NAME: ${{ github.event.inputs.package_name }}
+                  PACKAGE_VERSION: ${{ github.event.inputs.package_version }}
+                  PR_URL: ${{ steps.main-repo-pr.outputs.pull-request-url }}
+              run: |
+                  echo "PostHog pull request for $PACKAGE_NAME version $PACKAGE_VERSION ready: $PR_URL"
+
+            - name: Update pull request metadata
+              env:
+                  GH_TOKEN: ${{ steps.upgrader.outputs.token }}
+                  PR_BODY: ${{ steps.generate-pr-details.outputs.body }}
+                  PR_NUMBER: ${{ steps.main-repo-pr.outputs.pull-request-number }}
+                  PR_TITLE: ${{ steps.generate-pr-details.outputs.title }}
+              run: |
+                  gh pr edit "$PR_NUMBER" \
+                      --repo PostHog/posthog \
+                      --title "$PR_TITLE" \
+                      --body "$PR_BODY"
+
+            - name: Assign reviewers
+              env:
+                  GH_TOKEN: ${{ steps.upgrader.outputs.token }}
+                  PR_NUMBER: ${{ steps.main-repo-pr.outputs.pull-request-number }}
+              run: |
+                  gh pr edit "$PR_NUMBER" --repo PostHog/posthog --add-reviewer PostHog/client-libraries-approvers --add-reviewer PostHog/team-client-libraries
+
+            # https://us.posthog.com/project/11213/functions/019ae9c0-03ee-0000-2f32-971f64be8ffe
+            - name: Send failure event to PostHog
+              if: ${{ failure() }}
+              continue-on-error: true
+              uses: PostHog/posthog-github-action@9a6a19d360820ab4d95ecc4a5a7564062c895f84 # v1.3.0
+              with:
+                  posthog-token: '${{ secrets.POSTHOG_PROJECT_API_KEY }}'
+                  event: 'posthog-sdk-github-release-workflow-failure'
+                  properties: >-
+                      {
+                        "commitSha": "${{ github.sha }}",
+                        "jobStatus": "${{ job.status }}",
+                        "ref": "${{ github.ref }}",
+                        "repository": "${{ github.repository }}",
+                        "sdk": "posthog-js",
+                        "targetRepository": "PostHog/posthog",
+                        "jobName": "posthog-upgrade",
+                        "packageName": "${{ github.event.inputs.package_name }}",
+                        "packageVersion": "${{ github.event.inputs.package_version || 'unknown' }}",
+                        "actionUrl": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                        "alertText": ":warning: Downstream PostHog/posthog dependency bump failed for ${{ github.event.inputs.package_name }}@${{ github.event.inputs.package_version }}",
+                        "alertContext": "This is the monorepo upgrade workflow, not a posthog-js release failure."
+                      }

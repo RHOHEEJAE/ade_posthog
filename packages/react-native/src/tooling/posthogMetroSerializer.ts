@@ -1,0 +1,172 @@
+// Portions of this file are derived from getsentry/sentry-react-native
+// Copyright (c) 2017 Sentry
+// Licensed under the MIT License: https://github.com/getsentry/sentry-react-native/blob/main/LICENSE.md
+
+import * as crypto from 'crypto'
+// eslint-disable-next-line import/no-extraneous-dependencies
+import type { MixedOutput, Module, ReadOnlyGraph } from 'metro'
+import type { Bundle, MetroSerializer, MetroSerializerOutput, SerializedBundle, VirtualJSOutput } from './utils'
+import {
+  createDebugIdSnippet,
+  createVirtualJSModule,
+  determineDebugIdFromBundleSource,
+  prependModule,
+  stringToUUID,
+} from './utils'
+import { createDefaultMetroSerializer } from './vendor/metro/utils'
+
+type SourceMap = Record<string, unknown>
+type PostHogSerializerOptions = Parameters<MetroSerializer>[3] & {
+  posthogBundleCallback?: (bundle: Bundle) => Bundle
+}
+
+const DEBUG_ID_PLACE_HOLDER = '__POSTHOG_CHUNK_ID__'
+const DEBUG_ID_MODULE_PATH = '__chunkid__'
+
+const SOURCE_MAP_COMMENT = '//# sourceMappingURL='
+const DEBUG_ID_COMMENT = '//# chunkId='
+
+/**
+ * Adds PostHog Chunk ID polyfill module to the bundle.
+ */
+export function unstableBeforeAssetSerializationDebugIdPlugin({
+  graph,
+  premodules,
+  debugId,
+}: {
+  graph: ReadOnlyGraph<MixedOutput>
+  premodules: Module[]
+  debugId?: string
+}): Module[] {
+  // Skip for web platform - sourcemaps are handled differently for web builds
+  if (graph.transformOptions.platform === 'web') {
+    return premodules
+  }
+
+  if (!debugId) {
+    return premodules
+  }
+
+  const debugIdModuleExists = premodules.some((module) => module.path === DEBUG_ID_MODULE_PATH)
+  if (debugIdModuleExists) {
+    // eslint-disable-next-line no-console
+    console.warn('\n\nChunk ID module found. Skipping PostHog Chunk ID module...\n\n')
+    return premodules
+  }
+
+  const debugIdModule = createDebugIdModule(debugId)
+  return prependModule(premodules, debugIdModule)
+}
+
+/**
+ * Creates a Metro serializer that adds Chunk ID module to the plain bundle.
+ * The Chunk ID module is a virtual module that provides a Chunk ID in runtime.
+ *
+ * RAM Bundles do not support custom serializers.
+ */
+export const createPostHogMetroSerializer = (customSerializer?: MetroSerializer): MetroSerializer => {
+  const serializer = customSerializer || createDefaultMetroSerializer()
+  return async function (entryPoint, premodules, graph, options) {
+    if (graph.transformOptions.hot) {
+      return serializer(entryPoint, premodules, graph, options)
+    }
+
+    const debugIdModuleExists = premodules.some((module) => module.path === DEBUG_ID_MODULE_PATH)
+    if (debugIdModuleExists) {
+      // eslint-disable-next-line no-console
+      console.warn('Chunk ID module found. Skipping PostHog Chunk ID module...')
+      return serializer(entryPoint, premodules, graph, options)
+    }
+
+    const debugIdModule = createDebugIdModule(DEBUG_ID_PLACE_HOLDER)
+    const serializerOptions = options as PostHogSerializerOptions
+    serializerOptions.posthogBundleCallback = createPostHogBundleCallback(debugIdModule)
+    const modifiedPremodules = prependModule(premodules, debugIdModule)
+
+    // The default serializer invokes posthogBundleCallback after Metro assembles
+    // the bundle and before it renders code/source maps, so both outputs contain
+    // the same real Chunk ID.
+    const serializerResult = serializer(entryPoint, modifiedPremodules, graph, serializerOptions)
+    const { code: bundleCode, map: bundleMapString } = await extractSerializerResult(serializerResult)
+
+    const debugId = determineDebugIdFromBundleSource(bundleCode)
+    if (!debugId) {
+      throw new Error('Chunk ID was not found in the bundle.')
+    }
+
+    // Only print Chunk ID for command line builds => not hot reload from dev server
+    // eslint-disable-next-line no-console
+    console.log('info ' + `Bundle Chunk ID: ${debugId}`)
+
+    const debugIdComment = `${DEBUG_ID_COMMENT}${debugId}`
+    const indexOfSourceMapComment = bundleCode.lastIndexOf(SOURCE_MAP_COMMENT)
+    const bundleCodeWithDebugId =
+      indexOfSourceMapComment === -1
+        ? // If source map comment is missing lets just add the Chunk ID comment
+          `${bundleCode}\n${debugIdComment}`
+        : // If source map comment is present lets add the Chunk ID comment before it
+          `${bundleCode.substring(0, indexOfSourceMapComment) + debugIdComment}\n${bundleCode.substring(
+            indexOfSourceMapComment
+          )}`
+
+    const bundleMap: SourceMap = JSON.parse(bundleMapString)
+    bundleMap['chunkId'] = debugId
+
+    return {
+      code: bundleCodeWithDebugId,
+      map: JSON.stringify(bundleMap),
+    }
+  }
+}
+
+/**
+ * Called by the default Metro serializer after baseJSBundle has produced the
+ * final bundle but before source-map generation. That ordering is important:
+ * both generated code and sourcesContent must contain the same real Chunk ID.
+ */
+function createPostHogBundleCallback(
+  debugIdModule: Module<VirtualJSOutput> & { setSource: (code: string) => void }
+): (bundle: Bundle) => Bundle {
+  return (bundle) => {
+    const debugId = calculateDebugId(bundle.pre, bundle.modules)
+    debugIdModule.setSource(injectDebugId(debugIdModule.getSource().toString(), debugId))
+    bundle.pre = injectDebugId(bundle.pre, debugId)
+    return bundle
+  }
+}
+
+async function extractSerializerResult(serializerResult: MetroSerializerOutput): Promise<SerializedBundle> {
+  if (typeof serializerResult === 'string') {
+    return { code: serializerResult, map: '{}' }
+  }
+
+  if ('map' in serializerResult) {
+    return { code: serializerResult.code, map: serializerResult.map }
+  }
+
+  const awaitedResult = await serializerResult
+  if (typeof awaitedResult === 'string') {
+    return { code: awaitedResult, map: '{}' }
+  }
+
+  return { code: awaitedResult.code, map: awaitedResult.map }
+}
+
+function createDebugIdModule(debugId: string): Module<VirtualJSOutput> & { setSource: (code: string) => void } {
+  return createVirtualJSModule(DEBUG_ID_MODULE_PATH, createDebugIdSnippet(debugId))
+}
+
+function calculateDebugId(bundleCode: string, modules?: Array<[id: number, code: string]>): string {
+  const hash = crypto.createHash('md5')
+  hash.update(bundleCode)
+  if (modules) {
+    for (const [, code] of modules) {
+      hash.update(code)
+    }
+  }
+  return stringToUUID(hash.digest('hex'))
+}
+
+function injectDebugId(code: string, debugId: string): string {
+  return code.replace(new RegExp(DEBUG_ID_PLACE_HOLDER, 'g'), debugId)
+}

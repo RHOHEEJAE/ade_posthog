@@ -1,0 +1,224 @@
+// Regression test for PostHog/posthog-js#3005 — Nuxt module used to fail
+// sourcemap upload when `ssr: false` because the `close` hook injected against
+// nitro's reported `serverDir` even when no server bundle was produced
+// (e.g. `nuxt generate`), causing the CLI to exit 1.
+// Covers both branches: ssr:false must skip the server inject (but still
+// upload outputDir) and ssr:true must still inject the server bundle.
+// Also covers PostHog/posthog-js#4275: public sourcemaps must be uploaded and
+// deleted before Nitro generates its public-asset manifest.
+//
+// Portability: avoids `import('../src/module.ts')` because Node 20 (declared
+// in package.json `engines`) cannot strip TS types. Instead reads module.ts
+// as text and rewrites the TS-specific bits into a runnable function, the
+// same approach used by vue-plugin.test.mjs.
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+
+// Normalize CRLF → LF so the single-line and end-of-line regexes below work
+// identically on Windows and POSIX checkouts.
+const source = readFileSync(new URL('../src/module.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+
+const executableSource = source
+  // Strip every static import — all type-only or replaced by injected stubs below.
+  .replace(/^import .*$/gm, '')
+  // Strip `declare module '...' { ... }` augmentation blocks (type-only).
+  .replace(/^declare module [^{]*\{[\s\S]+?^\}\n/gm, '')
+  // Strip `interface Foo { ... }` and `export interface Foo { ... }` blocks.
+  .replace(/^(?:export )?interface \w+ \{[\s\S]+?^\}\n/gm, '')
+  // Strip `type X = ...` and `export type X = ...` single-line aliases.
+  .replace(/^(?:export )?type \w+ = .*\n/gm, '')
+  // Strip the generic on defineNuxtModule.
+  .replace('defineNuxtModule<ModuleOptions>', 'defineNuxtModule')
+  // Strip the specific TS annotations actually used in module.ts.
+  .replace(/value\?: unknown/g, 'value')
+  .replace(/\(directory: string, sourcemapsConfig: SourcemapsConfig\)/g, '(directory, sourcemapsConfig)')
+  .replace(/\(args: string\[\]\)/g, '(args)')
+  .replace(/\): string \{/g, ') {')
+  .replace(/\): boolean \{/g, ') {')
+  .replace(/let (outputDir|publicDir|serverDir): string \| undefined/g, 'let $1')
+  .replace(/const processOptions: string\[\] = /g, 'const processOptions = ')
+  // `import.meta.url` is not available inside `new Function`; the value is
+  // only fed to stubbed createResolver/fileURLToPath which ignore it.
+  .replace(/import\.meta\.url/g, '\'file:///fake/module.ts\'')
+  // Turn the module's `export default` into a value the wrapper returns.
+  .replace('export default defineNuxtModule(', 'return defineNuxtModule(')
+
+function loadModule({ failPublicUpload = false, nuxtVersion = '4.1.2' } = {}) {
+  const spawnCalls = []
+  const pluginCalls = []
+  const serverPluginCalls = []
+  const stubs = {
+    defineNuxtModule: config => config,
+    addPlugin: plugin => pluginCalls.push(plugin),
+    addServerPlugin: plugin => serverPluginCalls.push(plugin),
+    addImportsDir: () => {},
+    createResolver: () => ({ resolve: p => p }),
+    getNuxtVersion: () => nuxtVersion,
+    resolveBinaryPath: () => '/fake/posthog-cli',
+    spawnLocal: async (bin, args) => {
+      spawnCalls.push({ bin, args: [...args] })
+      if (failPublicUpload && args.includes('upload') && args.includes('/build/.output/public')) {
+        throw new Error('public upload failed')
+      }
+      return { code: 0 }
+    },
+    fileURLToPath: u => u,
+    dirname: p => p,
+    console: { error: () => {} },
+  }
+  const factory = new Function(...Object.keys(stubs), executableSource)
+  const mod = factory(...Object.values(stubs))
+  return { mod, spawnCalls, pluginCalls, serverPluginCalls }
+}
+
+async function runRegistration({ nuxtVersion, compatibilityVersion }) {
+  const { mod, pluginCalls, serverPluginCalls } = loadModule({ nuxtVersion })
+  const nuxt = {
+    options: {
+      dev: true,
+      future: { compatibilityVersion },
+      runtimeConfig: { public: {} },
+    },
+    hook() {},
+  }
+
+  await mod.setup(
+    {
+      host: 'https://us.i.posthog.com',
+      publicKey: 'phc_test',
+      clientConfig: {},
+      serverConfig: {},
+    },
+    nuxt,
+  )
+
+  return { pluginCalls, serverPluginCalls }
+}
+
+for (const { nuxtVersion, compatibilityVersion, expectedServerPlugin } of [
+  { nuxtVersion: '3.7.0', expectedServerPlugin: './runtime/nitro-plugin-v2' },
+  { nuxtVersion: '4.1.2', expectedServerPlugin: './runtime/nitro-plugin-v2' },
+  { nuxtVersion: '4.1.2', compatibilityVersion: 5, expectedServerPlugin: './runtime/nitro-plugin-v2' },
+  { nuxtVersion: '5.0.0-0', expectedServerPlugin: './runtime/nitro-plugin-v3' },
+  { nuxtVersion: '5.0.0-29762631.396a4ae3', expectedServerPlugin: './runtime/nitro-plugin-v3' },
+]) {
+  const { pluginCalls, serverPluginCalls } = await runRegistration({ nuxtVersion, compatibilityVersion })
+  assert.deepEqual(pluginCalls, [{ src: './runtime/vue-plugin', mode: 'client' }])
+  assert.deepEqual(serverPluginCalls, [expectedServerPlugin])
+}
+
+async function runLifecycle({ ssr, deleteAfterUpload, failPublicUpload = false }) {
+  const { mod, spawnCalls } = loadModule({ failPublicUpload })
+  const hooks = {}
+  const nuxt = {
+    options: {
+      dev: false,
+      ssr,
+      sourcemap: {},
+      runtimeConfig: { public: {} },
+    },
+    hook(name, cb) {
+      ;(hooks[name] ||= []).push(cb)
+    },
+  }
+
+  await mod.setup(
+    {
+      host: 'https://us.i.posthog.com',
+      publicKey: 'phc_test',
+      debug: false,
+      clientConfig: {},
+      serverConfig: {},
+      cliBinaryPath: '/fake/posthog-cli',
+      sourcemaps: {
+        enabled: true,
+        personalApiKey: 'phx_test',
+        projectId: '123',
+        deleteAfterUpload,
+      },
+    },
+    nuxt,
+  )
+
+  // With `ssr: false` (client-only / SPA mode) Nitro still reports output
+  // dirs, but no server bundle is produced and serverDir is never created on disk.
+  for (const cb of hooks['nitro:init'] || []) {
+    await cb({
+      options: {
+        output: {
+          dir: '/build/.output',
+          publicDir: '/build/.output/public',
+          serverDir: '/build/.output/server',
+        },
+      },
+    })
+  }
+  for (const cb of hooks['nitro:config'] || []) await cb({})
+  for (const cb of hooks['build:before'] || []) await cb()
+  for (const cb of hooks['nitro:build:public-assets'] || []) await cb()
+  for (const cb of hooks['close'] || []) await cb()
+
+  return spawnCalls
+}
+
+function findCall(calls, op, directory) {
+  return calls.find(c => c.args.includes(op) && c.args.includes('--directory') && c.args.includes(directory))
+}
+
+// Both branches share the same assertion skeleton: did the server inject happen
+// (or not), and was the outputDir upload always emitted? Table-drive it so the
+// shape stays obvious and a future `ssr: 'hybrid'` row is one line away.
+const cases = [
+  { ssr: false, expectInject: false },
+  { ssr: true, expectInject: true },
+]
+
+for (const { ssr, expectInject } of cases) {
+  const calls = await runLifecycle({ ssr })
+  const dump = JSON.stringify(calls.map(c => c.args))
+  const injectCall = findCall(calls, 'inject', '/build/.output/server')
+
+  if (expectInject) {
+    assert.ok(injectCall, `ssr:${ssr}: expected server inject. Got: ${dump}`)
+  } else {
+    assert.equal(injectCall, undefined, `ssr:${ssr}: expected no server inject. Got: ${dump}`)
+  }
+
+  const publicUploadCall = findCall(calls, 'upload', '/build/.output/public')
+  const outputUploadCall = findCall(calls, 'upload', '/build/.output')
+
+  assert.ok(publicUploadCall, `ssr:${ssr}: expected early public sourcemap upload. Got: ${dump}`)
+  assert.ok(publicUploadCall.args.includes('--delete-after'), `ssr:${ssr}: expected public sourcemap deletion`)
+
+  // Upload of the outputDir must still happen so server and preset-specific sourcemaps reach PostHog.
+  assert.ok(outputUploadCall, `ssr:${ssr}: expected sourcemap upload against outputDir. Got: ${dump}`)
+  assert.ok(
+    calls.indexOf(publicUploadCall) < calls.indexOf(outputUploadCall),
+    `ssr:${ssr}: expected public sourcemaps to be deleted before the final output upload. Got: ${dump}`,
+  )
+}
+
+const retainedMapCalls = await runLifecycle({ ssr: true, deleteAfterUpload: false })
+const retainedMapDump = JSON.stringify(retainedMapCalls.map(c => c.args))
+assert.equal(
+  findCall(retainedMapCalls, 'upload', '/build/.output/public'),
+  undefined,
+  `deleteAfterUpload:false: expected no early public upload. Got: ${retainedMapDump}`,
+)
+const retainedMapOutputUpload = findCall(retainedMapCalls, 'upload', '/build/.output')
+assert.ok(retainedMapOutputUpload, `deleteAfterUpload:false: expected final output upload. Got: ${retainedMapDump}`)
+assert.ok(
+  !retainedMapOutputUpload.args.includes('--delete-after'),
+  `deleteAfterUpload:false: expected sourcemaps to be retained. Got: ${retainedMapDump}`,
+)
+
+const failedPublicUploadCalls = await runLifecycle({ ssr: true, failPublicUpload: true })
+const failedPublicUploadDump = JSON.stringify(failedPublicUploadCalls.map(c => c.args))
+const fallbackOutputUpload = findCall(failedPublicUploadCalls, 'upload', '/build/.output')
+assert.ok(fallbackOutputUpload, `failed public upload: expected final output upload. Got: ${failedPublicUploadDump}`)
+assert.ok(
+  !fallbackOutputUpload.args.includes('--delete-after'),
+  `failed public upload: expected final upload to retain manifest-listed maps. Got: ${failedPublicUploadDump}`,
+)
+
+console.log('ok sourcemaps-ssr.test.mjs')

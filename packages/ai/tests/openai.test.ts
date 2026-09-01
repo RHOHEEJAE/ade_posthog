@@ -1,0 +1,2864 @@
+import { PostHog } from 'posthog-node'
+import PostHogOpenAI, { WrappedCompletions } from '../src/openai'
+import openaiModule from 'openai'
+import type { ChatCompletion, ChatCompletionChunk } from 'openai/resources/chat/completions'
+import type { ParsedResponse } from 'openai/resources/responses/responses'
+import { Stream as OpenAIStream } from 'openai/streaming'
+import { collectUnhandledRejections, flushPromises } from './test-utils'
+import { version } from '../package.json'
+
+// Test-specific helper interface for async iteration
+interface MockAsyncIterator<T> {
+  [Symbol.asyncIterator](): AsyncIterator<T>
+}
+
+// `_request_id` is attached by the OpenAI SDK from the `x-request-id` response
+// header; it is not part of the public `ChatCompletion` type, so widen it here.
+let mockOpenAiChatResponse: ChatCompletion & { _request_id?: string } = {} as ChatCompletion
+let mockOpenAiParsedResponse: ParsedResponse<any> = {} as ParsedResponse<any>
+let mockOpenAiEmbeddingResponse: any = {}
+let mockStreamChunks: ChatCompletionChunk[] = []
+
+jest.mock(
+  'posthog-node',
+  () => {
+    return {
+      PostHog: jest.fn().mockImplementation(() => {
+        return {
+          capture: jest.fn(),
+          captureImmediate: jest.fn(),
+          privacy_mode: false,
+        }
+      }),
+    }
+  },
+  { virtual: true }
+)
+
+jest.mock(
+  '@posthog/core',
+  () => ({
+    uuidv7: jest.fn(() => 'uuid-v7'),
+    ErrorTracking: {},
+    toJsonSafeValue: jest.fn((value) => value),
+  }),
+  { virtual: true }
+)
+
+jest.mock('openai', () => {
+  // Mock Completions class – `create` is declared on the prototype so that
+  // subclasses can safely `super.create(...)` without it being shadowed by an
+  // instance field (which would overwrite the subclass implementation).
+  class MockCompletions {
+    constructor() {}
+    create(..._args: any[]): any {
+      /* will be stubbed in beforeEach */
+      return undefined
+    }
+  }
+
+  // Mock Chat class
+  class MockChat {
+    constructor() {}
+    static Completions = MockCompletions
+  }
+
+  // Mock Responses class with parse method that will be called by super.parse()
+  class MockResponses {
+    constructor() {}
+    // These need to be on the prototype for super.parse() to work
+    create() {
+      return Promise.resolve({})
+    }
+    parse() {
+      return Promise.resolve({})
+    }
+  }
+
+  // Mock Embeddings class
+  class MockEmbeddings {
+    constructor() {}
+    create() {
+      return Promise.resolve({})
+    }
+  }
+
+  // Mock Transcriptions class
+  class MockTranscriptions {
+    constructor() {}
+    create() {
+      return Promise.resolve({})
+    }
+  }
+
+  // Mock Audio class
+  class MockAudio {
+    constructor() {}
+    static Transcriptions = MockTranscriptions
+  }
+
+  // Mock OpenAI class
+  class MockOpenAI {
+    chat: any
+    embeddings: any
+    responses: any
+    audio: any
+    constructor() {
+      this.chat = {
+        completions: {
+          create: jest.fn(),
+        },
+      }
+      this.embeddings = {
+        create: jest.fn(),
+      }
+      this.responses = {
+        create: jest.fn(),
+      }
+      this.audio = {
+        transcriptions: {
+          create: jest.fn(),
+        },
+      }
+    }
+    static Chat = MockChat
+    static Responses = MockResponses
+    static Embeddings = MockEmbeddings
+    static Audio = MockAudio
+  }
+
+  return {
+    __esModule: true,
+    default: MockOpenAI,
+    OpenAI: MockOpenAI,
+    // AzureOpenAI extends OpenAI in the real SDK, so the same mock satisfies it
+    AzureOpenAI: MockOpenAI,
+    Chat: MockChat,
+    Responses: MockResponses,
+    Embeddings: MockEmbeddings,
+    Audio: MockAudio,
+  }
+})
+
+/**
+ * Helper function to create an async iterator from stream chunks
+ * Used to simulate OpenAI's streaming response behavior
+ */
+const createMockAsyncIterator = <T>(chunks: T[]): MockAsyncIterator<T> => {
+  let index = 0
+  return {
+    async *[Symbol.asyncIterator]() {
+      while (index < chunks.length) {
+        yield chunks[index++]
+      }
+    },
+  }
+}
+
+const createMockAPIPromise = <T>(
+  data: T,
+  withResponseData: unknown = { stale: true }
+): Promise<T> & { asResponse: jest.Mock; withResponse: jest.Mock } => {
+  const response = new Response(JSON.stringify(data), {
+    headers: {
+      'x-ratelimit-remaining-requests': '42',
+    },
+    status: 200,
+  })
+  return Object.assign(Promise.resolve(data), {
+    asResponse: jest.fn().mockResolvedValue(response),
+    withResponse: jest.fn().mockResolvedValue({
+      data: withResponseData,
+      response,
+      request_id: 'req_test',
+    }),
+  })
+}
+
+/**
+ * Creates mock stream chunks for testing streaming completions
+ * @param options Configuration for the mock stream response
+ * @returns Array of properly typed ChatCompletionChunk objects
+ */
+const createMockStreamChunks = (options: {
+  content?: string
+  includeToolCalls?: boolean
+  toolCallName?: string
+  toolCallArguments?: string
+  includeUsage?: boolean
+  cachedTokens?: number
+  cacheWriteTokens?: number
+}): ChatCompletionChunk[] => {
+  const chunks: ChatCompletionChunk[] = []
+  const baseChunk: Partial<ChatCompletionChunk> = {
+    id: 'chatcmpl-test',
+    model: 'gpt-4',
+    object: 'chat.completion.chunk',
+    created: Date.now() / 1000,
+    system_fingerprint: 'fp_stream_test',
+  }
+
+  if (options.content) {
+    // Split content into multiple chunks to simulate real streaming
+    const words = options.content.split(' ')
+    for (let i = 0; i < words.length; i++) {
+      chunks.push({
+        ...baseChunk,
+        choices: [
+          {
+            index: 0,
+            delta: {
+              content: words[i] + (i < words.length - 1 ? ' ' : ''),
+            },
+            finish_reason: null,
+            logprobs: null,
+          },
+        ],
+      } as ChatCompletionChunk)
+    }
+  }
+
+  if (options.includeToolCalls) {
+    // Tool call chunks come in sequence: id/name first, then arguments in parts
+    chunks.push({
+      ...baseChunk,
+      choices: [
+        {
+          index: 0,
+          delta: {
+            tool_calls: [
+              {
+                index: 0,
+                id: 'call_abc123',
+                type: 'function',
+                function: {
+                  name: options.toolCallName || 'get_weather',
+                  arguments: '',
+                },
+              },
+            ],
+          },
+          finish_reason: null,
+          logprobs: null,
+        },
+      ],
+    } as ChatCompletionChunk)
+
+    // Stream the arguments in parts
+    const args = options.toolCallArguments || '{"location": "San Francisco", "unit": "celsius"}'
+    const argChunks = [args.slice(0, 10), args.slice(10, 30), args.slice(30)]
+
+    for (const argChunk of argChunks) {
+      chunks.push({
+        ...baseChunk,
+        choices: [
+          {
+            index: 0,
+            delta: {
+              tool_calls: [
+                {
+                  index: 0,
+                  function: {
+                    arguments: argChunk,
+                  },
+                },
+              ],
+            },
+            finish_reason: null,
+            logprobs: null,
+          },
+        ],
+      } as ChatCompletionChunk)
+    }
+  }
+
+  // Add final chunk with finish reason and optional usage
+  const finalChunk: ChatCompletionChunk = {
+    ...baseChunk,
+    choices: [
+      {
+        index: 0,
+        delta: {},
+        finish_reason: 'stop',
+        logprobs: null,
+      },
+    ],
+  } as ChatCompletionChunk
+
+  if (options.includeUsage) {
+    finalChunk.usage = {
+      prompt_tokens: 25,
+      completion_tokens: 15,
+      total_tokens: 40,
+      prompt_tokens_details: {
+        cached_tokens: options.cachedTokens ?? 0,
+        cache_write_tokens: options.cacheWriteTokens ?? 0,
+      },
+    } as ChatCompletionChunk['usage']
+  }
+
+  chunks.push(finalChunk)
+  return chunks
+}
+
+describe('PostHogOpenAI - Jest test suite', () => {
+  let mockPostHogClient: PostHog
+  let client: PostHogOpenAI
+
+  beforeAll(() => {
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn('⚠️ Skipping OpenAI tests: No OPENAI_API_KEY environment variable set')
+    }
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+
+    // Reset the default mocks
+    mockPostHogClient = new (PostHog as any)()
+    client = new PostHogOpenAI({
+      apiKey: process.env.OPENAI_API_KEY || 'test-api-key',
+      posthog: mockPostHogClient as any,
+    })
+
+    // Default chat completion mock for non-streaming responses
+    mockOpenAiChatResponse = {
+      id: 'chatcmpl-test-response-id',
+      model: 'gpt-4',
+      object: 'chat.completion',
+      created: Date.now() / 1000,
+      system_fingerprint: 'fp_test123',
+      _request_id: 'req_test-request-id',
+      choices: [
+        {
+          index: 0,
+          finish_reason: 'stop',
+          message: {
+            role: 'assistant',
+            content: 'Hello from OpenAI!',
+            refusal: null,
+          },
+          logprobs: null,
+        },
+      ],
+      usage: {
+        prompt_tokens: 20,
+        completion_tokens: 10,
+        total_tokens: 30,
+      },
+    }
+
+    // Some default parsed response mock
+    mockOpenAiParsedResponse = {
+      id: 'test-parsed-response-id',
+      model: 'gpt-4o-2024-08-06',
+      object: 'response',
+      created_at: Date.now(),
+      status: 'completed',
+      output: [
+        {
+          id: 'msg-001',
+          type: 'message',
+          role: 'assistant',
+          content: [
+            {
+              type: 'text',
+              text: '{"name": "Science Fair", "date": "Friday", "participants": ["Alice", "Bob"]}',
+            },
+          ],
+        } as any,
+      ],
+      output_parsed: {
+        name: 'Science Fair',
+        date: 'Friday',
+        participants: ['Alice', 'Bob'],
+      },
+      usage: {
+        input_tokens: 15,
+        output_tokens: 20,
+        input_tokens_details: { cached_tokens: 0 },
+        output_tokens_details: { reasoning_tokens: 5 },
+        total_tokens: 35,
+      },
+      // Additional required fields for ParsedResponse
+      output_text: '',
+      error: null,
+      incomplete_details: null,
+      instructions: '',
+      input: [],
+      metadata: null,
+      response_id: 'test-parsed-response-id',
+      _request_id: 'req_test-parsed-request-id',
+      service_tier: null,
+      system_fingerprint: null,
+      queue_time: null,
+      parallel_tool_calls: true,
+      temperature: 1.0,
+      tool_choice: 'auto',
+      tools: [],
+      top_p: 1.0,
+    } as unknown as ParsedResponse<any>
+
+    // Default embeddings response
+    mockOpenAiEmbeddingResponse = {
+      object: 'list',
+      data: [
+        {
+          object: 'embedding',
+          embedding: new Array(1536).fill(0).map(() => Math.random()),
+          index: 0,
+        },
+      ],
+      model: 'text-embedding-3-small',
+      usage: {
+        prompt_tokens: 5,
+        total_tokens: 5,
+      },
+    }
+
+    // Default stream chunks for streaming tests
+    mockStreamChunks = createMockStreamChunks({
+      content: 'Hello from streaming OpenAI!',
+      includeUsage: true,
+    })
+
+    const ChatMock: any = openaiModule.Chat
+    ;(ChatMock.Completions as any).prototype.create = jest.fn().mockImplementation((params: any) => {
+      if (params.stream) {
+        const mockStream = createMockAsyncIterator(mockStreamChunks)
+        return createMockAPIPromise(mockStream)
+      }
+      return createMockAPIPromise(mockOpenAiChatResponse)
+    })
+
+    // Mock the Responses.prototype.parse method that super.parse() will call
+    const ResponsesMock: any = openaiModule.Responses
+    ResponsesMock.prototype.parse = jest.fn().mockImplementation(() => createMockAPIPromise(mockOpenAiParsedResponse))
+    ResponsesMock.prototype.create = jest.fn().mockImplementation(() => createMockAPIPromise(mockOpenAiParsedResponse))
+
+    // Mock the Embeddings class
+    const EmbeddingsMock: any = openaiModule.Embeddings || class MockEmbeddings {}
+    EmbeddingsMock.prototype.create = jest
+      .fn()
+      .mockImplementation(() => createMockAPIPromise(mockOpenAiEmbeddingResponse))
+  })
+
+  // Conditionally run tests based on API key availability
+  const conditionalTest = process.env.OPENAI_API_KEY ? test : test.skip
+
+  conditionalTest('basic completion', async () => {
+    // We ensure calls to create a completion return our mock
+    // This is handled by the inherited Chat.Completions mock in openai
+    const response = await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+      posthogProperties: { foo: 'bar' },
+    })
+
+    expect(response).toEqual(mockOpenAiChatResponse)
+    // We expect 1 capture call
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    // Check the capture arguments
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { distinctId, event, properties } = captureArgs[0]
+
+    expect(distinctId).toBe('test-id')
+    expect(event).toBe('$ai_generation')
+    expect(properties['$ai_lib']).toBe('posthog-ai')
+    expect(properties['$ai_lib_version']).toBe(version)
+    expect(properties['$ai_provider']).toBe('openai')
+    expect(properties['$ai_model']).toBe('gpt-4')
+    expect(properties['$ai_input']).toEqual([{ role: 'user', content: 'Hello' }])
+    // Updated to match new formatted output structure
+    expect(properties['$ai_output_choices']).toEqual([
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'text',
+            text: 'Hello from OpenAI!',
+          },
+        ],
+      },
+    ])
+    expect(properties['$ai_input_tokens']).toBe(20)
+    expect(properties['$ai_output_tokens']).toBe(10)
+    expect(properties['$ai_http_status']).toBe(200)
+    expect(properties['foo']).toBe('bar')
+    expect(typeof properties['$ai_latency']).toBe('number')
+    expect(properties['$ai_usage']).toBeDefined()
+    expect(properties['$ai_completion_id']).toBe('chatcmpl-test-response-id')
+    expect(properties['$ai_provider_metadata']).toEqual({
+      system_fingerprint: 'fp_test123',
+      request_id: 'req_test-request-id',
+    })
+  })
+
+  test('redacts chat audio and Responses output without changing provider payloads', async () => {
+    const binary = 'A'.repeat(80)
+    mockOpenAiChatResponse = {
+      ...mockOpenAiChatResponse,
+      choices: [
+        {
+          ...mockOpenAiChatResponse.choices[0],
+          message: {
+            role: 'assistant',
+            content: null,
+            refusal: null,
+            audio: { id: 'audio-1', data: binary, transcript: 'hello', expires_at: 0 },
+          },
+        },
+      ],
+    } as ChatCompletion
+
+    const chatRequest = {
+      model: 'gpt-4o-audio-preview',
+      messages: [{ role: 'user' as const, content: 'play audio' }],
+    }
+    await client.chat.completions.create(chatRequest)
+
+    expect((openaiModule.Chat.Completions as any).prototype.create).toHaveBeenCalledWith(chatRequest, undefined)
+    expect((mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties['$ai_output_choices']).toEqual([
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'audio',
+            id: 'audio-1',
+            data: '[base64 audio redacted]',
+            transcript: 'hello',
+            expires_at: 0,
+          },
+        ],
+      },
+    ])
+
+    jest.clearAllMocks()
+    mockOpenAiParsedResponse = {
+      ...mockOpenAiParsedResponse,
+      output: [{ type: 'image_generation_call', id: 'image-1', status: 'completed', result: binary } as any],
+    }
+    const responseRequest = { model: 'gpt-4o', input: 'draw a picture' }
+    const response = await client.responses.parse(responseRequest as any)
+
+    expect(response.output[0]).toMatchObject({ result: binary })
+    expect((openaiModule.Responses as any).prototype.parse).toHaveBeenCalledWith(responseRequest, undefined)
+    expect((mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties['$ai_output_choices']).toEqual([
+      { type: 'image_generation_call', id: 'image-1', status: 'completed', result: '[base64 redacted]' },
+    ])
+
+    jest.clearAllMocks()
+    const transcriptionResult = { text: `data:audio/wav;base64,${binary}` }
+    const TranscriptionsMock: any = openaiModule.Audio.Transcriptions
+    TranscriptionsMock.prototype.create = jest.fn().mockResolvedValue(transcriptionResult)
+    const file = new Blob(['audio'], { type: 'audio/wav' }) as any
+    file.name = 'audio.wav'
+    const transcriptionRequest = { model: 'whisper-1', file }
+
+    const transcription = await client.audio.transcriptions.create(transcriptionRequest)
+
+    expect(transcription).toBe(transcriptionResult)
+    expect(TranscriptionsMock.prototype.create).toHaveBeenCalledWith(transcriptionRequest, undefined)
+    expect((mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties['$ai_output_choices']).toBe(
+      '[base64 audio/wav redacted]'
+    )
+  })
+
+  conditionalTest('preserves images when the client enables multimodal capture', async () => {
+    Object.assign(mockPostHogClient, { enableFullAiCapture: true })
+    const dataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...'
+
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'image_url', image_url: { url: dataUrl } }],
+        } as any,
+      ],
+      posthogDistinctId: 'test-id',
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    expect(JSON.stringify(captureArgs[0].properties['$ai_input'])).toContain(dataUrl)
+  })
+
+  conditionalTest('redacts images when the client does not enable multimodal capture', async () => {
+    const dataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ...'
+
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'user',
+          content: [{ type: 'image_url', image_url: { url: dataUrl } }],
+        } as any,
+      ],
+      posthogDistinctId: 'test-id',
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    expect(JSON.stringify(captureArgs[0].properties['$ai_input'])).toContain('redacted')
+  })
+
+  test('chat completions create preserves OpenAI APIPromise helpers', async () => {
+    const promise = client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+    })
+
+    expect(typeof promise.asResponse).toBe('function')
+    expect(typeof promise.withResponse).toBe('function')
+
+    const rawResponse = await promise.asResponse()
+    const { data, response, request_id } = await promise.withResponse()
+
+    expect(rawResponse.headers.get('x-ratelimit-remaining-requests')).toBe('42')
+    expect(response.headers.get('x-ratelimit-remaining-requests')).toBe('42')
+    expect(request_id).toBe('req_test')
+    expect(data).toEqual(mockOpenAiChatResponse)
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+  })
+
+  test('chat completions create waits for captureImmediate before resolving', async () => {
+    let resolveCapture: () => void
+    const captureDelivery = new Promise<void>((resolve) => {
+      resolveCapture = resolve
+    })
+    ;(mockPostHogClient.captureImmediate as jest.Mock).mockReturnValue(captureDelivery)
+
+    const promise = client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+      posthogCaptureImmediate: true,
+    })
+
+    let settled = false
+    promise.then(() => {
+      settled = true
+    })
+
+    await flushPromises()
+
+    expect(mockPostHogClient.captureImmediate).toHaveBeenCalledTimes(1)
+    expect(settled).toBe(false)
+
+    resolveCapture!()
+
+    await expect(promise).resolves.toEqual(mockOpenAiChatResponse)
+    expect(settled).toBe(true)
+  })
+
+  test('chat completions preserve the provider result when captureImmediate rejects', async () => {
+    ;(mockPostHogClient.captureImmediate as jest.Mock).mockRejectedValue(new Error('telemetry failed'))
+
+    const response = await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogCaptureImmediate: true,
+    })
+
+    expect(response).toBe(mockOpenAiChatResponse)
+    expect(mockPostHogClient.captureImmediate).toHaveBeenCalledTimes(1)
+  })
+
+  test('chat completions preserve the provider error when captureImmediate rejects', async () => {
+    const providerError = new Error('provider failed')
+    const ChatMock: any = openaiModule.Chat
+    ;(ChatMock.Completions as any).prototype.create = jest.fn().mockRejectedValue(providerError)
+    ;(mockPostHogClient.captureImmediate as jest.Mock).mockRejectedValue(new Error('telemetry failed'))
+
+    const rejection = await client.chat.completions
+      .create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello' }],
+        posthogCaptureImmediate: true,
+      })
+      .catch((error: unknown) => error)
+
+    expect(rejection).toBe(providerError)
+    expect(mockPostHogClient.captureImmediate).toHaveBeenCalledTimes(1)
+  })
+
+  conditionalTest('groups', async () => {
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+      posthogGroups: { company: 'test_company' },
+    })
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { groups } = captureArgs[0]
+    expect(groups).toEqual({ company: 'test_company' })
+  })
+
+  conditionalTest('privacy mode local', async () => {
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+      posthogPrivacyMode: true,
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { properties } = captureArgs[0]
+    expect(properties['$ai_input']).toBeNull()
+    expect(properties['$ai_output_choices']).toBeNull()
+  })
+
+  conditionalTest('privacy mode global', async () => {
+    // override mock to appear globally in privacy mode
+    ;(mockPostHogClient as any).privacy_mode = true
+
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+      // we attempt to override locally, but it should still be null if global is true
+      posthogPrivacyMode: false,
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { properties } = captureArgs[0]
+    expect(properties['$ai_input']).toBeNull()
+    expect(properties['$ai_output_choices']).toBeNull()
+  })
+
+  conditionalTest('core model params', async () => {
+    mockOpenAiChatResponse.usage = {
+      prompt_tokens: 20,
+      completion_tokens: 10,
+      total_tokens: 30,
+    }
+
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      // using openai-like params
+      temperature: 0.5,
+      max_completion_tokens: 100,
+      stream: false,
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+      posthogProperties: { foo: 'bar' },
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { properties } = captureArgs[0]
+
+    expect(properties['$ai_model_parameters']).toEqual({
+      temperature: 0.5,
+      max_completion_tokens: 100,
+      stream: false,
+    })
+    expect(properties['foo']).toBe('bar')
+  })
+
+  describe('response service tier', () => {
+    test('prefers the response tier for non-streaming chat completions', async () => {
+      mockOpenAiChatResponse.service_tier = 'flex'
+
+      await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello' }],
+        service_tier: 'auto',
+        posthogDistinctId: 'test-id',
+      })
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      expect(captureArgs[0].properties['$ai_model_parameters'].service_tier).toBe('flex')
+    })
+
+    test('prefers the final response tier for streaming chat completions', async () => {
+      mockStreamChunks[0].service_tier = 'default'
+      mockStreamChunks[mockStreamChunks.length - 1].service_tier = 'priority'
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello' }],
+        service_tier: 'auto',
+        stream: true,
+        posthogDistinctId: 'test-id',
+      })
+      for await (const _chunk of stream) {
+        // consume the stream so the analytics copy reaches the final chunk
+      }
+      await flushPromises()
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      expect(captureArgs[0].properties['$ai_model_parameters'].service_tier).toBe('priority')
+    })
+
+    test.each([
+      {
+        api: 'responses.create',
+        invoke: () =>
+          client.responses.create({
+            model: 'gpt-4',
+            input: 'Hello',
+            service_tier: 'auto',
+            posthogDistinctId: 'test-id',
+          }),
+      },
+      {
+        api: 'responses.parse',
+        invoke: () =>
+          client.responses.parse({
+            model: 'gpt-4',
+            input: 'Hello',
+            service_tier: 'auto',
+            posthogDistinctId: 'test-id',
+          } as any),
+      },
+    ])('prefers the response tier for non-streaming $api', async ({ invoke }) => {
+      mockOpenAiParsedResponse.service_tier = 'default'
+
+      await invoke()
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      expect(captureArgs[0].properties['$ai_model_parameters'].service_tier).toBe('default')
+    })
+
+    test('prefers the final response tier for streaming responses', async () => {
+      const chunks = [
+        {
+          type: 'response.created',
+          sequence_number: 0,
+          response: { ...mockOpenAiParsedResponse, service_tier: 'default' as const },
+        },
+        {
+          type: 'response.completed',
+          sequence_number: 1,
+          response: { ...mockOpenAiParsedResponse, service_tier: 'flex' as const },
+        },
+      ]
+      const ResponsesMock: any = openaiModule.Responses
+      ResponsesMock.prototype.create = jest
+        .fn()
+        .mockImplementation(() => createMockAPIPromise(createMockAsyncIterator(chunks)))
+
+      const stream = await client.responses.create({
+        model: 'gpt-4',
+        input: 'Hello',
+        service_tier: 'auto',
+        stream: true,
+        posthogDistinctId: 'test-id',
+      })
+      for await (const _chunk of stream) {
+        // consume the stream so the analytics copy reaches the final chunk
+      }
+      await flushPromises()
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      expect(captureArgs[0].properties['$ai_model_parameters'].service_tier).toBe('flex')
+    })
+  })
+
+  conditionalTest('reasoning and cache tokens', async () => {
+    // Set up mock response with standard token usage
+    mockOpenAiChatResponse.usage = {
+      prompt_tokens: 20,
+      completion_tokens: 10,
+      total_tokens: 30,
+      // Add the detailed token usage that OpenAI would return
+      completion_tokens_details: {
+        reasoning_tokens: 15,
+      },
+      prompt_tokens_details: {
+        cached_tokens: 5,
+      },
+    }
+
+    // Create a completion with additional token tracking
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+      posthogProperties: { foo: 'bar' },
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { properties } = captureArgs[0]
+
+    // Check standard token properties
+    expect(properties['$ai_input_tokens']).toBe(20)
+    expect(properties['$ai_output_tokens']).toBe(10)
+
+    // Check the new token properties
+    expect(properties['$ai_reasoning_tokens']).toBe(15)
+    expect(properties['$ai_cache_read_input_tokens']).toBe(5)
+  })
+
+  // The cache-reporting tests below are fully mocked (no API calls), so they
+  // run unconditionally instead of using `conditionalTest`.
+  test.each([
+    {
+      behavior: 'declares inclusive reporting by default',
+      posthogProperties: undefined,
+      expectedFlag: false,
+      expectedInputTokens: 32611,
+    },
+    {
+      behavior: 'lets user-provided posthogProperties override the declaration',
+      posthogProperties: { $ai_cache_reporting_exclusive: true },
+      expectedFlag: true,
+      expectedInputTokens: 32611,
+    },
+    {
+      // Callers working around the double-billing already pass exclusive
+      // counts through posthogProperties (here 4,682 = 32,611 − 27,929);
+      // declaring `false` on those events would make ingestion subtract the
+      // cache again and report −23,247 uncached tokens.
+      behavior: 'stays unset when posthogProperties passes through token counts',
+      posthogProperties: { $ai_input_tokens: 4682, $ai_cache_read_input_tokens: 27929 },
+      expectedFlag: undefined,
+      expectedInputTokens: 4682,
+    },
+    {
+      behavior: 'keeps an explicit declaration alongside passed-through token counts',
+      posthogProperties: {
+        $ai_input_tokens: 4682,
+        $ai_cache_read_input_tokens: 27929,
+        $ai_cache_reporting_exclusive: true,
+      },
+      expectedFlag: true,
+      expectedInputTokens: 4682,
+    },
+  ])(
+    'cache token reporting convention $behavior (#3615)',
+    async ({ posthogProperties, expectedFlag, expectedInputTokens }) => {
+      // OpenAI-convention usage reports prompt_tokens INCLUSIVE of cached tokens.
+      // Ingestion classifies claude* models as Anthropic-convention (exclusive)
+      // and would price the 27,929 cached tokens twice unless the event declares
+      // the convention via $ai_cache_reporting_exclusive: false. Numbers taken
+      // from the #3615 report (Claude via OpenRouter).
+      mockOpenAiChatResponse.model = 'anthropic/claude-sonnet-4.6'
+      mockOpenAiChatResponse.usage = {
+        prompt_tokens: 32611,
+        completion_tokens: 561,
+        total_tokens: 33172,
+        prompt_tokens_details: {
+          cached_tokens: 27929,
+        },
+      }
+
+      await client.chat.completions.create({
+        model: 'anthropic/claude-sonnet-4.6',
+        messages: [{ role: 'user', content: 'Hello' }],
+        posthogDistinctId: 'test-id',
+        posthogProperties,
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      // Token counts stay raw either way (OpenAI convention, consistent with
+      // $ai_usage) unless the caller passes their own through…
+      expect(properties['$ai_input_tokens']).toBe(expectedInputTokens)
+      expect(properties['$ai_cache_read_input_tokens']).toBe(27929)
+      // …only the declared convention changes, so ingestion subtracts instead of double-billing.
+      if (expectedFlag === undefined) {
+        expect(properties).not.toHaveProperty('$ai_cache_reporting_exclusive')
+      } else {
+        expect(properties['$ai_cache_reporting_exclusive']).toBe(expectedFlag)
+      }
+    }
+  )
+
+  // Each key must suppress the declaration on its own, not only alongside
+  // $ai_input_tokens — partial overrides are valid passthrough too.
+  test.each(['$ai_input_tokens', '$ai_cache_read_input_tokens', '$ai_cache_creation_input_tokens'])(
+    'passthrough of %s alone keeps the reporting declaration unset (#3615)',
+    async (tokenKey) => {
+      mockOpenAiChatResponse.model = 'anthropic/claude-sonnet-4.6'
+      mockOpenAiChatResponse.usage = {
+        prompt_tokens: 32611,
+        completion_tokens: 561,
+        total_tokens: 33172,
+        prompt_tokens_details: {
+          cached_tokens: 27929,
+        },
+      }
+
+      await client.chat.completions.create({
+        model: 'anthropic/claude-sonnet-4.6',
+        messages: [{ role: 'user', content: 'Hello' }],
+        posthogDistinctId: 'test-id',
+        posthogProperties: { [tokenKey]: 1234 },
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties[tokenKey]).toBe(1234)
+      expect(properties).not.toHaveProperty('$ai_cache_reporting_exclusive')
+    }
+  )
+
+  test('tracks cache creation tokens', async () => {
+    mockOpenAiChatResponse.model = 'anthropic/claude-sonnet-4.6'
+    mockOpenAiChatResponse.usage = {
+      prompt_tokens: 33400,
+      completion_tokens: 572,
+      total_tokens: 33972,
+      prompt_tokens_details: {
+        cached_tokens: 29580,
+        cache_write_tokens: 3820,
+      },
+    } as ChatCompletion['usage']
+
+    await client.chat.completions.create({
+      model: 'anthropic/claude-sonnet-4.6',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { properties } = captureArgs[0]
+    expect(properties['$ai_cache_read_input_tokens']).toBe(29580)
+    expect(properties['$ai_cache_creation_input_tokens']).toBe(3820)
+  })
+
+  test('declares inclusive cache token reporting on streaming completions', async () => {
+    const stream = (await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      stream: true,
+      posthogDistinctId: 'test-id',
+    })) as unknown as AsyncIterable<ChatCompletionChunk>
+
+    // Consume the stream to trigger the monitoring capture
+    for await (const _chunk of stream) {
+      // no-op
+    }
+    await flushPromises()
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    expect(captureArgs[0].properties['$ai_cache_reporting_exclusive']).toBe(false)
+  })
+
+  test('captures cache creation tokens on streaming completions', async () => {
+    mockStreamChunks = createMockStreamChunks({
+      content: 'This is a streaming response',
+      includeUsage: true,
+      cachedTokens: 29580,
+      cacheWriteTokens: 3820,
+    })
+
+    const stream = (await client.chat.completions.create({
+      model: 'anthropic/claude-sonnet-4.6',
+      messages: [{ role: 'user', content: 'Hello' }],
+      stream: true,
+      posthogDistinctId: 'test-id',
+    })) as unknown as AsyncIterable<ChatCompletionChunk>
+
+    for await (const _chunk of stream) {
+      // no-op
+    }
+    await flushPromises()
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { properties } = captureArgs[0]
+    expect(properties['$ai_cache_read_input_tokens']).toBe(29580)
+    expect(properties['$ai_cache_creation_input_tokens']).toBe(3820)
+  })
+
+  // New test: ensure captureImmediate is used when flag is set
+  conditionalTest('captureImmediate flag', async () => {
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+      posthogCaptureImmediate: true,
+    })
+
+    // captureImmediate should be called once, and capture should not be called
+    expect(mockPostHogClient.captureImmediate).toHaveBeenCalledTimes(1)
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(0)
+  })
+
+  conditionalTest('responses parse', async () => {
+    const response = await client.responses.parse({
+      model: 'gpt-4o-2024-08-06',
+      input: [
+        { role: 'system', content: 'Extract the event information.' },
+        { role: 'user', content: 'Alice and Bob are going to a science fair on Friday.' },
+      ],
+      text: {
+        format: {
+          type: 'json_object',
+          json_schema: {
+            name: 'event',
+            schema: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                date: { type: 'string' },
+                participants: { type: 'array', items: { type: 'string' } },
+              },
+              required: ['name', 'date', 'participants'],
+            },
+          },
+        },
+      },
+      posthogDistinctId: 'test-id',
+      posthogProperties: { foo: 'bar' },
+    })
+
+    expect(response).toEqual(mockOpenAiParsedResponse)
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { distinctId, event, properties } = captureArgs[0]
+
+    expect(distinctId).toBe('test-id')
+    expect(event).toBe('$ai_generation')
+    expect(properties['$ai_lib']).toBe('posthog-ai')
+    expect(properties['$ai_lib_version']).toBe(version)
+    expect(properties['$ai_provider']).toBe('openai')
+    expect(properties['$ai_model']).toBe('gpt-4o-2024-08-06')
+    expect(properties['$ai_input']).toEqual([
+      { role: 'system', content: 'Extract the event information.' },
+      { role: 'user', content: 'Alice and Bob are going to a science fair on Friday.' },
+    ])
+    expect(properties['$ai_output_choices']).toEqual(mockOpenAiParsedResponse.output)
+    expect(properties['$ai_input_tokens']).toBe(15)
+    expect(properties['$ai_output_tokens']).toBe(20)
+    expect(properties['$ai_reasoning_tokens']).toBe(5)
+    expect(properties['$ai_cache_read_input_tokens']).toBeUndefined()
+    expect(properties['$ai_http_status']).toBe(200)
+    expect(properties['foo']).toBe('bar')
+    expect(typeof properties['$ai_latency']).toBe('number')
+    expect(properties['$ai_completion_id']).toBe('test-parsed-response-id')
+    // Responses API has no system_fingerprint, so only request_id is reported.
+    expect(properties['$ai_provider_metadata']).toEqual({ request_id: 'req_test-parsed-request-id' })
+  })
+
+  test('responses create preserves OpenAI APIPromise helpers', async () => {
+    const promise = client.responses.create({
+      model: 'gpt-4o-2024-08-06',
+      input: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'test-id',
+    })
+
+    expect(typeof promise.asResponse).toBe('function')
+    expect(typeof promise.withResponse).toBe('function')
+
+    const { data, response, request_id } = await promise.withResponse()
+
+    expect(response.headers.get('x-ratelimit-remaining-requests')).toBe('42')
+    expect(request_id).toBe('req_test')
+    expect(data).toEqual(mockOpenAiParsedResponse)
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+  })
+
+  test.each([
+    { method: 'create' as const, status: 'queued' },
+    { method: 'create' as const, status: 'in_progress' },
+    { method: 'parse' as const, status: 'queued' },
+    { method: 'parse' as const, status: 'in_progress' },
+  ])('responses $method skips $status background responses without usage', async ({ method, status }) => {
+    mockOpenAiParsedResponse = {
+      ...mockOpenAiParsedResponse,
+      id: `resp_${method}_${status}`,
+      status,
+      output: [],
+      usage: null,
+    } as unknown as ParsedResponse<any>
+
+    const response = await client.responses[method]({
+      model: 'gpt-4o-2024-08-06',
+      input: [{ role: 'user', content: 'Hello' }],
+      background: true,
+      ...(method === 'parse' ? { text: { format: { type: 'text' } } } : {}),
+      posthogDistinctId: 'test-id',
+    } as any)
+
+    expect(response).toEqual(mockOpenAiParsedResponse)
+    expect(mockPostHogClient.capture).not.toHaveBeenCalled()
+    expect(mockPostHogClient.captureImmediate).not.toHaveBeenCalled()
+  })
+
+  describe('Responses terminal statuses', () => {
+    const terminalStatuses = ['completed', 'failed', 'incomplete', 'cancelled'] as const
+
+    const terminalResponse = (status: (typeof terminalStatuses)[number]) => ({
+      ...mockOpenAiParsedResponse,
+      id: `resp_${status}`,
+      _request_id: `req_${status}`,
+      status,
+      output: [
+        {
+          id: `msg_${status}`,
+          type: 'message',
+          role: 'assistant',
+          status: status === 'completed' ? 'completed' : 'incomplete',
+          content: [{ type: 'output_text', text: `${status} output`, annotations: [] }],
+        },
+      ],
+      usage: {
+        input_tokens: 11,
+        output_tokens: 7,
+        total_tokens: 18,
+        input_tokens_details: { cached_tokens: 2 },
+        output_tokens_details: { reasoning_tokens: 3 },
+      },
+      error: status === 'failed' ? { code: 'server_error', message: 'provider response failed' } : null,
+      incomplete_details: status === 'incomplete' || status === 'cancelled' ? { reason: 'max_output_tokens' } : null,
+    })
+
+    test.each(terminalStatuses)('non-streaming %s response preserves terminal data', async (status) => {
+      const response = terminalResponse(status)
+      const ResponsesMock: any = openaiModule.Responses
+      ResponsesMock.prototype.create = jest.fn().mockImplementation(() => createMockAPIPromise(response))
+
+      await client.responses.create({
+        model: 'gpt-4',
+        input: 'Hello',
+        posthogDistinctId: 'test-id',
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const properties = (mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties
+      expect(properties['$ai_stop_reason']).toBe(status)
+      expect(properties['$ai_input_tokens']).toBe(11)
+      expect(properties['$ai_output_tokens']).toBe(7)
+      expect(properties['$ai_output_choices']).toEqual([
+        {
+          role: 'assistant',
+          content: [{ type: 'text', text: `${status} output` }],
+        },
+      ])
+      expect(properties['$ai_is_error']).toBe(status === 'failed' ? true : undefined)
+      if (status === 'failed') {
+        expect(properties['$ai_error']).toContain('provider response failed')
+      }
+      expect(properties['$ai_provider_metadata']).toEqual({
+        request_id: `req_${status}`,
+        ...(status === 'incomplete' || status === 'cancelled'
+          ? { incomplete_details: { reason: 'max_output_tokens' } }
+          : {}),
+      })
+    })
+
+    test.each(terminalStatuses)('streaming %s response preserves terminal data', async (status) => {
+      const baseResponse = terminalResponse(status)
+      const response = { ...baseResponse, output: status === 'cancelled' ? undefined : baseResponse.output }
+      const chunks = [
+        {
+          type:
+            status === 'failed'
+              ? 'response.failed'
+              : status === 'completed'
+                ? 'response.completed'
+                : 'response.incomplete',
+          sequence_number: 0,
+          response,
+        },
+      ]
+      const ResponsesMock: any = openaiModule.Responses
+      ResponsesMock.prototype.create = jest
+        .fn()
+        .mockImplementation(() => createMockAPIPromise(createMockAsyncIterator(chunks)))
+
+      const stream = await client.responses.create({
+        model: 'gpt-4',
+        input: 'Hello',
+        stream: true,
+        posthogDistinctId: 'test-id',
+      })
+      for await (const _chunk of stream) {
+        // consume the returned stream while analytics consumes its monitored copy
+      }
+      await flushPromises()
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const properties = (mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties
+      expect(properties['$ai_stop_reason']).toBe(status)
+      expect(properties['$ai_input_tokens']).toBe(11)
+      expect(properties['$ai_output_tokens']).toBe(7)
+      expect(properties['$ai_output_choices']).toEqual(response.output ?? [])
+      expect(properties['$ai_is_error']).toBe(status === 'failed' ? true : undefined)
+      if (status === 'failed') {
+        expect(properties['$ai_error']).toContain('provider response failed')
+      }
+      expect(properties['$ai_provider_metadata']).toEqual(
+        status === 'incomplete' || status === 'cancelled'
+          ? { incomplete_details: { reason: 'max_output_tokens' } }
+          : undefined
+      )
+    })
+
+    test('parse failed response preserves terminal data', async () => {
+      const response = terminalResponse('failed')
+      const ResponsesMock: any = openaiModule.Responses
+      ResponsesMock.prototype.parse = jest.fn().mockImplementation(() => createMockAPIPromise(response))
+
+      await client.responses.parse({
+        model: 'gpt-4',
+        input: 'Hello',
+        posthogDistinctId: 'test-id',
+      } as any)
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const properties = (mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties
+      expect(properties['$ai_stop_reason']).toBe('failed')
+      expect(properties['$ai_is_error']).toBe(true)
+      expect(properties['$ai_error']).toContain('provider response failed')
+      expect(properties['$ai_provider_metadata']).toEqual({ request_id: 'req_failed' })
+    })
+  })
+
+  describe('full AI capture', () => {
+    test('preserves binary image content in a streaming Responses output when enabled', async () => {
+      Object.assign(mockPostHogClient, { enableFullAiCapture: true })
+      const binary = 'A'.repeat(80)
+      const response = {
+        ...mockOpenAiParsedResponse,
+        id: 'resp_full_capture',
+        status: 'completed',
+        output: [{ type: 'image_generation_call', id: 'image-1', status: 'completed', result: binary }],
+        usage: { input_tokens: 11, output_tokens: 7, total_tokens: 18 },
+      }
+      const chunks = [{ type: 'response.completed', sequence_number: 0, response }]
+      const ResponsesMock: any = openaiModule.Responses
+      ResponsesMock.prototype.create = jest
+        .fn()
+        .mockImplementation(() => createMockAPIPromise(createMockAsyncIterator(chunks)))
+
+      const stream = await client.responses.create({
+        model: 'gpt-4',
+        input: 'Hello',
+        stream: true,
+        posthogDistinctId: 'test-id',
+      })
+      for await (const _chunk of stream) {
+        // consume the returned stream while analytics consumes its monitored copy
+      }
+      await flushPromises()
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const properties = (mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties
+      expect(JSON.stringify(properties['$ai_output_choices'])).toContain(binary)
+      expect(JSON.stringify(properties)).not.toContain('redacted')
+    })
+  })
+
+  describe('Responses cache creation tokens', () => {
+    const usageWithCacheWrite = {
+      input_tokens: 33400,
+      output_tokens: 572,
+      total_tokens: 33972,
+      input_tokens_details: { cached_tokens: 29580, cache_write_tokens: 3820 },
+      output_tokens_details: { reasoning_tokens: 0 },
+    }
+    const ResponsesMock: any = openaiModule.Responses
+    let response: any
+
+    beforeEach(() => {
+      response = { ...mockOpenAiParsedResponse, status: 'completed', usage: usageWithCacheWrite }
+    })
+
+    test('non-streaming create captures cache creation tokens', async () => {
+      ResponsesMock.prototype.create = jest.fn().mockImplementation(() => createMockAPIPromise(response))
+
+      await client.responses.create({ model: 'gpt-4', input: 'Hello', posthogDistinctId: 'test-id' })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const properties = (mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties
+      expect(properties['$ai_cache_read_input_tokens']).toBe(29580)
+      expect(properties['$ai_cache_creation_input_tokens']).toBe(3820)
+    })
+
+    test('streaming create captures cache creation tokens', async () => {
+      const chunks = [{ type: 'response.completed', sequence_number: 0, response }]
+      ResponsesMock.prototype.create = jest
+        .fn()
+        .mockImplementation(() => createMockAPIPromise(createMockAsyncIterator(chunks)))
+
+      const stream = await client.responses.create({
+        model: 'gpt-4',
+        input: 'Hello',
+        stream: true,
+        posthogDistinctId: 'test-id',
+      })
+      for await (const _chunk of stream) {
+        // consume the returned stream while analytics consumes its monitored copy
+      }
+      await flushPromises()
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const properties = (mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties
+      expect(properties['$ai_cache_read_input_tokens']).toBe(29580)
+      expect(properties['$ai_cache_creation_input_tokens']).toBe(3820)
+    })
+
+    test('parse captures cache creation tokens', async () => {
+      ResponsesMock.prototype.parse = jest.fn().mockImplementation(() => createMockAPIPromise(response))
+
+      await client.responses.parse({ model: 'gpt-4', input: 'Hello', posthogDistinctId: 'test-id' } as any)
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const properties = (mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties
+      expect(properties['$ai_cache_read_input_tokens']).toBe(29580)
+      expect(properties['$ai_cache_creation_input_tokens']).toBe(3820)
+    })
+  })
+
+  conditionalTest('responses parse with instructions parameter', async () => {
+    const response = await client.responses.parse({
+      model: 'gpt-4o-2024-08-06',
+      input: [{ role: 'user', content: 'Alice and Bob are going to a science fair on Friday.' }],
+      instructions: 'Extract the event information.',
+      text: {
+        format: {
+          type: 'json_object',
+          json_schema: {
+            name: 'event',
+            schema: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                date: { type: 'string' },
+                participants: { type: 'array', items: { type: 'string' } },
+              },
+              required: ['name', 'date', 'participants'],
+            },
+          },
+        },
+      },
+      posthogDistinctId: 'test-instructions-id',
+    })
+
+    expect(response).toEqual(mockOpenAiParsedResponse)
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { distinctId, event, properties } = captureArgs[0]
+
+    expect(distinctId).toBe('test-instructions-id')
+    expect(event).toBe('$ai_generation')
+    expect(properties['$ai_provider']).toBe('openai')
+    expect(properties['$ai_model']).toBe('gpt-4o-2024-08-06')
+    expect(properties['$ai_input']).toEqual([
+      { role: 'system', content: 'Extract the event information.' },
+      { role: 'user', content: 'Alice and Bob are going to a science fair on Friday.' },
+    ])
+  })
+
+  conditionalTest('anonymous user - $process_person_profile set to false', async () => {
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogTraceId: 'trace-123',
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { distinctId, properties } = captureArgs[0]
+
+    expect(distinctId).toBe('trace-123')
+    expect(properties['$process_person_profile']).toBe(false)
+  })
+
+  conditionalTest('identified user - $process_person_profile not set', async () => {
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: 'Hello' }],
+      posthogDistinctId: 'user-456',
+      posthogTraceId: 'trace-123',
+    })
+
+    expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+    const { distinctId, properties } = captureArgs[0]
+
+    expect(distinctId).toBe('user-456')
+    expect(properties['$process_person_profile']).toBeUndefined()
+  })
+
+  describe('Streaming Responses', () => {
+    test('break after first chunk cancels the real OpenAI stream and captures only the partial response', async () => {
+      const sourceController = new AbortController()
+      let pulls = 0
+      let sourceReturned = false
+      const firstChunk = createMockStreamChunks({ content: 'first second' })[0]
+      const secondChunk = createMockStreamChunks({ content: 'unobserved' })[0]
+      const source = new OpenAIStream<ChatCompletionChunk>(() => {
+        const iterator = (async function* () {
+          try {
+            pulls += 1
+            yield firstChunk
+            pulls += 1
+            yield secondChunk
+          } finally {
+            sourceReturned = true
+            sourceController.abort()
+          }
+        })()
+        return iterator
+      }, sourceController)
+
+      const ChatMock: any = openaiModule.Chat
+      ;(ChatMock.Completions as any).prototype.create = jest.fn().mockReturnValue(createMockAPIPromise(source))
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Stop early' }],
+        stream: true,
+        posthogDistinctId: 'test-stream-break-user',
+      })
+
+      expect(stream).toBeInstanceOf(OpenAIStream)
+      expect(pulls).toBe(0)
+      for await (const _chunk of stream) {
+        break
+      }
+      await flushPromises()
+
+      expect(pulls).toBe(1)
+      expect(sourceReturned).toBe(true)
+      expect(sourceController.signal.aborted).toBe(true)
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const properties = (mockPostHogClient.capture as jest.Mock).mock.calls[0][0].properties
+      expect(properties['$ai_output_choices'][0].content[0].text).toBe(firstChunk.choices[0]?.delta.content)
+    })
+
+    conditionalTest('handles basic streaming completion', async () => {
+      // Create a simple streaming response
+      mockStreamChunks = createMockStreamChunks({
+        content: 'This is a streaming response',
+        includeUsage: true,
+      })
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Tell me about streaming' }],
+        stream: true,
+        posthogDistinctId: 'test-stream-user',
+        posthogProperties: { streamTest: true },
+      })
+
+      // Consume the stream to trigger the monitoring
+      const chunks = []
+      for await (const chunk of stream) {
+        chunks.push(chunk)
+      }
+
+      // Verify we received all chunks
+      expect(chunks.length).toBeGreaterThan(0)
+
+      // Wait for async capture to complete
+      await flushPromises()
+
+      // Verify PostHog was called with correct data
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { distinctId, event, properties } = captureArgs[0]
+
+      expect(distinctId).toBe('test-stream-user')
+      expect(event).toBe('$ai_generation')
+      expect(properties['$ai_lib']).toBe('posthog-ai')
+      expect(properties['$ai_lib_version']).toBe(version)
+      expect(properties['$ai_provider']).toBe('openai')
+      expect(properties['$ai_model']).toBe('gpt-4')
+
+      // Check the formatted output structure
+      expect(properties['$ai_output_choices']).toEqual([
+        {
+          role: 'assistant',
+          content: [
+            {
+              type: 'text',
+              text: 'This is a streaming response',
+            },
+          ],
+        },
+      ])
+
+      expect(properties['$ai_input_tokens']).toBe(25)
+      expect(properties['$ai_output_tokens']).toBe(15)
+      expect(properties['streamTest']).toBe(true)
+      // Completion metadata is accumulated from the streamed chunks. The
+      // streaming path has no request id, so only system_fingerprint is reported.
+      expect(properties['$ai_completion_id']).toBe('chatcmpl-test')
+      expect(properties['$ai_provider_metadata']).toEqual({ system_fingerprint: 'fp_stream_test' })
+    })
+
+    describe('mid-flight stream errors do not emit unhandled rejections', () => {
+      const streamErrorCases: {
+        name: string
+        firstChunk: unknown
+        stubCreate: (impl: jest.Mock) => void
+        invoke: () => Promise<unknown>
+      }[] = [
+        {
+          name: 'chat completions',
+          firstChunk: {
+            id: 'chatcmpl-test',
+            model: 'gpt-4',
+            object: 'chat.completion.chunk',
+            created: 1,
+            choices: [{ index: 0, delta: { content: 'partial' }, finish_reason: null, logprobs: null }],
+          },
+          stubCreate: (impl) => {
+            ;((openaiModule.Chat as any).Completions as any).prototype.create = impl
+          },
+          invoke: () =>
+            client.chat.completions.create({
+              model: 'gpt-4',
+              messages: [{ role: 'user', content: 'Tell me about streaming' }],
+              stream: true,
+              posthogDistinctId: 'test-stream-error-user',
+            }),
+        },
+        {
+          name: 'responses',
+          firstChunk: { type: 'response.output_text.delta', delta: 'partial' },
+          stubCreate: (impl) => {
+            ;(openaiModule.Responses as any).prototype.create = impl
+          },
+          invoke: () =>
+            client.responses.create({
+              model: 'gpt-4',
+              input: 'Tell me about streaming',
+              stream: true,
+              posthogDistinctId: 'test-stream-error-user',
+            } as any),
+        },
+        {
+          name: 'audio transcriptions',
+          firstChunk: { type: 'transcript.text.delta', delta: 'partial' },
+          stubCreate: (impl) => {
+            ;((openaiModule as any).Audio.Transcriptions as any).prototype.create = impl
+          },
+          invoke: () =>
+            client.audio.transcriptions.create({
+              model: 'whisper-1',
+              file: new File(['audio'], 'audio.mp3'),
+              stream: true,
+              posthogDistinctId: 'test-stream-error-user',
+            } as any),
+        },
+      ]
+
+      test.each(streamErrorCases)('$name stream error is not rethrown unhandled', async (streamErrorCase) => {
+        const streamError = new Error('provider error injected into SSE stream')
+        const createErroringIterator = (): MockAsyncIterator<unknown> => ({
+          async *[Symbol.asyncIterator]() {
+            yield streamErrorCase.firstChunk
+            throw streamError
+          },
+        })
+
+        streamErrorCase.stubCreate(jest.fn().mockImplementation(() => createMockAPIPromise(createErroringIterator())))
+
+        const unhandledRejections = await collectUnhandledRejections(async () => {
+          const stream = await streamErrorCase.invoke()
+
+          // The caller's copy of the stream must still surface the error
+          await expect(async () => {
+            for await (const _chunk of stream as AsyncIterable<unknown>) {
+              // consume until the error
+            }
+          }).rejects.toThrow(streamError)
+        })
+
+        // The analytics error event is still captured
+        expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+
+        // The detached analytics consumer must not crash the host process
+        expect(unhandledRejections).toEqual([])
+      })
+    })
+
+    conditionalTest('handles streaming with tool calls', async () => {
+      // Create stream chunks with tool calls
+      mockStreamChunks = createMockStreamChunks({
+        content: 'Let me check the weather for you.',
+        includeToolCalls: true,
+        toolCallName: 'get_current_weather',
+        toolCallArguments: '{"location": "New York", "unit": "fahrenheit"}',
+        includeUsage: true,
+      })
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'What is the weather?' }],
+        stream: true,
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'get_current_weather',
+              description: 'Get the current weather in a location',
+              parameters: {
+                type: 'object',
+                properties: {
+                  location: { type: 'string' },
+                  unit: { type: 'string', enum: ['celsius', 'fahrenheit'] },
+                },
+                required: ['location'],
+              },
+            },
+          },
+        ],
+        posthogDistinctId: 'test-tools-user',
+      })
+
+      // Consume the stream
+      for await (const _chunk of stream) {
+        // Just consume the chunks
+      }
+
+      // Wait for async capture
+      await flushPromises()
+
+      // Verify the capture includes tool calls in the formatted output
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      // Check that output contains both text and function call
+      expect(properties['$ai_output_choices']).toEqual([
+        {
+          role: 'assistant',
+          content: [
+            {
+              type: 'text',
+              text: 'Let me check the weather for you.',
+            },
+            {
+              type: 'function',
+              id: 'call_abc123',
+              function: {
+                name: 'get_current_weather',
+                arguments: '{"location": "New York", "unit": "fahrenheit"}',
+              },
+            },
+          ],
+        },
+      ])
+
+      // Verify tools were captured
+      expect(properties['$ai_tools']).toBeDefined()
+      expect(properties['$ai_tools']).toHaveLength(1)
+      expect(properties['$ai_tools'][0].function.name).toBe('get_current_weather')
+    })
+
+    conditionalTest('handles multiple tool calls in streaming', async () => {
+      // Create custom chunks with multiple tool calls
+      const multiToolChunks: ChatCompletionChunk[] = [
+        {
+          id: 'chatcmpl-multi',
+          model: 'gpt-4',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          choices: [
+            {
+              index: 0,
+              delta: {
+                content: 'I will check both weather and news for you.',
+              },
+              finish_reason: null,
+              logprobs: null,
+            },
+          ],
+        } as ChatCompletionChunk,
+        // First tool call
+        {
+          id: 'chatcmpl-multi',
+          model: 'gpt-4',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          choices: [
+            {
+              index: 0,
+              delta: {
+                tool_calls: [
+                  {
+                    index: 0,
+                    id: 'call_weather',
+                    type: 'function',
+                    function: {
+                      name: 'get_weather',
+                      arguments: '{"loc',
+                    },
+                  },
+                ],
+              },
+              finish_reason: null,
+              logprobs: null,
+            },
+          ],
+        } as ChatCompletionChunk,
+        {
+          id: 'chatcmpl-multi',
+          model: 'gpt-4',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          choices: [
+            {
+              index: 0,
+              delta: {
+                tool_calls: [
+                  {
+                    index: 0,
+                    function: {
+                      arguments: 'ation": "NYC"}',
+                    },
+                  },
+                ],
+              },
+              finish_reason: null,
+              logprobs: null,
+            },
+          ],
+        } as ChatCompletionChunk,
+        // Second tool call
+        {
+          id: 'chatcmpl-multi',
+          model: 'gpt-4',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          choices: [
+            {
+              index: 0,
+              delta: {
+                tool_calls: [
+                  {
+                    index: 1,
+                    id: 'call_news',
+                    type: 'function',
+                    function: {
+                      name: 'get_news',
+                      arguments: '{"topic": "technology"}',
+                    },
+                  },
+                ],
+              },
+              finish_reason: null,
+              logprobs: null,
+            },
+          ],
+        } as ChatCompletionChunk,
+        // Final chunk
+        {
+          id: 'chatcmpl-multi',
+          model: 'gpt-4',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason: 'stop',
+              logprobs: null,
+            },
+          ],
+          usage: {
+            prompt_tokens: 30,
+            completion_tokens: 20,
+            total_tokens: 50,
+          },
+        } as ChatCompletionChunk,
+      ]
+
+      mockStreamChunks = multiToolChunks
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Weather and news?' }],
+        stream: true,
+        posthogDistinctId: 'multi-tool-user',
+      })
+
+      // Consume the stream
+      for await (const _chunk of stream) {
+        // Just consume
+      }
+
+      // Wait for async capture
+      await flushPromises()
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      // Verify both tool calls are in the output
+      const outputContent = properties['$ai_output_choices'][0].content
+      expect(outputContent).toHaveLength(3) // text + 2 function calls
+      expect(outputContent[0].type).toBe('text')
+      expect(outputContent[1].type).toBe('function')
+      expect(outputContent[1].function.name).toBe('get_weather')
+      expect(outputContent[2].type).toBe('function')
+      expect(outputContent[2].function.name).toBe('get_news')
+    })
+
+    conditionalTest('handles streaming errors gracefully', async () => {
+      // Mock a stream that throws an error
+      const errorStream = {
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            id: 'error-chunk',
+            model: 'gpt-4',
+            object: 'chat.completion.chunk',
+            created: Date.now() / 1000,
+            choices: [
+              {
+                index: 0,
+                delta: { content: 'Starting...' },
+                finish_reason: null,
+              },
+            ],
+          }
+          const error = new Error('Stream interrupted') as Error & { status: number }
+          error.status = 503
+          throw error
+        },
+      }
+
+      const ChatMock: any = openaiModule.Chat
+      ;(ChatMock.Completions as any).prototype.create = jest.fn().mockResolvedValue(errorStream)
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Test error' }],
+        stream: true,
+        posthogDistinctId: 'error-user',
+      })
+
+      // Try to consume the stream (should throw)
+      await expect(async () => {
+        for await (const _chunk of stream) {
+          // Should throw before completing
+        }
+      }).rejects.toThrow('Stream interrupted')
+
+      // Wait for error capture
+      await flushPromises()
+
+      // Verify error was captured
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_http_status']).toBe(503)
+      expect(properties['$ai_error']).toBeDefined()
+      // Error is JSON stringified, so check for status code
+      expect(properties['$ai_error']).toContain('503')
+    })
+
+    conditionalTest('tracks time to first token in streaming', async () => {
+      // Create a simple streaming response with content
+      mockStreamChunks = createMockStreamChunks({
+        content: 'Hello world',
+        includeUsage: true,
+      })
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Say hello' }],
+        stream: true,
+        posthogDistinctId: 'test-ttft-user',
+      })
+
+      // Consume the stream
+      for await (const _chunk of stream) {
+        // Just consume
+      }
+
+      // Wait for async capture to complete
+      await flushPromises()
+
+      // Verify PostHog was called with time to first token
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      // Time to first token should be present and be a number
+      expect(typeof properties['$ai_time_to_first_token']).toBe('number')
+      expect(properties['$ai_time_to_first_token']).toBeGreaterThanOrEqual(0)
+      // Time to first token should be less than or equal to total latency
+      expect(properties['$ai_time_to_first_token']).toBeLessThanOrEqual(properties['$ai_latency'])
+    })
+
+    conditionalTest('handles empty streaming response', async () => {
+      // Create chunks with no content
+      mockStreamChunks = [
+        {
+          id: 'empty-stream',
+          model: 'gpt-4',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason: 'stop',
+              logprobs: null,
+            },
+          ],
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 0,
+            total_tokens: 10,
+          },
+        } as ChatCompletionChunk,
+      ]
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Empty test' }],
+        stream: true,
+        posthogDistinctId: 'empty-user',
+      })
+
+      // Consume the stream
+      for await (const _chunk of stream) {
+        // Just consume
+      }
+
+      // Wait for capture
+      await flushPromises()
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      // Should have empty text content
+      expect(properties['$ai_output_choices']).toEqual([
+        {
+          role: 'assistant',
+          content: [{ type: 'text', text: '' }],
+        },
+      ])
+      expect(properties['$ai_output_tokens']).toBe(0)
+    })
+  })
+
+  describe('Embeddings', () => {
+    conditionalTest('basic embeddings', async () => {
+      const response = await client.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: 'Hello world',
+        posthogDistinctId: 'test-id',
+        posthogProperties: { test: 'embeddings' },
+      })
+
+      expect(response).toEqual(mockOpenAiEmbeddingResponse)
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { distinctId, event, properties } = captureArgs[0]
+
+      expect(distinctId).toBe('test-id')
+      expect(event).toBe('$ai_embedding')
+      expect(properties['$ai_provider']).toBe('openai')
+      expect(properties['$ai_model']).toBe('text-embedding-3-small')
+      expect(properties['$ai_input']).toBe('Hello world')
+      expect(properties['$ai_output_choices']).toBeNull() // Embeddings don't have output
+      expect(properties['$ai_input_tokens']).toBe(5)
+      expect(properties['$ai_output_tokens']).toBeUndefined() // Embeddings don't send output tokens
+      expect(properties['$ai_http_status']).toBe(200)
+      expect(properties['test']).toBe('embeddings')
+      expect(typeof properties['$ai_latency']).toBe('number')
+    })
+
+    conditionalTest('embeddings with array input', async () => {
+      const arrayInput = ['Hello', 'World', 'Test']
+      mockOpenAiEmbeddingResponse = {
+        object: 'list',
+        data: [
+          {
+            object: 'embedding',
+            embedding: new Array(1536).fill(0).map(() => Math.random()),
+            index: 0,
+          },
+          {
+            object: 'embedding',
+            embedding: new Array(1536).fill(0).map(() => Math.random()),
+            index: 1,
+          },
+          {
+            object: 'embedding',
+            embedding: new Array(1536).fill(0).map(() => Math.random()),
+            index: 2,
+          },
+        ],
+        model: 'text-embedding-3-small',
+        usage: {
+          prompt_tokens: 8,
+          total_tokens: 8,
+        },
+      }
+
+      const EmbeddingsMock: any = openaiModule.Embeddings || class MockEmbeddings {}
+      EmbeddingsMock.prototype.create = jest.fn().mockResolvedValue(mockOpenAiEmbeddingResponse)
+
+      const response = await client.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: arrayInput,
+        posthogDistinctId: 'test-array-id',
+      })
+
+      expect(response).toEqual(mockOpenAiEmbeddingResponse)
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_input']).toEqual(arrayInput)
+      expect(properties['$ai_output_choices']).toBeNull() // Embeddings don't have output
+      expect(properties['$ai_input_tokens']).toBe(8)
+      expect(properties['$ai_output_tokens']).toBeUndefined() // Embeddings don't send output tokens
+    })
+
+    conditionalTest('embeddings privacy mode', async () => {
+      await client.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: 'Sensitive data',
+        posthogDistinctId: 'test-id',
+        posthogPrivacyMode: true,
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_input']).toBeNull()
+      expect(properties['$ai_output_choices']).toBeNull()
+    })
+
+    conditionalTest('embeddings error handling', async () => {
+      const EmbeddingsMock: any = openaiModule.Embeddings || class MockEmbeddings {}
+      const testError = new Error('API Error') as Error & { status: number }
+      testError.status = 400
+      EmbeddingsMock.prototype.create = jest.fn().mockRejectedValue(testError)
+
+      await expect(
+        client.embeddings.create({
+          model: 'text-embedding-3-small',
+          input: 'Test input',
+          posthogDistinctId: 'error-user',
+        })
+      ).rejects.toThrow('API Error')
+
+      // Verify error was captured
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_http_status']).toBe(400)
+      expect(properties['$ai_is_error']).toBe(true)
+      expect(properties['$ai_error']).toContain('400')
+    })
+
+    conditionalTest('embeddings captureImmediate flag', async () => {
+      await client.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: 'Test input',
+        posthogDistinctId: 'test-id',
+        posthogCaptureImmediate: true,
+      })
+
+      // captureImmediate should be called once, and capture should not be called
+      expect(mockPostHogClient.captureImmediate).toHaveBeenCalledTimes(1)
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(0)
+    })
+  })
+
+  describe('Transcriptions', () => {
+    let mockTranscriptionResponse: any
+
+    beforeEach(() => {
+      // Default transcription response
+      mockTranscriptionResponse = {
+        text: 'Hello, this is a test transcription.',
+      }
+
+      // Mock the Audio.Transcriptions.prototype.create method
+      const AudioMock: any = openaiModule.Audio
+      const TranscriptionsMock = AudioMock.Transcriptions
+      TranscriptionsMock.prototype.create = jest
+        .fn()
+        .mockImplementation(() => createMockAPIPromise(mockTranscriptionResponse))
+    })
+
+    test('audio transcriptions create preserves OpenAI APIPromise helpers', async () => {
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      const promise = client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        posthogDistinctId: 'test-transcription-user',
+      })
+
+      expect(typeof promise.asResponse).toBe('function')
+      expect(typeof promise.withResponse).toBe('function')
+
+      const rawResponse = await promise.asResponse()
+      const { data, response, request_id } = await promise.withResponse()
+
+      expect(rawResponse.headers.get('x-ratelimit-remaining-requests')).toBe('42')
+      expect(response.headers.get('x-ratelimit-remaining-requests')).toBe('42')
+      expect(request_id).toBe('req_test')
+      expect(data).toEqual(mockTranscriptionResponse)
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+    })
+
+    conditionalTest('basic transcription', async () => {
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      const response = await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        posthogDistinctId: 'test-transcription-user',
+        posthogProperties: { test: 'transcription' },
+      })
+
+      expect(response).toEqual(mockTranscriptionResponse)
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { distinctId, event, properties } = captureArgs[0]
+
+      expect(distinctId).toBe('test-transcription-user')
+      expect(event).toBe('$ai_generation')
+      expect(properties['$ai_lib']).toBe('posthog-ai')
+      expect(properties['$ai_lib_version']).toBe(version)
+      expect(properties['$ai_provider']).toBe('openai')
+      expect(properties['$ai_model']).toBe('whisper-1')
+      expect(properties['$ai_output_choices']).toBe('Hello, this is a test transcription.')
+      expect(properties['$ai_http_status']).toBe(200)
+      expect(properties['test']).toBe('transcription')
+      expect(typeof properties['$ai_latency']).toBe('number')
+      expect(properties['$ai_input_tokens']).toBe(0)
+      expect(properties['$ai_output_tokens']).toBe(0)
+    })
+
+    conditionalTest('transcription with prompt', async () => {
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        prompt: 'This is a test prompt to guide transcription.',
+        posthogDistinctId: 'test-user',
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_input']).toBe('This is a test prompt to guide transcription.')
+    })
+
+    conditionalTest('transcription with language parameter', async () => {
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        language: 'en',
+        posthogDistinctId: 'test-user',
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_model_parameters']).toMatchObject({
+        language: 'en',
+      })
+    })
+
+    conditionalTest('transcription verbose json format', async () => {
+      const mockVerboseResponse = {
+        language: 'english',
+        duration: 2.5,
+        text: 'Hello, this is a test transcription.',
+        words: [
+          { word: 'Hello', start: 0.0, end: 0.5 },
+          { word: 'this', start: 0.5, end: 0.8 },
+        ],
+      }
+
+      const AudioMock: any = openaiModule.Audio
+      const TranscriptionsMock = AudioMock.Transcriptions
+      TranscriptionsMock.prototype.create = jest.fn().mockResolvedValue(mockVerboseResponse)
+
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      const response = await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        response_format: 'verbose_json',
+        posthogDistinctId: 'test-verbose-user',
+      })
+
+      expect(response).toEqual(mockVerboseResponse)
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_output_choices']).toBe('Hello, this is a test transcription.')
+      expect(properties['$ai_model_parameters']).toMatchObject({
+        response_format: 'verbose_json',
+      })
+    })
+
+    conditionalTest('transcription privacy mode', async () => {
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        prompt: 'Sensitive prompt',
+        posthogDistinctId: 'test-user',
+        posthogPrivacyMode: true,
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_input']).toBeNull()
+      expect(properties['$ai_output_choices']).toBeNull()
+    })
+
+    conditionalTest('transcription with usage tokens', async () => {
+      const responseWithUsage = {
+        text: 'Hello, this is a test transcription.',
+        usage: {
+          type: 'tokens' as const,
+          input_tokens: 150,
+          output_tokens: 50,
+        },
+      }
+
+      const AudioMock: any = openaiModule.Audio
+      const TranscriptionsMock = AudioMock.Transcriptions
+      TranscriptionsMock.prototype.create = jest.fn().mockResolvedValue(responseWithUsage)
+
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        posthogDistinctId: 'test-user',
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_input_tokens']).toBe(150)
+      expect(properties['$ai_output_tokens']).toBe(50)
+    })
+
+    conditionalTest('transcription error handling', async () => {
+      const AudioMock: any = openaiModule.Audio
+      const TranscriptionsMock = AudioMock.Transcriptions
+      const testError = new Error('API Error') as Error & { status: number }
+      testError.status = 400
+      TranscriptionsMock.prototype.create = jest.fn().mockRejectedValue(testError)
+
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      await expect(
+        client.audio.transcriptions.create({
+          file: mockFile,
+          model: 'whisper-1',
+          posthogDistinctId: 'error-user',
+        })
+      ).rejects.toThrow('API Error')
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_http_status']).toBe(400)
+      expect(properties['$ai_is_error']).toBe(true)
+      expect(properties['$ai_error']).toContain('400')
+    })
+
+    conditionalTest('transcription captureImmediate flag', async () => {
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        posthogDistinctId: 'test-user',
+        posthogCaptureImmediate: true,
+      })
+
+      expect(mockPostHogClient.captureImmediate).toHaveBeenCalledTimes(1)
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(0)
+    })
+
+    conditionalTest('transcription groups', async () => {
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        posthogDistinctId: 'test-user',
+        posthogGroups: { company: 'test_company' },
+      })
+
+      expect(mockPostHogClient.capture).toHaveBeenCalledTimes(1)
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { groups } = captureArgs[0]
+      expect(groups).toEqual({ company: 'test_company' })
+    })
+
+    conditionalTest('posthogProperties are not sent to OpenAI', async () => {
+      const AudioMock: any = openaiModule.Audio
+      const TranscriptionsMock = AudioMock.Transcriptions
+      const mockCreate = jest.fn().mockResolvedValue(mockTranscriptionResponse)
+      const originalCreate = TranscriptionsMock.prototype.create
+      TranscriptionsMock.prototype.create = mockCreate
+
+      const mockFile = new Blob(['mock audio data'], { type: 'audio/mpeg' }) as any
+      mockFile.name = 'test.mp3'
+
+      await client.audio.transcriptions.create({
+        file: mockFile,
+        model: 'whisper-1',
+        posthogDistinctId: 'test-user',
+        posthogProperties: { key: 'value' },
+        posthogGroups: { team: 'test' },
+        posthogPrivacyMode: true,
+        posthogCaptureImmediate: true,
+        posthogTraceId: 'trace-123',
+      })
+
+      const [actualParams] = mockCreate.mock.calls[0]
+      const posthogParams = Object.keys(actualParams).filter((key) => key.startsWith('posthog'))
+      expect(posthogParams).toEqual([])
+      TranscriptionsMock.prototype.create = originalCreate
+    })
+  })
+
+  describe('Web Search Tracking', () => {
+    conditionalTest('should track web search with Perplexity-style citations (binary detection)', async () => {
+      mockOpenAiChatResponse = {
+        id: 'chatcmpl-test',
+        object: 'chat.completion',
+        created: Date.now() / 1000,
+        model: 'sonar-pro',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'Based on my search, PostHog is a product analytics platform.',
+              annotations: [
+                {
+                  type: 'url_citation',
+                  text: 'PostHog docs',
+                  url: 'https://posthog.com',
+                },
+              ] as any,
+            },
+            finish_reason: 'stop',
+            logprobs: null,
+          },
+        ],
+        usage: {
+          prompt_tokens: 50,
+          completion_tokens: 30,
+          total_tokens: 80,
+        },
+      } as ChatCompletion
+
+      await client.chat.completions.create({
+        model: 'sonar-pro',
+        messages: [{ role: 'user', content: 'What is PostHog?' }],
+        posthogDistinctId: 'test-user',
+      })
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_web_search_count']).toBe(1)
+    })
+
+    conditionalTest('should track exact count from Responses API web_search_call', async () => {
+      // Mock Responses API response with web_search_call items
+      const mockResponsesResult = {
+        id: 'resp_test',
+        _request_id: 'req_test-responses-create',
+        output: [
+          {
+            type: 'web_search_call',
+            id: 'search_1',
+            query: 'PostHog features',
+          },
+          {
+            type: 'web_search_call',
+            id: 'search_2',
+            query: 'PostHog pricing',
+          },
+          {
+            type: 'message',
+            role: 'assistant',
+            content: [
+              {
+                type: 'text',
+                text: 'Based on the search results, here is what I found...',
+              },
+            ],
+          },
+        ],
+        usage: {
+          input_tokens: 60,
+          output_tokens: 40,
+          total_tokens: 100,
+        },
+      } as any
+
+      const ResponsesMock: any = openaiModule.Responses || class MockResponses {}
+      ResponsesMock.prototype.create = jest.fn().mockResolvedValue(mockResponsesResult)
+
+      await client.responses.create({
+        model: 'gpt-4',
+        input: 'Tell me about PostHog',
+        posthogDistinctId: 'test-user',
+      } as any)
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      // Should detect 2 web_search_call items (exact count)
+      expect(properties['$ai_web_search_count']).toBe(2)
+      // Completion metadata for the non-streaming Responses API create path.
+      expect(properties['$ai_completion_id']).toBe('resp_test')
+      expect(properties['$ai_provider_metadata']).toEqual({ request_id: 'req_test-responses-create' })
+    })
+
+    conditionalTest('should track web search in streaming with citations on final chunk', async () => {
+      // Create stream chunks with citations
+      mockStreamChunks = [
+        {
+          id: 'chatcmpl-test',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          model: 'sonar-pro',
+          choices: [
+            {
+              index: 0,
+              delta: { content: 'Search result text' },
+              finish_reason: null,
+              logprobs: null,
+            },
+          ],
+        } as ChatCompletionChunk,
+        {
+          id: 'chatcmpl-test',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          model: 'sonar-pro',
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason: 'stop',
+              logprobs: null,
+            },
+          ],
+          usage: {
+            prompt_tokens: 40,
+            completion_tokens: 25,
+            total_tokens: 65,
+          },
+          citations: [
+            {
+              url: 'https://example.com',
+              text: 'Example citation',
+            },
+          ] as any,
+        } as any,
+      ]
+
+      const stream = await client.chat.completions.create({
+        model: 'sonar-pro',
+        messages: [{ role: 'user', content: 'Search query' }],
+        stream: true,
+        posthogDistinctId: 'test-user',
+      })
+
+      // Consume stream
+      for await (const _chunk of stream) {
+        // Just consume
+      }
+
+      await flushPromises()
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_web_search_count']).toBe(1)
+    })
+
+    conditionalTest('should detect web search on early chunk without usage data (CRITICAL)', async () => {
+      mockStreamChunks = [
+        {
+          id: 'chatcmpl-test',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          model: 'gpt-4',
+          choices: [
+            {
+              index: 0,
+              delta: {
+                content: 'Search result',
+                annotations: [
+                  {
+                    type: 'url_citation',
+                    text: 'Citation',
+                    url: 'https://example.com',
+                  },
+                ] as any,
+              },
+              finish_reason: null,
+              logprobs: null,
+            },
+          ],
+          // NO usage data on this chunk!
+        } as any,
+        {
+          id: 'chatcmpl-test',
+          object: 'chat.completion.chunk',
+          created: Date.now() / 1000,
+          model: 'gpt-4',
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason: 'stop',
+              logprobs: null,
+            },
+          ],
+          usage: {
+            prompt_tokens: 30,
+            completion_tokens: 20,
+            total_tokens: 50,
+          },
+        } as ChatCompletionChunk,
+      ]
+
+      const stream = await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Query' }],
+        stream: true,
+        posthogDistinctId: 'test-user',
+      })
+
+      // Consume stream
+      for await (const _chunk of stream) {
+        // Just consume
+      }
+
+      await flushPromises()
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      // Should detect web search from early chunk even without usage data
+      expect(properties['$ai_web_search_count']).toBe(1)
+    })
+
+    conditionalTest('should detect web search from search_results (Perplexity via OpenRouter)', async () => {
+      mockOpenAiChatResponse = {
+        id: 'chatcmpl-test',
+        object: 'chat.completion',
+        created: Date.now() / 1000,
+        model: 'sonar-pro',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'Search result content',
+            },
+            finish_reason: 'stop',
+            logprobs: null,
+          },
+        ],
+        usage: {
+          prompt_tokens: 35,
+          completion_tokens: 28,
+          total_tokens: 63,
+        },
+        search_results: [
+          {
+            url: 'https://example.com',
+            title: 'Example',
+          },
+        ] as any,
+      } as any
+
+      await client.chat.completions.create({
+        model: 'sonar-pro',
+        messages: [{ role: 'user', content: 'Search' }],
+        posthogDistinctId: 'test-user',
+      })
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_web_search_count']).toBe(1)
+    })
+
+    conditionalTest('should detect web search from search_context_size (Perplexity via OpenRouter)', async () => {
+      mockOpenAiChatResponse = {
+        id: 'chatcmpl-test',
+        object: 'chat.completion',
+        created: Date.now() / 1000,
+        model: 'sonar-pro',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'Search result',
+            },
+            finish_reason: 'stop',
+            logprobs: null,
+          },
+        ],
+        usage: {
+          prompt_tokens: 45,
+          completion_tokens: 32,
+          total_tokens: 77,
+          search_context_size: '1234',
+        } as any,
+      } as any
+
+      await client.chat.completions.create({
+        model: 'sonar-pro',
+        messages: [{ role: 'user', content: 'Query' }],
+        posthogDistinctId: 'test-user',
+      })
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      expect(properties['$ai_web_search_count']).toBe(1)
+    })
+
+    conditionalTest('should not include web search count when not present', async () => {
+      mockOpenAiChatResponse = {
+        id: 'chatcmpl-test',
+        object: 'chat.completion',
+        created: Date.now() / 1000,
+        model: 'gpt-4',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'Regular response without web search',
+            },
+            finish_reason: 'stop',
+            logprobs: null,
+          },
+        ],
+        usage: {
+          prompt_tokens: 20,
+          completion_tokens: 15,
+          total_tokens: 35,
+        },
+      } as ChatCompletion
+
+      await client.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello' }],
+        posthogDistinctId: 'test-user',
+      })
+
+      const [captureArgs] = (mockPostHogClient.capture as jest.Mock).mock.calls
+      const { properties } = captureArgs[0]
+
+      // Should not have web search count when not present
+      expect(properties['$ai_web_search_count']).toBeUndefined()
+    })
+  })
+
+  conditionalTest('posthogProperties are not sent to OpenAI', async () => {
+    const ChatMock: any = openaiModule.Chat
+    const mockCreate = jest.fn().mockResolvedValue({})
+    const originalCreate = (ChatMock.Completions as any).prototype.create
+    ;(ChatMock.Completions as any).prototype.create = mockCreate
+
+    await client.chat.completions.create({
+      model: 'gpt-4',
+      messages: [],
+      posthogDistinctId: 'test-id',
+      posthogProperties: { key: 'value' },
+      posthogGroups: { team: 'test' },
+      posthogPrivacyMode: true,
+      posthogCaptureImmediate: true,
+      posthogTraceId: 'trace-123',
+    })
+
+    const [actualParams] = mockCreate.mock.calls[0]
+    const posthogParams = Object.keys(actualParams).filter((key) => key.startsWith('posthog'))
+    expect(posthogParams).toEqual([])
+    ;(ChatMock.Completions as any).prototype.create = originalCreate
+  })
+})
+
+// No API key: drive the wrapper with a fake parent to assert $ai_base_url carries its base URL.
+describe('PostHogOpenAI - $ai_base_url', () => {
+  it('emits the wrapped client base URL', async () => {
+    const ph = new (PostHog as any)()
+    const ChatMock: any = openaiModule.Chat
+    ;(ChatMock.Completions as any).prototype.create = jest.fn().mockResolvedValue({
+      id: 'chatcmpl-x',
+      model: 'gpt-4',
+      object: 'chat.completion',
+      created: 0,
+      choices: [
+        {
+          index: 0,
+          finish_reason: 'stop',
+          message: { role: 'assistant', content: 'hi', refusal: null },
+          logprobs: null,
+        },
+      ],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    })
+
+    const wrapped = new WrappedCompletions({ baseURL: 'https://gateway.posthog.com/v1' } as any, ph as any)
+    await wrapped.create({ model: 'gpt-4', messages: [{ role: 'user', content: 'hi' }] } as any)
+
+    const { properties } = (ph.capture as jest.Mock).mock.calls[0][0]
+    expect(properties['$ai_base_url']).toBe('https://gateway.posthog.com/v1')
+  })
+})

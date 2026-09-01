@@ -1,0 +1,519 @@
+import babel from '@rollup/plugin-babel'
+import json from '@rollup/plugin-json'
+import resolve from '@rollup/plugin-node-resolve'
+import typescript from '@rollup/plugin-typescript'
+import { dts } from 'rollup-plugin-dts'
+import terser from '@rollup/plugin-terser'
+import { visualizer } from 'rollup-plugin-visualizer'
+import commonjs from '@rollup/plugin-commonjs'
+import postcss from 'rollup-plugin-postcss'
+import postcssImport from 'postcss-import'
+import postcssNesting from 'postcss-nesting'
+import cssnano from 'cssnano'
+import fs from 'fs'
+import path from 'path'
+import crossBundlePropertyConfig from './terser-cross-bundle-properties.cjs'
+
+const { crossBundlePrivateProperties, globallyReservedPrivateProperties } = crossBundlePropertyConfig
+const WRITE_MANGLED_PROPERTIES = process.env.WRITE_MANGLED_PROPERTIES
+const nameCachePath = './terser-mangled-names.json'
+let nameCache = {}
+
+// Shared across all entries so mangled property names are consistent between
+// module.slim.js and extension-bundles.js — see #3313.
+// Only property names (props) are shared; top-level variable names (vars) are
+// reset per-entry by the plugin below since each module has its own scope.
+
+const plugins = (es5, noExternal, preserveCrossBundleProperties) => [
+    {
+        name: 'reset-vars-name-cache',
+        buildStart() {
+            nameCache.vars = { props: {} }
+        },
+    },
+    json(),
+    resolve({ browser: true }),
+    typescript({ sourceMap: true, outDir: './dist', module: 'es2015' }),
+    commonjs(),
+    postcss({
+        plugins: [
+            postcssImport(),
+            postcssNesting(),
+            cssnano({
+                preset: [
+                    'default',
+                    {
+                        discardComments: { removeAll: true },
+                        discardDuplicates: true,
+                        discardEmpty: true,
+                        discardUnused: true,
+                        mergeIdents: true,
+                        mergeLonghand: true,
+                        mergeRules: true,
+                        minifyFontValues: true,
+                        minifyGradients: true,
+                        minifyParams: true,
+                        minifySelectors: true,
+                        normalizeCharset: true,
+                        normalizeDisplayValues: true,
+                        normalizePositions: true,
+                        normalizeRepeatStyle: true,
+                        normalizeString: true,
+                        normalizeTimingFunctions: true,
+                        normalizeUnicode: true,
+                        normalizeUrl: true,
+                        normalizeWhitespace: true,
+                        orderedValues: true,
+                        reduceIdents: true,
+                        reduceInitial: true,
+                        reduceTransforms: true,
+                        svgo: true,
+                        uniqueSelectors: true,
+                    },
+                ],
+            }),
+        ],
+        minimize: true,
+        inject: false,
+    }),
+    babel({
+        extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx'],
+        babelHelpers: 'bundled',
+        overrides: [
+            {
+                // This prebuilt rrweb module intentionally exceeds Babel's 500 KB compacting threshold.
+                // Make the existing behavior explicit without hiding warnings for other unexpectedly large modules.
+                test: /[\\/]packages[\\/]rrweb[\\/]rrweb[\\/]dist[\\/]rrweb\.js$/,
+                compact: true,
+            },
+        ],
+        plugins: [
+            '@babel/plugin-transform-nullish-coalescing-operator',
+            // Explicitly included so we transform 1 ** 2 to Math.pow(1, 2) for ES6 compatibility
+            '@babel/plugin-transform-exponentiation-operator',
+        ],
+        presets: [
+            [
+                '@babel/preset-env',
+                {
+                    loose: true,
+                    targets: es5
+                        ? [
+                              '> 0.5%, last 2 versions, Firefox ESR, not dead',
+                              'chrome > 62',
+                              'firefox > 59',
+                              'ios_saf >= 6.1',
+                              'opera > 50',
+                              'safari > 12',
+                              'IE 11',
+                          ]
+                        : [
+                              '> 0.5%, last 2 versions, Firefox ESR, not dead',
+                              'chrome > 62',
+                              'firefox > 59',
+                              'ios_saf >= 10.3',
+                              'opera > 50',
+                              'safari > 12',
+                          ],
+                },
+            ],
+        ],
+    }),
+    terser({
+        nameCache,
+        toplevel: true,
+        compress: {
+            ecma: es5 ? 5 : 6,
+            passes: 2,
+            pure_getters: true,
+            unsafe_methods: true,
+            unsafe_comps: true,
+            unsafe_math: true,
+            unsafe_proto: true,
+            unsafe_regexp: true,
+        },
+        format: {
+            comments: false,
+        },
+        mangle:
+            noExternal || es5
+                ? {
+                      // Don't mangle properties in no-external builds, as it is used in Browser extensions which have to go through a review process with e.g. Google, and they can be weird about obfuscated code.
+                      // Don't mangle properties in the es5 build, as it relies on helpers which don't work well with mangling.
+                      properties: false,
+                      reserved: [
+                          // we don't want to emit $ since that clashes with jquery
+                          '$',
+                      ],
+                  }
+                : {
+                      // Note:
+                      // PROPERTY MANGLING CAN BREAK YOUR CODE
+                      // But we use it anyway because it's incredible for bundle size, you just need to develop with it in mind.
+                      // Any properties that start with _ will be mangled, which can be a problem if anything with that pattern is
+                      // part of the public interface, or if any API responses we use matches that regex.
+                      // Fix specific instances of this by adding the property to the reserved list.
+                      properties: {
+                          regex: /^_(?!_)/, // only mangle properties that start with a single _
+                          reserved: [
+                              // list any exceptions that shouldn't be mangled, and please add an explanation:
+
+                              // referenced in snippet, MUST be preserved
+                              '_i',
+                              '__SV',
+
+                              // used in flags endpoint, MUST be preserved
+                              '_',
+
+                              // used in config
+                              '_url',
+                              '_batchKey',
+                              '_noTruncate',
+                              '_onCapture',
+
+                              // passed from the exception extension bundle to legacy cores
+                              '_noHeatmaps',
+
+                              // used in surveys, however, this shouldn't be needed
+                              // TODO: figure out how to remove them
+                              '_posthog',
+                              '_instance',
+                              '_surveyEventReceiver',
+                              // we don't mangle _surveyManager as it's used by external surveys to paint them on the dom directly
+                              '_surveyManager',
+
+                              // private ABI between independently emitted slim cores and extension bundles
+                              ...(preserveCrossBundleProperties
+                                  ? crossBundlePrivateProperties
+                                  : globallyReservedPrivateProperties),
+
+                              // used in conversations - external bundle needs to access these on the posthog instance
+                              '_conversationsManager',
+                              '_conversations',
+
+                              // part of setup/teardown code, preserve these out of caution
+                              '_init',
+                              '_dom_loaded',
+                              '_execute_array',
+                              '_handle_unload',
+
+                              // playwright uses these
+                              '_forceAllowLocalhostNetworkCapture',
+                              '_is_bot',
+                              '__ph_loaded',
+                              '_sessionActivityTimestamp',
+                              '_sessionStartTimestamp',
+                              '_sessionTimeoutMs',
+
+                              // set on global window object (the ones using __ are not mangled anyway BUT be abundantly cautious)
+                              '_POSTHOG_REMOTE_CONFIG',
+                              '__POSTHOG_INSTRUMENTED__',
+                              '__PosthogExtensions__',
+                              '__posthog_wrapped__',
+                              '__Posthog__',
+                              '_patchFetch',
+                              '_patchXHR',
+
+                              // set as part of lazy-loading (doesn't start with _ BUT be abundantly cautious)
+                              'loadExternalDependency',
+
+                              // part of the public API (none start with _ so are not mangled anyway BUT be abundantly cautious)
+                              'capture',
+                              'identify',
+                              'alias',
+                              'set',
+                              'set_once',
+                              'set_config',
+                              'register',
+                              'register_once',
+                              'unregister',
+                              'opt_out_capturing',
+                              'has_opted_out_capturing',
+                              'opt_in_capturing',
+                              'reset',
+                              'isFeatureEnabled',
+                              'onFeatureFlags',
+                              'getSurveys',
+                              'getActiveMatchingSurveys',
+                              'captureException',
+                              'posthog',
+                              'version',
+                              'surveys',
+                              'calculateEventProperties',
+
+                              // used by wrapper SDKs (e.g. posthog-flutter, posthog-react-native) to override $lib and $lib_version
+                              '_overrideSDKInfo',
+
+                              // possibly used by naughty users - we should decide if we want make these part of the public API, but be cautious for now
+                              '_isIdentified',
+                              '_is_bot',
+                              '_calculate_event_properties', // deprecated in favour of calculateEventProperties
+
+                              // URL parameters
+                              '__posthog_debug',
+
+                              // attribution params, not used in a way that would be mangled but be cautious
+                              '_kx',
+
+                              // used in rrweb source
+                              '_rrweb',
+                              '_root',
+                              '_css',
+                              '_opts',
+                              '_cssText',
+                              '__context',
+                              '_mappings',
+                              '_processor',
+                              '_args',
+                              '__ln',
+                              '_unchangedStyles',
+                              '__rrweb_original__',
+                              '_Departed',
+                              '_onload',
+                              '_onclick',
+                              '_oncontextmenu',
+                              '_ondblclick',
+                              '_onmousedown',
+                              '_onmouseenter',
+                              '_onmouseleave',
+                              '_onmousemove',
+                              '_onmouseout',
+                              '_onmouseover',
+
+                              // Helpers added by the e.g. es5 build. We don't use this, but they can be a starting point if we try to get the es5 build mangled in the future
+                              '_invoke',
+                              '__proto__',
+                              '__await',
+                              '_createClass',
+                              '_classCallCheck',
+                              '__esModule',
+                              '__publicField2',
+                              '__symbol__',
+
+                              // found in terser-mangled-names.json and couldn't attribute source, so preserve out of caution,
+                              '_sb',
+                              '_mirror',
+                              '_map',
+                          ],
+                      },
+                      reserved: [
+                          // we don't want to emit $ since that clashes with jquery
+                          '$',
+                      ],
+                  },
+    }),
+    {
+        name: 'save-terser-mangled-names',
+        writeBundle() {
+            if (!WRITE_MANGLED_PROPERTIES) {
+                return
+            }
+
+            const names = Object.keys(nameCache.props.props).map((k) => {
+                // strip leading dollar to make operating on terser-mangled-names.json easier
+                if (!k.startsWith('$')) {
+                    throw new Error('Unexpected format')
+                }
+                return k.substring(1)
+            })
+            names.sort()
+            // save the props section to a file
+            fs.writeFileSync(
+                nameCachePath,
+                JSON.stringify(
+                    {
+                        '//':
+                            'THIS FILE IS AUTO_GENERATED BY rollup.config.js DO NOT EDIT IT DIRECTLY\n' +
+                            'If a line has been added to this file after a build, it means that the terser mangler has added a new property to the list of mangled properties.\n' +
+                            'CI will fail unless changes to this file are committed.\n' +
+                            'Run a build with `WRITE_MANGLED_PROPERTIES=1 pnpm run build` and commit the new version of this file',
+                        names,
+                    },
+                    null,
+                    4
+                ) + '\n'
+            )
+        },
+    },
+    {
+        name: 'block-node-protocol-imports',
+        resolveId(source) {
+            if (source.startsWith('node:')) {
+                // See https://posthog.slack.com/archives/C03P7NL6RMW/p1761119028457109 for context
+                // Please don't fix this by adding a polyfill, instead use an approach which keeps the bundle size small, even if it means doing something bespoke.
+                throw new Error(
+                    `Node.js protocol import detected: "${source}". This will cause issues in browser/edge environments. Check the comments in rollup.config.mjs for details.`
+                )
+            }
+            return null
+        },
+    },
+]
+
+const entryFilter = process.env.ENTRY
+const allEntrypoints = fs.readdirSync('./src/entrypoints')
+const entrypoints = entryFilter ? allEntrypoints.filter((file) => file.startsWith(entryFilter)) : allEntrypoints
+
+const entrypointTargets = entrypoints.map((file) => {
+    const fileParts = file.split('.')
+    // pop the extension
+    fileParts.pop()
+
+    let format = fileParts[fileParts.length - 1]
+    // NOTE: Sadly we can't just use the file extensions as tsc won't compile things correctly
+    if (['cjs', 'es', 'iife'].includes(format)) {
+        fileParts.pop()
+    } else {
+        format = 'iife'
+    }
+
+    const fileName = fileParts.join('.')
+
+    const preserveCrossBundleProperties = ['extension-bundles', 'module.slim'].includes(fileName)
+    const pluginsForThisFile = plugins(
+        fileName.includes('es5'),
+        fileName.includes('no-external'),
+        preserveCrossBundleProperties
+    )
+
+    // we're allowed to console log in this file :)
+    // eslint-disable-next-line no-console
+    console.log(`Building ${fileName} in ${format} format`)
+
+    /** @type {import('rollup').RollupOptions} */
+    return {
+        input: `src/entrypoints/${file}`,
+        output: [
+            {
+                file: `dist/${fileName}.js`,
+                sourcemap: true,
+                // Mark every source in our bundles as third-party so devtools skip our frames.
+                // Without this, wrappers we install on globals (most visibly the console capture
+                // in entrypoints/logs.ts and rrweb's console plugin) become the reported location
+                // of the caller's own `console.*` calls (e.g. everything blamed on `logs.ts`).
+                // Rollup's default only ignore-lists paths containing node_modules, which misses
+                // both our `src/` and workspace packages (they resolve through symlinks).
+                sourcemapIgnoreList: () => true,
+                format,
+                ...(format === 'iife'
+                    ? {
+                          name: 'posthog',
+                          globals: {
+                              preact: 'preact',
+                          },
+                      }
+                    : {}),
+                ...(format === 'cjs' ? { exports: 'named' } : {}),
+            },
+        ],
+        plugins: [...pluginsForThisFile, visualizer({ filename: `bundle-stats-${fileName}.html`, gzipSize: true })],
+    }
+})
+
+// Entries whose .d.ts must inline upstream types (respectExternal: true) so
+// consumers don't need a runtime dep on the re-exported package to resolve them.
+const inlineExternalTypesEntries = new Set([
+    'extension-bundles.es.ts',
+    'posthog-recorder.ts',
+    'recorder.ts',
+    'rrweb.es.ts',
+    'rrweb-types.es.ts',
+    'rrweb-plugin-console-record.es.ts',
+])
+
+// Entries whose declarations use PostHog must reference the canonical class in
+// module.d.ts instead of inlining a nominally incompatible copy.
+const mainModuleTypesEntries = new Set([
+    'conversations.ts',
+    'customizations.es.ts',
+    'dead-clicks-autocapture.ts',
+    'main.cjs.ts',
+    'product-tours-preview.es.ts',
+    'product-tours.ts',
+    'surveys-preview.es.ts',
+    'surveys.ts',
+    'tracing-headers.ts',
+])
+
+// rrdom's dts drops the local `RRNodeType` alias declaration; the renderChunk
+// below rewrites value references back to `NodeType.`. Only rrweb pulls in rrdom.
+const rewriteRrdomNodeTypeAlias = (file) => file === 'rrweb.es.ts'
+
+const typeTargets = entrypoints
+    .filter((file) => file.endsWith('.ts'))
+    .map((file) => {
+        const source = `./lib/src/entrypoints/${file.replace('.ts', '.d.ts')}`
+        const isExtensionBundles = file === 'extension-bundles.es.ts'
+        const isSlimModule = file === 'module.slim.es.ts'
+        const referencesMainModuleTypes = mainModuleTypesEntries.has(file)
+        const inlineExternalTypes = inlineExternalTypesEntries.has(file)
+        const rewriteRrdomAlias = rewriteRrdomNodeTypeAlias(file)
+        /** @type {import('rollup').RollupOptions} */
+        return {
+            input: source,
+            // extension-bundles types must reference module.slim rather than inlining
+            // their own copies — classes with private fields are nominally typed, so
+            // duplicate declarations across .d.ts files are incompatible. For the same
+            // reason, module.slim must use a source-level re-export from
+            // module.slim.no-external and keep that module external here, so dts preserves
+            // the reference instead of inlining a second declaration graph.
+            ...(isExtensionBundles ? { external: [/module\.slim/] } : {}),
+            ...(isSlimModule ? { external: [/module\.slim\.no-external/] } : {}),
+            ...(referencesMainModuleTypes ? { external: [/posthog-core$/] } : {}),
+            output: [
+                {
+                    dir: path.resolve('./dist'),
+                    entryFileNames: file.replace(/(?:\.(?:cjs|es|iife))?\.ts$/, '.d.ts'),
+                },
+            ],
+            plugins: [
+                json(),
+                dts({
+                    exclude: [],
+                    ...(inlineExternalTypes ? { respectExternal: true } : {}),
+                }),
+                // dts preserves tsc-era paths ending in `.es`, but the output files
+                // omit that segment — fix references between the generated declarations.
+                ...(isExtensionBundles || isSlimModule
+                    ? [
+                          {
+                              name: 'fix-dts-external-paths',
+                              renderChunk(code) {
+                                  return code
+                                      .replace(/\.\/module\.slim\.es(?=['"])/g, './module.slim')
+                                      .replace(
+                                          /\.\/module\.slim\.no-external\.es(?=['"])/g,
+                                          './module.slim.no-external'
+                                      )
+                              },
+                          },
+                      ]
+                    : []),
+                ...(referencesMainModuleTypes
+                    ? [
+                          {
+                              name: 'fix-main-module-dts-external-paths',
+                              renderChunk(code) {
+                                  // The external posthog-core import keeps its source-relative
+                                  // path; point it at the canonical PostHog in dist/module.d.ts.
+                                  return code.replace(/['"](?:\.\.\/)+posthog-core['"]/g, "'./module'")
+                              },
+                          },
+                      ]
+                    : []),
+                ...(rewriteRrdomAlias
+                    ? [
+                          {
+                              name: 'resolve-rrdom-rrnodetype-alias',
+                              renderChunk(code) {
+                                  // Value uses only; the property name `RRNodeType` (rrdom public API) must stay.
+                                  return code.replace(/\bRRNodeType\./g, 'NodeType.')
+                              },
+                          },
+                      ]
+                    : []),
+            ],
+        }
+    })
+
+export default [...entrypointTargets, ...typeTargets]

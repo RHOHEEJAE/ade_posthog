@@ -1,0 +1,35 @@
+name: Browser SDK Compliance Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'packages/browser/**'
+      - 'packages/browser-common/**'
+      - 'packages/core/**'
+      - 'compliance/browser/**'
+      - '.github/workflows/sdk-compliance-tests-browser.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'packages/browser/**'
+      - 'packages/browser-common/**'
+      - 'packages/core/**'
+      - 'compliance/browser/**'
+      - '.github/workflows/sdk-compliance-tests-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+  pull-requests: write
+
+jobs:
+  test-browser-sdk:
+    uses: PostHog/posthog-sdk-test-harness/.github/workflows/test-sdk-action.yml@30b84840a6cdca267aa2a7a296ff20e8da7b51ad
+    with:
+      adapter-dockerfile: compliance/browser/Dockerfile
+      adapter-context: .
+      test-harness-version: "0.10.0"
+      sdk-type: client
+      report-name: browser-sdk-compliance-report

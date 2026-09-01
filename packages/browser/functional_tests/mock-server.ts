@@ -1,0 +1,111 @@
+// An MSW server that handles requests to https://app.posthog.com/e/ and stores
+
+import { ResponseComposition, rest } from 'msw'
+import { setupServer } from 'msw/node'
+import { RestContext } from 'msw'
+import { RestRequest } from 'msw'
+import { decompressSync, strFromU8 } from 'fflate'
+import { isArray } from '@posthog/core'
+
+// the request bodies in a store that we can inspect within tests.
+const capturedRequests: { '/e/': any[]; '/engage/': any[]; '/flags/': any[] } = {
+    '/e/': [],
+    '/engage/': [],
+    '/flags/': [],
+}
+
+const capturedFlagsWireRequests: any[] = []
+
+const isGzipData = (data: Uint8Array): boolean => data[0] === 0x1f && data[1] === 0x8b
+
+const handleRequest = (group: string) => (req: RestRequest, res: ResponseComposition, ctx: RestContext) => {
+    let body = req.body
+    let bodyWrapper = '<unknown>'
+
+    if (typeof body === 'string') {
+        try {
+            const b64Encoded = req.url.href.includes('compression=base64')
+            const data = new Uint8Array(req._body)
+            const gzipCompressed = isGzipData(data)
+            if (b64Encoded) {
+                bodyWrapper = 'data=<base64>'
+                body = JSON.parse(Buffer.from(decodeURIComponent(body.split('=')[1]), 'base64').toString())
+            } else if (gzipCompressed) {
+                bodyWrapper = '<gzip>'
+                const decoded = strFromU8(decompressSync(data))
+                body = JSON.parse(decoded)
+            } else {
+                body = JSON.parse(decodeURIComponent(body.split('=')[1]))
+            }
+        } catch {
+            return res(ctx.status(500))
+        }
+    }
+
+    const requests = group === '/e/' ? (isArray(body) ? body : isArray(body.batch) ? body.batch : [body]) : [body]
+    capturedRequests[group] = [...(capturedRequests[group] || []), ...requests]
+
+    if (group === '/flags/') {
+        capturedFlagsWireRequests.push({
+            bodyWrapper,
+            compression: req.url.searchParams.get('compression'),
+            contentType: req.headers.get('content-type'),
+            decodedBody: body,
+            path: `${req.url.pathname}${req.url.search}`,
+        })
+    }
+
+    return res(ctx.json({}))
+}
+
+const server = setupServer(
+    rest.post('http://localhost/e/', (req, res, ctx) => {
+        return handleRequest('/e/')(req, res, ctx)
+    }),
+    rest.post('http://localhost/engage/', (req, res, ctx) => {
+        return handleRequest('/engage/')(req, res, ctx)
+    }),
+    rest.post('http://localhost/flags/', (req, res, ctx) => {
+        return handleRequest('/flags/')(req, res, ctx)
+    })
+)
+
+// Start the server before all the tests run, and close it afterwards.
+beforeAll(() =>
+    server.listen({
+        onUnhandledRequest: 'error',
+    })
+)
+afterAll(() => server.close())
+
+export const getRequests = (token: string) => {
+    // Filter the captured requests by the given token.
+    return {
+        '/e/': capturedRequests['/e/'].filter((request) => request.properties.token === token),
+        '/engage/': capturedRequests['/engage/'].filter((request) => request.properties.token === token),
+        '/flags/': capturedRequests['/flags/'].filter((request) => request.token === token),
+    }
+}
+
+export const getFlagsWireRequests = (token: string) =>
+    capturedFlagsWireRequests.filter((request) => request.decodedBody.token === token)
+
+export const resetRequests = (token: string) => {
+    Object.assign(capturedRequests, {
+        '/e/': (capturedRequests['/e/'] = capturedRequests['/e/'].filter(
+            (request) => request.properties.token !== token
+        )),
+        '/engage/': (capturedRequests['/engage/'] = capturedRequests['/engage/'].filter(
+            (request) => request.properties.token !== token
+        )),
+        '/flags/': (capturedRequests['/flags/'] = capturedRequests['/flags/'].filter(
+            (request) => request.token !== token
+        )),
+    })
+
+    for (let index = capturedFlagsWireRequests.length - 1; index >= 0; index--) {
+        if (capturedFlagsWireRequests[index].decodedBody.token === token) {
+            capturedFlagsWireRequests.splice(index, 1)
+        }
+    }
+}

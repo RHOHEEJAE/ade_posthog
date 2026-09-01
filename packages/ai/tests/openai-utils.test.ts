@@ -1,0 +1,77 @@
+import {
+  extractRequestId,
+  extractCacheWriteTokens,
+  buildProviderMetadata,
+  getResponseFailure,
+} from '../src/openai/utils'
+
+describe('extractRequestId', () => {
+  it.each<[name: string, input: unknown, expected: string | undefined]>([
+    ['reads `_request_id` when present', { _request_id: 'req_abc123' }, 'req_abc123'],
+    ['returns undefined when `_request_id` is absent', { id: 'chatcmpl-1' }, undefined],
+    ['returns undefined when `_request_id` is null', { _request_id: null }, undefined],
+    ['returns undefined for null input', null, undefined],
+    ['returns undefined for undefined input', undefined, undefined],
+    ['returns undefined for string input', 'not-an-object', undefined],
+    ['returns undefined for numeric input', 42, undefined],
+  ])('%s', (_name, input, expected) => {
+    expect(extractRequestId(input)).toBe(expected)
+  })
+})
+
+describe('extractCacheWriteTokens', () => {
+  it.each<[name: string, input: unknown, expected: number]>([
+    ['reads `cache_write_tokens` when present', { cache_write_tokens: 3820 }, 3820],
+    ['returns 0 when `cache_write_tokens` is absent', { cached_tokens: 5 }, 0],
+    ['returns 0 when `cache_write_tokens` is null', { cache_write_tokens: null }, 0],
+    ['returns 0 for null input', null, 0],
+    ['returns 0 for undefined input', undefined, 0],
+    ['returns 0 for string input', 'not-an-object', 0],
+    ['returns 0 for numeric input', 42, 0],
+  ])('%s', (_name, input, expected) => {
+    expect(extractCacheWriteTokens(input)).toBe(expected)
+  })
+})
+
+describe('getResponseFailure', () => {
+  it('returns a copy of the provider error', () => {
+    const error = { code: 'server_error', message: 'provider response failed' }
+    const response = { id: 'resp_failed', status: 'failed', error } as Parameters<typeof getResponseFailure>[0]
+
+    const failure = getResponseFailure(response)
+
+    expect(failure).toEqual(error)
+    expect(failure).not.toBe(error)
+  })
+})
+
+describe('buildProviderMetadata', () => {
+  it.each<
+    [
+      name: string,
+      input: Parameters<typeof buildProviderMetadata>[0],
+      expected: ReturnType<typeof buildProviderMetadata>,
+    ]
+  >([
+    [
+      'includes both keys when both values are present',
+      { systemFingerprint: 'fp_1', requestId: 'req_1' },
+      { system_fingerprint: 'fp_1', request_id: 'req_1' },
+    ],
+    [
+      'omits requestId when only systemFingerprint is present',
+      { systemFingerprint: 'fp_1' },
+      { system_fingerprint: 'fp_1' },
+    ],
+    ['omits systemFingerprint when only requestId is present', { requestId: 'req_1' }, { request_id: 'req_1' }],
+    ['returns undefined for an empty input object', {}, undefined],
+    [
+      'returns undefined when both values are undefined',
+      { systemFingerprint: undefined, requestId: undefined },
+      undefined,
+    ],
+    ['returns undefined when both values are null', { systemFingerprint: null, requestId: null }, undefined],
+  ])('%s', (_name, input, expected) => {
+    expect(buildProviderMetadata(input)).toEqual(expected)
+  })
+})

@@ -1,0 +1,349 @@
+import AnthropicOriginal, { APIPromise, ClientOptions } from '@anthropic-ai/sdk'
+import { PostHog } from 'posthog-node'
+import {
+  formatResponseAnthropic,
+  mergeSystemPrompt,
+  MonitoringParams,
+  extractAvailableToolCalls,
+  extractPosthogParams,
+  getModelParams,
+} from '../utils'
+import { captureAiGeneration } from '../captureAiGeneration'
+import type { FormattedContentItem, FormattedTextContent, FormattedFunctionCall, FormattedMessage } from '../types'
+
+type MessageCreateParamsNonStreaming = AnthropicOriginal.Messages.MessageCreateParamsNonStreaming
+type MessageCreateParamsStreaming = AnthropicOriginal.Messages.MessageCreateParamsStreaming
+type MessageCreateParams = AnthropicOriginal.Messages.MessageCreateParams
+type Message = AnthropicOriginal.Messages.Message
+type RawMessageStreamEvent = AnthropicOriginal.Messages.RawMessageStreamEvent
+type MessageCreateParamsBase = AnthropicOriginal.Messages.MessageCreateParams
+type RequestOptions = AnthropicOriginal.RequestOptions
+import { Stream } from '@anthropic-ai/sdk/streaming'
+import { sanitizeAnthropic } from '../sanitization'
+import { preserveProviderPromise } from '../providerPromise'
+import { monitoredStreamTee } from '../stream'
+
+interface ToolInProgress {
+  block: FormattedFunctionCall
+  inputString: string
+}
+
+interface MonitoringAnthropicConfig extends ClientOptions {
+  apiKey: string
+  posthog: PostHog
+}
+
+export class PostHogAnthropic extends AnthropicOriginal {
+  private readonly phClient: PostHog
+  public messages: WrappedMessages
+
+  constructor(config: MonitoringAnthropicConfig) {
+    const { posthog, ...anthropicConfig } = config
+    super(anthropicConfig)
+    this.phClient = posthog
+    this.messages = new WrappedMessages(this, this.phClient)
+  }
+}
+
+export class WrappedMessages extends AnthropicOriginal.Messages {
+  private readonly phClient: PostHog
+  private readonly baseURL: string
+
+  constructor(parentClient: PostHogAnthropic, phClient: PostHog) {
+    super(parentClient)
+    this.phClient = phClient
+    this.baseURL = parentClient.baseURL
+  }
+
+  public create(body: MessageCreateParamsNonStreaming, options?: RequestOptions): APIPromise<Message>
+  public create(
+    body: MessageCreateParamsStreaming & MonitoringParams,
+    options?: RequestOptions
+  ): APIPromise<Stream<RawMessageStreamEvent>>
+  public create(
+    body: MessageCreateParamsBase & MonitoringParams,
+    options?: RequestOptions
+  ): APIPromise<Stream<RawMessageStreamEvent> | Message>
+  public create(
+    body: MessageCreateParams & MonitoringParams,
+    options?: RequestOptions
+  ): APIPromise<Message> | APIPromise<Stream<RawMessageStreamEvent>> {
+    const { providerParams: anthropicParams, posthogParams } = extractPosthogParams(body)
+    const startTime = Date.now()
+
+    if (anthropicParams.stream) {
+      const parentPromise = super.create(anthropicParams, options)
+      const wrappedPromise = parentPromise.then((value) => {
+        let accumulatedContent = ''
+        const contentBlocks: FormattedContentItem[] = []
+        const toolsInProgress: Map<string, ToolInProgress> = new Map()
+        let currentTextBlock: FormattedTextContent | null = null
+        let firstTokenTime: number | undefined
+        let stopReason: string | undefined
+
+        const usage: {
+          inputTokens: number
+          outputTokens: number
+          cacheCreationInputTokens?: number
+          cacheReadInputTokens?: number
+          webSearchCount?: number
+          rawUsage?: unknown
+        } = {
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheCreationInputTokens: 0,
+          cacheReadInputTokens: 0,
+          webSearchCount: 0,
+        }
+        let rawUsage: Record<string, unknown> = {}
+        if (Symbol.asyncIterator in value) {
+          const [stream1, stream2] = monitoredStreamTee<RawMessageStreamEvent, Stream<RawMessageStreamEvent>>(
+            value as Stream<RawMessageStreamEvent>,
+            (iterator, controller) => new Stream(iterator, controller)
+          )
+          ;(async () => {
+            try {
+              for await (const chunk of stream1) {
+                // Handle content block start events
+                if (chunk.type === 'content_block_start') {
+                  if (chunk.content_block?.type === 'text') {
+                    currentTextBlock = {
+                      type: 'text',
+                      text: '',
+                    }
+
+                    contentBlocks.push(currentTextBlock)
+                  } else if (chunk.content_block?.type === 'tool_use') {
+                    if (firstTokenTime === undefined) {
+                      firstTokenTime = Date.now()
+                    }
+
+                    const toolBlock: FormattedFunctionCall = {
+                      type: 'function',
+                      id: chunk.content_block.id,
+                      function: {
+                        name: chunk.content_block.name,
+                        arguments: {},
+                      },
+                    }
+
+                    contentBlocks.push(toolBlock)
+
+                    toolsInProgress.set(chunk.content_block.id, {
+                      block: toolBlock,
+                      inputString: '',
+                    })
+
+                    currentTextBlock = null
+                  }
+                }
+
+                // Handle text delta events
+                if ('delta' in chunk) {
+                  if ('text' in chunk.delta) {
+                    const delta = chunk.delta.text
+
+                    if (firstTokenTime === undefined) {
+                      firstTokenTime = Date.now()
+                    }
+
+                    accumulatedContent += delta
+
+                    if (currentTextBlock) {
+                      currentTextBlock.text += delta
+                    }
+                  }
+                }
+
+                // Handle tool input delta events
+                if (chunk.type === 'content_block_delta' && chunk.delta?.type === 'input_json_delta') {
+                  const block = chunk.index !== undefined ? contentBlocks[chunk.index] : undefined
+                  const toolId = block?.type === 'function' ? block.id : undefined
+
+                  if (toolId && toolsInProgress.has(toolId)) {
+                    const tool = toolsInProgress.get(toolId)
+                    if (tool) {
+                      tool.inputString += chunk.delta.partial_json || ''
+                    }
+                  }
+                }
+
+                // Handle content block stop events
+                if (chunk.type === 'content_block_stop') {
+                  currentTextBlock = null
+
+                  // Parse accumulated tool input
+                  if (chunk.index !== undefined) {
+                    const block = contentBlocks[chunk.index]
+
+                    if (block?.type === 'function' && block.id && toolsInProgress.has(block.id)) {
+                      const tool = toolsInProgress.get(block.id)
+                      if (tool) {
+                        try {
+                          block.function.arguments = JSON.parse(tool.inputString)
+                        } catch (e) {
+                          // Keep empty object if parsing fails
+                          console.error('Error parsing tool input:', e)
+                        }
+                      }
+                      toolsInProgress.delete(block.id)
+                    }
+                  }
+                }
+
+                if (chunk.type == 'message_start') {
+                  rawUsage = { ...chunk.message.usage }
+                  usage.inputTokens = chunk.message.usage.input_tokens ?? 0
+                  usage.cacheCreationInputTokens = chunk.message.usage.cache_creation_input_tokens ?? 0
+                  usage.cacheReadInputTokens = chunk.message.usage.cache_read_input_tokens ?? 0
+                  usage.webSearchCount = chunk.message.usage.server_tool_use?.web_search_requests ?? 0
+                }
+                if ('usage' in chunk) {
+                  rawUsage = {
+                    ...rawUsage,
+                    ...Object.fromEntries(Object.entries(chunk.usage).filter(([, value]) => value != null)),
+                  }
+                  usage.outputTokens = chunk.usage.output_tokens ?? 0
+                  // Update web search count if present in delta
+                  if (chunk.usage.server_tool_use?.web_search_requests !== undefined) {
+                    usage.webSearchCount = chunk.usage.server_tool_use.web_search_requests
+                  }
+                }
+
+                if (chunk.type === 'message_delta' && 'delta' in chunk) {
+                  const delta = chunk.delta
+                  if ('stop_reason' in delta && typeof delta.stop_reason === 'string' && delta.stop_reason) {
+                    stopReason = delta.stop_reason
+                  }
+                }
+              }
+              usage.rawUsage = rawUsage
+
+              const latency = (Date.now() - startTime) / 1000
+              const timeToFirstToken = firstTokenTime !== undefined ? (firstTokenTime - startTime) / 1000 : undefined
+
+              const availableTools = extractAvailableToolCalls('anthropic', anthropicParams)
+
+              // Format output to match non-streaming version
+              const formattedOutput: FormattedMessage[] =
+                contentBlocks.length > 0
+                  ? [
+                      {
+                        role: 'assistant',
+                        content: contentBlocks,
+                      },
+                    ]
+                  : [
+                      {
+                        role: 'assistant',
+                        content: [{ type: 'text', text: accumulatedContent }],
+                      },
+                    ]
+
+              await captureAiGeneration(this.phClient, {
+                ...posthogParams,
+                model: anthropicParams.model,
+                provider: 'anthropic',
+                input: sanitizeAnthropic(mergeSystemPrompt(anthropicParams, 'anthropic'), this.phClient),
+                output: formattedOutput,
+                latency,
+                timeToFirstToken,
+                baseURL: this.baseURL,
+                modelParameters: getModelParams(body),
+                httpStatus: 200,
+                usage,
+                stopReason,
+                tools: availableTools,
+              })
+            } catch (error: unknown) {
+              await captureAiGeneration(this.phClient, {
+                ...posthogParams,
+                model: anthropicParams.model,
+                provider: 'anthropic',
+                input: sanitizeAnthropic(mergeSystemPrompt(anthropicParams, 'anthropic'), this.phClient),
+                output: [],
+                latency: 0,
+                baseURL: this.baseURL,
+                modelParameters: getModelParams(body),
+                usage: {
+                  inputTokens: 0,
+                  outputTokens: 0,
+                },
+                error: error,
+              })
+              throw error
+            }
+          })().catch(() => {
+            // Swallow: analytics must never crash the host process. The caller
+            // already receives this error via their own tee of the stream.
+          })
+
+          // Return the other stream to the user
+          return stream2
+        }
+        return value
+      })
+
+      return preserveProviderPromise(parentPromise, wrappedPromise, { requestIdHeader: 'request-id' })
+    } else {
+      const parentPromise = super.create(anthropicParams, options)
+      const wrappedPromise = parentPromise.then(
+        async (result) => {
+          if ('content' in result) {
+            const latency = (Date.now() - startTime) / 1000
+
+            const availableTools = extractAvailableToolCalls('anthropic', anthropicParams)
+
+            await captureAiGeneration(this.phClient, {
+              ...posthogParams,
+              model: anthropicParams.model,
+              provider: 'anthropic',
+              input: sanitizeAnthropic(mergeSystemPrompt(anthropicParams, 'anthropic'), this.phClient),
+              output: formatResponseAnthropic(result),
+              latency,
+              baseURL: this.baseURL,
+              modelParameters: getModelParams(body),
+              httpStatus: 200,
+              usage: {
+                inputTokens: result.usage.input_tokens ?? 0,
+                outputTokens: result.usage.output_tokens ?? 0,
+                cacheCreationInputTokens: result.usage.cache_creation_input_tokens ?? 0,
+                cacheReadInputTokens: result.usage.cache_read_input_tokens ?? 0,
+                webSearchCount: result.usage.server_tool_use?.web_search_requests ?? 0,
+                rawUsage: result.usage,
+              },
+              stopReason: result.stop_reason ?? undefined,
+              tools: availableTools,
+            })
+          }
+          return result
+        },
+        async (error: any) => {
+          await captureAiGeneration(this.phClient, {
+            ...posthogParams,
+            model: anthropicParams.model,
+            provider: 'anthropic',
+            input: sanitizeAnthropic(mergeSystemPrompt(anthropicParams, 'anthropic'), this.phClient),
+            output: [],
+            latency: 0,
+            baseURL: this.baseURL,
+            modelParameters: getModelParams(body),
+            httpStatus: error?.status ? error.status : 500,
+            usage: {
+              inputTokens: 0,
+              outputTokens: 0,
+            },
+            error: error,
+          })
+          throw error
+        }
+      )
+
+      return preserveProviderPromise(parentPromise, wrappedPromise, { requestIdHeader: 'request-id' })
+    }
+  }
+}
+
+export default PostHogAnthropic
+
+export { PostHogAnthropic as Anthropic }

@@ -1,0 +1,1233 @@
+/// <reference lib="dom" />
+
+import {
+    SurveyType,
+    SurveyQuestionType,
+    Survey,
+    SurveyActionType,
+    ActionStepStringMatching,
+    SurveyEventName,
+    SurveySchedule,
+} from '../../posthog-surveys-types'
+import { SURVEYS_ACTIVATED_TIMESTAMPS } from '../../constants'
+import { PostHogPersistence } from '../../posthog-persistence'
+import { PostHog } from '../../posthog-core'
+import { CaptureResult, PostHogConfig, PropertyMatchType } from '../../types'
+import { SurveyEventReceiver } from '../../utils/survey-event-receiver'
+import { createMockPostHog, createMockConfig } from '../helpers/posthog-instance'
+
+describe('survey-event-receiver', () => {
+    describe('event based surveys', () => {
+        let config: PostHogConfig
+        let instance: PostHog
+        let mockAddCaptureHook: jest.Mock
+
+        const surveysWithEvents: Survey[] = [
+            {
+                name: 'first survey',
+                id: 'first-survey',
+                description: 'first survey description',
+                type: SurveyType.Popover,
+                questions: [{ type: SurveyQuestionType.Open, question: 'what is a bokoblin?' }],
+                conditions: {
+                    events: {
+                        values: [
+                            {
+                                name: 'user_subscribed',
+                            },
+                            {
+                                name: 'user_unsubscribed',
+                            },
+                            {
+                                name: 'billing_changed',
+                            },
+                            {
+                                name: 'billing_removed',
+                            },
+                        ],
+                    },
+                },
+            } as unknown as Survey,
+            {
+                name: 'second survey',
+                id: 'second-survey',
+                description: 'second survey description',
+                type: SurveyType.Popover,
+                questions: [{ type: SurveyQuestionType.Open, question: 'what is a moblin?' }],
+            } as unknown as Survey,
+            {
+                name: 'third survey',
+                id: 'third-survey',
+                description: 'third survey description',
+                type: SurveyType.Popover,
+                questions: [{ type: SurveyQuestionType.Open, question: 'what is a bokoblin?' }],
+                conditions: {
+                    events: {
+                        values: [
+                            {
+                                name: 'user_subscribed',
+                            },
+                            {
+                                name: 'user_unsubscribed',
+                            },
+                            {
+                                name: 'address_changed',
+                            },
+                        ],
+                    },
+                },
+            } as unknown as Survey,
+        ]
+
+        beforeEach(() => {
+            mockAddCaptureHook = jest.fn()
+            config = createMockConfig({
+                token: 'testtoken',
+                api_host: 'https://app.posthog.com',
+                persistence: 'memory',
+            })
+
+            instance = createMockPostHog({
+                config: config,
+                persistence: new PostHogPersistence(config),
+                _addCaptureHook: mockAddCaptureHook,
+                getSurveys: jest.fn((callback) => callback(surveysWithEvents)),
+            })
+        })
+
+        afterEach(() => {
+            instance.persistence?.clear()
+        })
+
+        it('register makes receiver listen for all surveys with events', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register(surveysWithEvents)
+            const registry = surveyEventReceiver.getEventToSurveys()
+            expect(registry.has('user_subscribed')).toBeTruthy()
+            expect(registry.get('user_subscribed')).toEqual(['first-survey', 'third-survey'])
+
+            expect(registry.has('address_changed')).toBeTruthy()
+            expect(registry.get('address_changed')).toEqual(['third-survey'])
+        })
+
+        it('reuses and disposes its capture hook idempotently', () => {
+            const unsubscribe = jest.fn()
+            mockAddCaptureHook.mockReturnValue(unsubscribe)
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register(surveysWithEvents)
+            surveyEventReceiver.register(surveysWithEvents)
+
+            surveyEventReceiver.dispose()
+            surveyEventReceiver.dispose()
+
+            expect(mockAddCaptureHook).toHaveBeenCalledTimes(1)
+            expect(unsubscribe).toHaveBeenCalledTimes(1)
+        })
+
+        it('receiver activates survey on event', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register(surveysWithEvents)
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+            registeredHook('billing_changed')
+            const activatedSurveys = surveyEventReceiver.getSurveys()
+            expect(activatedSurveys).toContain('first-survey')
+        })
+
+        it('receiver removes survey from list after its shown', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            const firstSurvey = surveysWithEvents[0]
+            if (firstSurvey.conditions && firstSurvey.conditions?.events) {
+                firstSurvey.conditions.events.repeatedActivation = true
+            }
+
+            surveyEventReceiver.register(surveysWithEvents)
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+            registeredHook('billing_changed')
+            const activatedSurveys = surveyEventReceiver.getSurveys()
+            expect(activatedSurveys).toContain('first-survey')
+
+            registeredHook('survey shown', {
+                $set: undefined,
+                $set_once: undefined,
+                event: 'survey shown',
+                timestamp: undefined,
+                uuid: '',
+                properties: {
+                    $survey_id: 'first-survey',
+                },
+            })
+
+            expect(surveyEventReceiver.getSurveys()).toEqual([])
+        })
+
+        it('receiver activates same survey on multiple event', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register(surveysWithEvents)
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+            registeredHook('billing_changed')
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
+            registeredHook('billing_removed')
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
+        })
+
+        it('receiver activates multiple surveys on same event', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register(surveysWithEvents)
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+            registeredHook('user_subscribed')
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey', 'third-survey'])
+        })
+
+        it('receiver activates multiple surveys on different events', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register(surveysWithEvents)
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+            registeredHook('billing_changed')
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
+            registeredHook('address_changed')
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey', 'third-survey'])
+        })
+    })
+
+    describe('activation lifecycle (reload persistence)', () => {
+        let config: PostHogConfig
+        let instance: PostHog
+        let mockAddCaptureHook: jest.Mock
+        // Mutable so tests can simulate a session rollover between reloads.
+        let currentSessionId: string
+        // Captures the receiver's onSessionId subscription so tests can drive a live rotation.
+        let sessionIdListeners: Array<(sessionId: string) => void>
+        const rotateSession = (sessionId: string): void => {
+            currentSessionId = sessionId
+            sessionIdListeners.forEach((listener) => listener(sessionId))
+        }
+
+        const makeSurvey = (overrides: Partial<Survey>): Survey =>
+            ({
+                name: 'lifecycle survey',
+                id: 'lifecycle-survey',
+                description: 'lifecycle survey description',
+                type: SurveyType.Popover,
+                questions: [{ type: SurveyQuestionType.Open, question: 'how is it going?' }],
+                conditions: {
+                    events: { values: [{ name: 'trigger_event' }] },
+                },
+                ...overrides,
+            }) as unknown as Survey
+
+        const surveyEventPayload = (surveyId: string, event: string): CaptureResult =>
+            ({
+                event,
+                properties: { $survey_id: surveyId },
+            }) as unknown as CaptureResult
+
+        const setup = (survey: Survey) => {
+            config = createMockConfig({
+                token: 'testtoken',
+                api_host: 'https://app.posthog.com',
+                persistence: 'memory',
+            })
+            instance = createMockPostHog({
+                config,
+                persistence: new PostHogPersistence(config),
+                _addCaptureHook: mockAddCaptureHook,
+                getSurveys: jest.fn((callback) => callback([survey])),
+                get_session_id: () => currentSessionId,
+                onSessionId: (listener: (sessionId: string) => void) => {
+                    sessionIdListeners.push(listener)
+                    return () => {}
+                },
+            })
+            const receiver = new SurveyEventReceiver(instance)
+            receiver.register([survey])
+            const hook = mockAddCaptureHook.mock.calls[0][0]
+            return { receiver, hook }
+        }
+
+        beforeEach(() => {
+            mockAddCaptureHook = jest.fn()
+            currentSessionId = 'session-1'
+            sessionIdListeners = []
+        })
+
+        afterEach(() => {
+            instance.persistence?.clear()
+        })
+
+        it('keeps a non-repeatable survey activated after it is shown (survives reload)', () => {
+            const { receiver, hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+            // still activated: a reload re-reads persistence and re-displays it
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+        })
+
+        it.each([
+            ['dismissed', SurveyEventName.DISMISSED],
+            ['sent', SurveyEventName.SENT],
+        ])('removes a non-repeatable survey from activated once it is %s', (_label, interactionEvent) => {
+            const { receiver, hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+
+            hook(interactionEvent, surveyEventPayload('lifecycle-survey', interactionEvent))
+            expect(receiver.getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        it.each([
+            [
+                'repeatedActivation',
+                { conditions: { events: { values: [{ name: 'trigger_event' }], repeatedActivation: true } } },
+            ],
+            ['always schedule', { schedule: SurveySchedule.Always }],
+        ])('consumes a repeatable survey (%s) when it is shown', (_label, overrides) => {
+            const { receiver, hook } = setup(makeSurvey(overrides as unknown as Partial<Survey>))
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+            expect(receiver.getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        // A fresh receiver reading the same persistence models a page reload: in-memory
+        // (armed, not yet shown) activations are gone, persisted (shown) ones remain.
+        it('does not let an armed-but-unshown survey survive a reload', () => {
+            const { receiver, hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            // armed in this session...
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+            // ...but never written to persistence, so a reload does not re-display it
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        it('persists a non-repeatable survey only once shown, so it survives a reload', () => {
+            const { hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('lifecycle-survey')
+
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+            expect(new SurveyEventReceiver(instance).getSurveys()).toContain('lifecycle-survey')
+
+            hook(SurveyEventName.DISMISSED, surveyEventPayload('lifecycle-survey', SurveyEventName.DISMISSED))
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        it('does not re-display a shown-but-unanswered survey in a brand-new session', () => {
+            const { hook } = setup(makeSurvey({}))
+
+            // Triggered and shown in session-1 (persisted so it survives a reload)...
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+            expect(new SurveyEventReceiver(instance).getSurveys()).toContain('lifecycle-survey')
+
+            // ...but a brand-new session (no fresh trigger event) must not re-display it.
+            currentSessionId = 'session-2'
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        it('re-arms in a new session only when the trigger fires again', () => {
+            const { hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+
+            // New session: stale activation is dropped until the trigger fires again.
+            currentSessionId = 'session-2'
+            const afterRollover = new SurveyEventReceiver(instance)
+            afterRollover.register([makeSurvey({})])
+            expect(afterRollover.getSurveys()).not.toContain('lifecycle-survey')
+
+            const rearmHook = mockAddCaptureHook.mock.calls.at(-1)?.[0]
+            rearmHook('trigger_event')
+            expect(afterRollover.getSurveys()).toContain('lifecycle-survey')
+        })
+
+        it('drops a shown survey when the session rotates live (idle timeout), without a reload', () => {
+            const { receiver, hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+
+            // The session rotates in-place (e.g. idle timeout) on the same receiver — a case the
+            // read-only session read cannot observe, so the onSessionId subscription must handle it.
+            rotateSession('session-2')
+            expect(receiver.getSurveys()).not.toContain('lifecycle-survey')
+            // Cleared from persistence too, so a subsequent reload doesn't resurrect it.
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        it('keeps a shown survey when the session id fires but is unchanged (e.g. window-id-only change)', () => {
+            const { receiver, hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+
+            // onSessionId can fire without the session id actually changing; that must not clear it.
+            sessionIdListeners.forEach((listener) => listener('session-1'))
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+        })
+
+        it.each([
+            [
+                'repeatedActivation',
+                { conditions: { events: { values: [{ name: 'trigger_event' }], repeatedActivation: true } } },
+            ],
+            ['always schedule', { schedule: SurveySchedule.Always }],
+        ])('never persists a repeatable survey (%s), so it cannot survive a reload', (_label, overrides) => {
+            const { hook } = setup(makeSurvey(overrides as unknown as Partial<Survey>))
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        it('consumes on shown when the survey cannot be resolved (does not promote to persistence)', () => {
+            const { receiver, hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+
+            // The survey is no longer resolvable (e.g. surveys unloaded): shown should consume it,
+            // not promote an unknown survey into persistence where it would re-display on reload.
+            ;(instance.getSurveys as jest.Mock).mockImplementation((cb) => cb([]))
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+
+            expect(receiver.getSurveys()).not.toContain('lifecycle-survey')
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        it('getSurveys() returns the union of armed (memory) and shown (persisted) surveys', () => {
+            const armed = makeSurvey({
+                id: 'armed-survey',
+                conditions: { events: { values: [{ name: 'arm_event' }] } },
+            })
+            const shown = makeSurvey({
+                id: 'shown-survey',
+                conditions: { events: { values: [{ name: 'show_event' }] } },
+            })
+            config = createMockConfig({
+                token: 'testtoken',
+                api_host: 'https://app.posthog.com',
+                persistence: 'memory',
+            })
+            instance = createMockPostHog({
+                config,
+                persistence: new PostHogPersistence(config),
+                _addCaptureHook: mockAddCaptureHook,
+                getSurveys: jest.fn((callback) => callback([armed, shown])),
+                get_session_id: () => currentSessionId,
+            })
+            const receiver = new SurveyEventReceiver(instance)
+            receiver.register([armed, shown])
+            const hook = mockAddCaptureHook.mock.calls[0][0]
+
+            hook('arm_event') // armed in memory only
+            hook('show_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('shown-survey', SurveyEventName.SHOWN)) // promoted to persistence
+
+            // Both are active in-session (the union of memory + persistence)...
+            expect(receiver.getSurveys()).toEqual(expect.arrayContaining(['armed-survey', 'shown-survey']))
+            // ...but only the shown one survives a reload.
+            const afterReload = new SurveyEventReceiver(instance)
+            expect(afterReload.getSurveys()).toContain('shown-survey')
+            expect(afterReload.getSurveys()).not.toContain('armed-survey')
+        })
+
+        it('reset() clears an armed-but-unshown activation (e.g. on logout without a reload)', () => {
+            const { receiver, hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+
+            receiver.reset()
+            expect(receiver.getSurveys()).not.toContain('lifecycle-survey')
+        })
+
+        it('reset() clears a shown (persisted) activation too', () => {
+            const { receiver, hook } = setup(makeSurvey({}))
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('lifecycle-survey', SurveyEventName.SHOWN))
+            expect(receiver.getSurveys()).toContain('lifecycle-survey')
+
+            receiver.reset()
+            expect(receiver.getSurveys()).not.toContain('lifecycle-survey')
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('lifecycle-survey')
+        })
+    })
+
+    // A delayed survey's popup delay is an in-memory timer that a full navigation discards, so the
+    // countdown restarts from zero on every page. To let the delay resume, an armed delayed survey
+    // is persisted (session-scoped) with the time it was triggered, so a fresh receiver on the next
+    // page re-arms it and can compute the remaining wait.
+    describe('delayed survey activation (survives navigation)', () => {
+        let config: PostHogConfig
+        let instance: PostHog
+        let mockAddCaptureHook: jest.Mock
+        let currentSessionId: string
+        let sessionIdListeners: Array<(sessionId: string) => void>
+        let nowSpy: jest.SpyInstance
+
+        const rotateSession = (sessionId: string): void => {
+            currentSessionId = sessionId
+            sessionIdListeners.forEach((listener) => listener(sessionId))
+        }
+
+        const makeDelayedSurvey = (overrides: Partial<Survey> = {}): Survey =>
+            ({
+                name: 'delayed survey',
+                id: 'delayed-survey',
+                description: 'delayed survey description',
+                type: SurveyType.Popover,
+                questions: [{ type: SurveyQuestionType.Open, question: 'how is it going?' }],
+                appearance: { surveyPopupDelaySeconds: 60 },
+                conditions: { events: { values: [{ name: 'trigger_event' }] } },
+                ...overrides,
+            }) as unknown as Survey
+
+        const surveyEventPayload = (surveyId: string, event: string): CaptureResult =>
+            ({ event, properties: { $survey_id: surveyId } }) as unknown as CaptureResult
+
+        const setup = (survey: Survey, hasSession = true) => {
+            config = createMockConfig({
+                token: 'testtoken',
+                api_host: 'https://app.posthog.com',
+                persistence: 'memory',
+            })
+            instance = createMockPostHog({
+                config,
+                persistence: new PostHogPersistence(config),
+                _addCaptureHook: mockAddCaptureHook,
+                getSurveys: jest.fn((callback) => callback([survey])),
+                get_session_id: () => (hasSession ? currentSessionId : undefined),
+                cancelPendingSurvey: jest.fn(),
+                onSessionId: (listener: (sessionId: string) => void) => {
+                    sessionIdListeners.push(listener)
+                    return () => {}
+                },
+            })
+            const receiver = new SurveyEventReceiver(instance)
+            receiver.register([survey])
+            const hook = mockAddCaptureHook.mock.calls.at(-1)?.[0]
+            return { receiver, hook }
+        }
+
+        beforeEach(() => {
+            mockAddCaptureHook = jest.fn()
+            currentSessionId = 'session-1'
+            sessionIdListeners = []
+            nowSpy = jest.spyOn(Date, 'now').mockReturnValue(1_000_000)
+        })
+
+        afterEach(() => {
+            nowSpy.mockRestore()
+            instance.persistence?.clear()
+        })
+
+        it('persists an armed delayed survey and records the activation time, so it survives a reload', () => {
+            const { receiver, hook } = setup(makeDelayedSurvey())
+
+            hook('trigger_event')
+            expect(receiver.getSurveys()).toContain('delayed-survey')
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBe(1_000_000)
+
+            // A fresh receiver reading the same persistence models the next page load.
+            const afterNav = new SurveyEventReceiver(instance)
+            expect(afterNav.getSurveys()).toContain('delayed-survey')
+            expect(afterNav.getActivationTimestamp('delayed-survey')).toBe(1_000_000)
+        })
+
+        it('keeps the first activation time when the trigger fires again before the survey is shown', () => {
+            const { receiver, hook } = setup(makeDelayedSurvey())
+
+            hook('trigger_event')
+            nowSpy.mockReturnValue(1_050_000)
+            hook('trigger_event')
+
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBe(1_000_000)
+        })
+
+        it('replaces a stale activation timestamp when starting a new activation', () => {
+            const { receiver, hook } = setup(makeDelayedSurvey())
+            instance.persistence?.register({
+                [SURVEYS_ACTIVATED_TIMESTAMPS]: { 'delayed-survey': 900_000 },
+            })
+
+            hook('trigger_event')
+
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBe(1_000_000)
+        })
+
+        it('does not persist an armed survey without a delay (keeps the exit-intent scoping)', () => {
+            const { receiver, hook } = setup(makeDelayedSurvey({ appearance: {} }))
+
+            hook('trigger_event')
+            expect(receiver.getSurveys()).toContain('delayed-survey')
+            // In-memory only: no timestamp and it does not survive a reload.
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBeUndefined()
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('delayed-survey')
+        })
+
+        it('drops the delayed activation and pending timer when the session rotates', () => {
+            const { receiver, hook } = setup(makeDelayedSurvey())
+
+            hook('trigger_event')
+            expect(receiver.getSurveys()).toContain('delayed-survey')
+
+            rotateSession('session-2')
+            expect(receiver.getSurveys()).not.toContain('delayed-survey')
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBeUndefined()
+            expect(new SurveyEventReceiver(instance).getActivationTimestamp('delayed-survey')).toBeUndefined()
+            expect(instance.cancelPendingSurvey).toHaveBeenCalledWith('delayed-survey')
+        })
+
+        it.each([
+            ['dismissed', SurveyEventName.DISMISSED],
+            ['sent', SurveyEventName.SENT],
+        ])('removes the activation once the survey is %s', (_label, interactionEvent) => {
+            const { receiver, hook } = setup(makeDelayedSurvey())
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('delayed-survey', SurveyEventName.SHOWN))
+
+            hook(interactionEvent, surveyEventPayload('delayed-survey', interactionEvent))
+            expect(receiver.getSurveys()).not.toContain('delayed-survey')
+        })
+
+        // A cancel event deactivates a survey that was never shown, so it is the one path that
+        // still has a timestamp to clean up. Asserted on persistence directly because
+        // getActivationTimestamp reads through the activation set and would hide a leaked entry.
+        it('forgets the stored activation time when a cancel event fires before the survey is shown', () => {
+            const { receiver, hook } = setup(
+                makeDelayedSurvey({
+                    conditions: {
+                        events: { values: [{ name: 'trigger_event' }] },
+                        cancelEvents: { values: [{ name: 'cancel_event' }] },
+                    },
+                } as Partial<Survey>)
+            )
+
+            hook('trigger_event')
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBe(1_000_000)
+
+            hook('cancel_event')
+            expect(receiver.getSurveys()).not.toContain('delayed-survey')
+            expect(instance.persistence?.props[SURVEYS_ACTIVATED_TIMESTAMPS]).toBeUndefined()
+        })
+
+        it('drops the activation time once the survey is shown, so a later page waits the full delay', () => {
+            const { receiver, hook } = setup(makeDelayedSurvey())
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('delayed-survey', SurveyEventName.SHOWN))
+
+            // Still activated, so a reload re-displays it until the user dismisses or answers it...
+            expect(receiver.getSurveys()).toContain('delayed-survey')
+            // ...but with no activation time the next page counts the whole delay down again
+            // instead of re-rendering the survey instantly.
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBeUndefined()
+            expect(new SurveyEventReceiver(instance).getActivationTimestamp('delayed-survey')).toBeUndefined()
+        })
+
+        it('does not record a new activation time when the trigger fires again after the survey is shown', () => {
+            const { receiver, hook } = setup(makeDelayedSurvey())
+
+            hook('trigger_event')
+            hook(SurveyEventName.SHOWN, surveyEventPayload('delayed-survey', SurveyEventName.SHOWN))
+            nowSpy.mockReturnValue(1_030_000)
+            hook('trigger_event')
+
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBeUndefined()
+        })
+
+        it('falls back to in-memory arming for a delayed survey when no session id is resolvable', () => {
+            const { receiver, hook } = setup(makeDelayedSurvey(), false)
+
+            hook('trigger_event')
+            // Still armed in-session so the current page works...
+            expect(receiver.getSurveys()).toContain('delayed-survey')
+            // ...but with no session to scope it, it is not persisted across a reload.
+            expect(receiver.getActivationTimestamp('delayed-survey')).toBeUndefined()
+            expect(new SurveyEventReceiver(instance).getSurveys()).not.toContain('delayed-survey')
+        })
+    })
+
+    describe('property filter based surveys', () => {
+        let config: PostHogConfig
+        let instance: PostHog
+        let mockAddCaptureHook: jest.Mock
+
+        const createEventPayload = (eventName: string, properties: Record<string, any> = {}): CaptureResult => ({
+            $set: undefined,
+            $set_once: undefined,
+            event: eventName,
+            timestamp: undefined,
+            uuid: '0C984DA5-761F-4F75-9582-D2F95B43B04A',
+            properties,
+        })
+
+        const createSurveyWithPropertyFilters = (
+            id: string,
+            eventName: string,
+            propertyFilters: Record<string, { values: string[]; operator: PropertyMatchType }>
+        ): Survey =>
+            ({
+                name: `${id} survey`,
+                id,
+                description: `${id} survey description`,
+                type: SurveyType.Popover,
+                questions: [{ type: SurveyQuestionType.Open, question: 'test question' }],
+                conditions: {
+                    events: {
+                        values: [
+                            {
+                                name: eventName,
+                                propertyFilters,
+                            },
+                        ],
+                    },
+                },
+            }) as unknown as Survey
+
+        beforeEach(() => {
+            mockAddCaptureHook = jest.fn()
+            config = createMockConfig({
+                token: 'testtoken',
+                api_host: 'https://app.posthog.com',
+                persistence: 'memory',
+            })
+
+            instance = createMockPostHog({
+                config: config,
+                persistence: new PostHogPersistence(config),
+                _addCaptureHook: mockAddCaptureHook,
+                getSurveys: jest.fn((callback) => callback([])),
+            })
+        })
+
+        afterEach(() => {
+            instance.persistence?.clear()
+        })
+
+        it('activates survey with exact property match', () => {
+            const survey = createSurveyWithPropertyFilters('exact-test', 'purchase', {
+                product_type: { values: ['premium'], operator: 'exact' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            // Set up getSurveys mock to return the survey
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            // Should match exact value
+            registeredHook('purchase', createEventPayload('purchase', { product_type: 'premium' }))
+            expect(surveyEventReceiver.getSurveys()).toContain('exact-test')
+        })
+
+        it('does not activate survey with non-matching exact property', () => {
+            const survey = createSurveyWithPropertyFilters('exact-test', 'purchase', {
+                product_type: { values: ['premium'], operator: 'exact' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            // Should not match different value
+            registeredHook('purchase', createEventPayload('purchase', { product_type: 'basic' }))
+            expect(surveyEventReceiver.getSurveys()).not.toContain('exact-test')
+        })
+
+        it('activates survey with is_not property match', () => {
+            const survey = createSurveyWithPropertyFilters('is-not-test', 'purchase', {
+                product_type: { values: ['basic'], operator: 'is_not' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            // Should match when value is not 'basic'
+            registeredHook('purchase', createEventPayload('purchase', { product_type: 'premium' }))
+            expect(surveyEventReceiver.getSurveys()).toContain('is-not-test')
+        })
+
+        it('activates survey with regex property match', () => {
+            const survey = createSurveyWithPropertyFilters('regex-test', 'page_view', {
+                url: { values: ['/app/.*'], operator: 'regex' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            // Should match regex pattern
+            registeredHook('page_view', createEventPayload('page_view', { url: '/app/dashboard' }))
+            expect(surveyEventReceiver.getSurveys()).toContain('regex-test')
+        })
+
+        it('activates survey with icontains property match', () => {
+            const survey = createSurveyWithPropertyFilters('icontains-test', 'search', {
+                query: { values: ['PRODUCT'], operator: 'icontains' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            // Should match case-insensitive contains
+            registeredHook('search', createEventPayload('search', { query: 'new product features' }))
+            expect(surveyEventReceiver.getSurveys()).toContain('icontains-test')
+        })
+
+        it('activates survey with multiple property filters (all must match)', () => {
+            const survey = createSurveyWithPropertyFilters('multi-filter-test', 'purchase', {
+                product_type: { values: ['premium'], operator: 'exact' },
+                amount: { values: ['100'], operator: 'is_not' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            // Should match when both conditions are met
+            registeredHook('purchase', createEventPayload('purchase', { product_type: 'premium', amount: '200' }))
+            expect(surveyEventReceiver.getSurveys()).toContain('multi-filter-test')
+
+            // A fresh receiver (e.g. after a reload) starts with no in-memory activations
+            const freshReceiver = new SurveyEventReceiver(instance)
+            freshReceiver.register([survey])
+            const freshHook = mockAddCaptureHook.mock.calls.at(-1)?.[0]
+
+            // Should not match when one condition fails (amount is_not 100 fails)
+            freshHook('purchase', createEventPayload('purchase', { product_type: 'premium', amount: '100' }))
+            expect(freshReceiver.getSurveys()).not.toContain('multi-filter-test')
+        })
+
+        it('does not activate survey when required property is missing', () => {
+            const survey = createSurveyWithPropertyFilters('missing-prop-test', 'purchase', {
+                product_type: { values: ['premium'], operator: 'exact' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            // Should not match when property is missing
+            registeredHook('purchase', createEventPayload('purchase', { other_prop: 'value' }))
+            expect(surveyEventReceiver.getSurveys()).not.toContain('missing-prop-test')
+        })
+
+        it('activates survey without property filters based on event name only', () => {
+            const survey = createSurveyWithPropertyFilters('no-filters-test', 'purchase', {})
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            // Should match based on event name only
+            registeredHook('purchase', createEventPayload('purchase', { any_prop: 'any_value' }))
+            expect(surveyEventReceiver.getSurveys()).toContain('no-filters-test')
+        })
+
+        it('activates survey with gt (greater than) numeric property match', () => {
+            const survey = createSurveyWithPropertyFilters('gt-test', 'purchase', {
+                amount: { values: ['100'], operator: 'gt' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            registeredHook('purchase', createEventPayload('purchase', { amount: 150 }))
+            expect(surveyEventReceiver.getSurveys()).toContain('gt-test')
+        })
+
+        it('activates survey with lt (less than) numeric property match', () => {
+            const survey = createSurveyWithPropertyFilters('lt-test', 'purchase', {
+                amount: { values: ['100'], operator: 'lt' },
+            })
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) => callback([survey]))
+
+            registeredHook('purchase', createEventPayload('purchase', { amount: 50 }))
+            expect(surveyEventReceiver.getSurveys()).toContain('lt-test')
+        })
+    })
+
+    describe('action based surveys', () => {
+        let config: PostHogConfig
+        let instance: PostHog
+
+        beforeEach(() => {
+            config = createMockConfig({
+                token: 'testtoken',
+                api_host: 'https://app.posthog.com',
+                persistence: 'memory',
+            })
+
+            instance = createMockPostHog({
+                config: config,
+                persistence: new PostHogPersistence(config),
+                _addCaptureHook: jest.fn(),
+                getSurveys: jest.fn((callback) => callback([])),
+            })
+        })
+
+        afterEach(() => {
+            instance.persistence?.clear()
+        })
+
+        const createCaptureResult = (eventName: string, currentUrl?: string): CaptureResult => {
+            return {
+                $set: undefined,
+                $set_once: undefined,
+                properties: {
+                    $current_url: currentUrl,
+                },
+                timestamp: undefined,
+                uuid: '0C984DA5-761F-4F75-9582-D2F95B43B04A',
+                event: eventName,
+            }
+        }
+        const createAction = (
+            id: number,
+            eventName: string,
+            currentUrl?: string,
+            urlMatch?: ActionStepStringMatching
+        ): SurveyActionType => {
+            return {
+                id: id,
+                name: `${eventName || 'user defined '} action`,
+                steps: [
+                    {
+                        event: eventName,
+                        text: null,
+                        text_matching: null,
+                        href: null,
+                        href_matching: null,
+                        url: currentUrl,
+                        url_matching: urlMatch || 'exact',
+                    },
+                ],
+            }
+        }
+
+        const autoCaptureSurvey = {
+            name: 'first survey',
+            id: 'first-survey',
+            description: 'first survey description',
+            type: SurveyType.Popover,
+            questions: [{ type: SurveyQuestionType.Open, question: 'what is a bokoblin?' }],
+            conditions: {
+                actions: [createAction(2, '$autocapture') as unknown as SurveyActionType],
+            },
+        } as unknown as Survey
+
+        const pageViewSurvey = {
+            name: 'pageview survey',
+            id: 'pageview-survey',
+            description: 'pageview survey description',
+            type: SurveyType.Popover,
+            questions: [{ type: SurveyQuestionType.Open, question: 'what is a bokoblin?' }],
+            conditions: {
+                actions: [createAction(3, '$pageview') as unknown as SurveyActionType],
+            },
+        } as unknown as Survey
+
+        it('can match action on event name', () => {
+            const myPageViewSurvey = {
+                name: 'my pageview survey',
+                id: 'my-pageview-survey',
+                description: 'pageview survey description',
+                type: SurveyType.Popover,
+                questions: [{ type: SurveyQuestionType.Open, question: 'what is a bokoblin?' }],
+                conditions: {
+                    actions: {
+                        values: [createAction(3, '$mypageview') as unknown as SurveyActionType],
+                    },
+                },
+            } as unknown as Survey
+            autoCaptureSurvey.conditions.actions.values = [createAction(2, '$match_event_name')]
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([autoCaptureSurvey, myPageViewSurvey])
+            surveyEventReceiver._getActionMatcher().on('$match_event_name', createCaptureResult('$match_event_name'))
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
+
+            surveyEventReceiver
+                ._getActionMatcher()
+                .on('$mypageview', createCaptureResult(myPageViewSurvey.conditions.actions.values[0].steps[0].event))
+            expect(surveyEventReceiver.getSurveys()).toContain('my-pageview-survey')
+        })
+
+        it('replaces action definitions when surveys are refreshed', () => {
+            const survey = {
+                ...autoCaptureSurvey,
+                conditions: { actions: { values: [createAction(2, '$old_action')] } },
+            } as unknown as Survey
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            surveyEventReceiver.replace([
+                {
+                    ...survey,
+                    conditions: { actions: { values: [createAction(2, '$new_action')] } },
+                } as unknown as Survey,
+            ])
+
+            surveyEventReceiver._getActionMatcher().on('$old_action', createCaptureResult('$old_action'))
+            expect(surveyEventReceiver.getSurveys()).not.toContain(survey.id)
+
+            surveyEventReceiver._getActionMatcher().on('$new_action', createCaptureResult('$new_action'))
+            expect(surveyEventReceiver.getSurveys()).toContain(survey.id)
+        })
+
+        it('clears trigger definitions when refreshed surveys have no triggers', () => {
+            const survey = {
+                ...autoCaptureSurvey,
+                conditions: {
+                    events: { values: [{ name: '$old_event' }] },
+                    actions: { values: [createAction(2, '$old_action')] },
+                },
+            } as unknown as Survey
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([survey])
+            expect(surveyEventReceiver.getEventToSurveys().has('$old_event')).toBe(true)
+
+            surveyEventReceiver.replace([])
+            expect(surveyEventReceiver.getEventToSurveys().size).toBe(0)
+
+            surveyEventReceiver._getActionMatcher().on('$old_action', createCaptureResult('$old_action'))
+            expect(surveyEventReceiver.getSurveys()).not.toContain(survey.id)
+        })
+
+        it('can match action on current_url exact', () => {
+            autoCaptureSurvey.conditions.actions.values = [createAction(2, '$autocapture', 'https://us.posthog.com')]
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([autoCaptureSurvey, pageViewSurvey])
+            surveyEventReceiver
+                ._getActionMatcher()
+                .on('$autocapture', createCaptureResult('$autocapture', 'https://eu.posthog.com'))
+            expect(surveyEventReceiver.getSurveys()).not.toEqual(['first-survey'])
+            surveyEventReceiver
+                ._getActionMatcher()
+                .on('$autocapture', createCaptureResult('$autocapture', 'https://us.posthog.com'))
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
+        })
+
+        it('can match action on current_url regexp', () => {
+            autoCaptureSurvey.conditions.actions.values = [
+                createAction(2, '$current_url_regexp', '[a-z][a-z].posthog.*', 'regex'),
+            ]
+            let surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([autoCaptureSurvey, pageViewSurvey])
+            surveyEventReceiver
+                ._getActionMatcher()
+                .on('$autocapture', createCaptureResult('$current_url_regexp', 'https://eu.posthog.com'))
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
+
+            surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([autoCaptureSurvey, pageViewSurvey])
+            surveyEventReceiver
+                ._getActionMatcher()
+                .on('$autocapture', createCaptureResult('$current_url_regexp', 'https://us.posthog.com'))
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
+        })
+
+        it('can match action on html element selector', () => {
+            const action = createAction(2, '$autocapture')
+            action.steps[0].selector = '* > #__next .flex > button:nth-child(2)'
+            autoCaptureSurvey.conditions.actions.values = [action]
+            const result = createCaptureResult('$autocapture', 'https://eu.posthog.com')
+            result.properties.$element_selectors = ['* > #__next .flex > button:nth-child(2)']
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([autoCaptureSurvey, pageViewSurvey])
+            surveyEventReceiver._getActionMatcher().on('$autocapture', result)
+            expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
+        })
+    })
+
+    describe('cancel events', () => {
+        let config: PostHogConfig
+        let instance: PostHog
+        let mockAddCaptureHook: jest.Mock
+        let mockCancelPendingSurvey: jest.Mock
+
+        const surveyWithCancelEvent: Survey = {
+            name: 'survey with cancel',
+            id: 'survey-with-cancel',
+            description: 'survey with cancel event',
+            type: SurveyType.Popover,
+            questions: [{ type: SurveyQuestionType.Open, question: 'test?' }],
+            appearance: { surveyPopupDelaySeconds: 5 },
+            conditions: {
+                events: { values: [{ name: 'trigger_event' }] },
+                cancelEvents: { values: [{ name: 'cancel_event' }] },
+            },
+        } as unknown as Survey
+
+        beforeEach(() => {
+            mockAddCaptureHook = jest.fn()
+            mockCancelPendingSurvey = jest.fn()
+            config = createMockConfig({
+                token: 'testtoken',
+                api_host: 'https://app.posthog.com',
+                persistence: 'memory',
+            })
+
+            instance = createMockPostHog({
+                config: config,
+                persistence: new PostHogPersistence(config),
+                _addCaptureHook: mockAddCaptureHook,
+                getSurveys: jest.fn((callback) => callback([surveyWithCancelEvent])),
+                cancelPendingSurvey: mockCancelPendingSurvey,
+            })
+        })
+
+        afterEach(() => {
+            instance.persistence?.clear()
+        })
+
+        it('calls cancelPendingSurvey when cancel event fires', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([surveyWithCancelEvent])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            // Trigger the survey first
+            registeredHook('trigger_event')
+            expect(surveyEventReceiver.getSurveys()).toContain('survey-with-cancel')
+
+            // Fire cancel event
+            registeredHook('cancel_event')
+            expect(mockCancelPendingSurvey).toHaveBeenCalledWith('survey-with-cancel')
+        })
+
+        it('removes cancelled survey from activated surveys', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([surveyWithCancelEvent])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            // Trigger then cancel
+            registeredHook('trigger_event')
+            expect(surveyEventReceiver.getSurveys()).toContain('survey-with-cancel')
+
+            registeredHook('cancel_event')
+            expect(surveyEventReceiver.getSurveys()).not.toContain('survey-with-cancel')
+        })
+
+        it('does not call cancelPendingSurvey for unrelated events', () => {
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([surveyWithCancelEvent])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            registeredHook('some_other_event')
+            expect(mockCancelPendingSurvey).not.toHaveBeenCalled()
+        })
+
+        it('cancels survey when cancel event property filter matches', () => {
+            const surveyWithCancelPropertyFilter: Survey = {
+                ...surveyWithCancelEvent,
+                id: 'survey-cancel-prop-filter',
+                conditions: {
+                    events: { values: [{ name: 'trigger_event' }] },
+                    cancelEvents: {
+                        values: [
+                            {
+                                name: 'cancel_event',
+                                propertyFilters: {
+                                    reason: { values: ['user_navigated_away'], operator: 'exact' },
+                                },
+                            },
+                        ],
+                    },
+                },
+            } as unknown as Survey
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) =>
+                callback([surveyWithCancelPropertyFilter])
+            )
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([surveyWithCancelPropertyFilter])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            registeredHook('trigger_event')
+            expect(surveyEventReceiver.getSurveys()).toContain('survey-cancel-prop-filter')
+
+            registeredHook('cancel_event', {
+                event: 'cancel_event',
+                properties: { reason: 'user_navigated_away' },
+            } as CaptureResult)
+
+            expect(mockCancelPendingSurvey).toHaveBeenCalledWith('survey-cancel-prop-filter')
+            expect(surveyEventReceiver.getSurveys()).not.toContain('survey-cancel-prop-filter')
+        })
+
+        it('does not cancel survey when cancel event property filter does not match', () => {
+            const surveyWithCancelPropertyFilter: Survey = {
+                ...surveyWithCancelEvent,
+                id: 'survey-cancel-prop-filter',
+                conditions: {
+                    events: { values: [{ name: 'trigger_event' }] },
+                    cancelEvents: {
+                        values: [
+                            {
+                                name: 'cancel_event',
+                                propertyFilters: {
+                                    reason: { values: ['user_navigated_away'], operator: 'exact' },
+                                },
+                            },
+                        ],
+                    },
+                },
+            } as unknown as Survey
+
+            ;(instance.getSurveys as jest.Mock).mockImplementation((callback) =>
+                callback([surveyWithCancelPropertyFilter])
+            )
+
+            const surveyEventReceiver = new SurveyEventReceiver(instance)
+            surveyEventReceiver.register([surveyWithCancelPropertyFilter])
+            const registeredHook = mockAddCaptureHook.mock.calls[0][0]
+
+            registeredHook('trigger_event')
+            expect(surveyEventReceiver.getSurveys()).toContain('survey-cancel-prop-filter')
+
+            registeredHook('cancel_event', {
+                event: 'cancel_event',
+                properties: { reason: 'some_other_reason' },
+            } as CaptureResult)
+
+            expect(mockCancelPendingSurvey).not.toHaveBeenCalled()
+            expect(surveyEventReceiver.getSurveys()).toContain('survey-cancel-prop-filter')
+        })
+    })
+})

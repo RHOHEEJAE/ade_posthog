@@ -1,0 +1,1042 @@
+import { EventMessage, PostHog } from 'posthog-node'
+import { withPrivacyMode, getModelParams, toContentString } from '../utils'
+import { BaseCallbackHandler } from '@langchain/core/callbacks/base'
+import { version } from '../../package.json'
+import type { Serialized } from '@langchain/core/load/serializable'
+import type { ChainValues } from '@langchain/core/utils/types'
+import type { LLMResult } from '@langchain/core/outputs'
+import type { AgentAction, AgentFinish } from '@langchain/core/agents'
+import type { DocumentInterface } from '@langchain/core/documents'
+import { ToolCall } from '@langchain/core/messages/tool'
+import { BaseMessage } from '@langchain/core/messages'
+import { sanitizeLangChain } from '../sanitization'
+import { stringifyError } from '../serializeError'
+import { warnIfPostHogAiGateway } from '../gatewayWarning'
+import { isObject } from '../typeGuards'
+import { captureAiEvent } from '../captureAiEvent'
+
+// Mirror LangGraph's isGraphBubbleUp guard without adding LangGraph as a dependency. Every
+// LangGraph control-flow exception (GraphInterrupt, NodeInterrupt, ParentCommand, GraphDrained,
+// and future subclasses) exposes a prototype getter `is_bubble_up` that returns true, which the
+// LangGraph runtime itself uses to distinguish control flow from real failures. The getter reads
+// as undefined on ordinary Errors and works across duplicated LangGraph package copies.
+const isLangGraphControlFlow = (error: Error): boolean =>
+  (error as Error & { is_bubble_up?: boolean }).is_bubble_up === true
+
+interface SpanMetadata {
+  /** Name of the trace/span (e.g. chain name) */
+  name: string
+  /** Timestamp (in ms) when the run started */
+  startTime: number
+  /** Timestamp (in ms) when the run ended (if already finished) */
+  endTime?: number
+  /** The input state */
+  input?: any
+}
+
+interface GenerationMetadata extends SpanMetadata {
+  /** Provider used (e.g. openai, anthropic) */
+  provider?: string
+  /** Model name used in the generation */
+  model?: string
+  /** The model parameters (temperature, max_tokens, etc.) */
+  modelParams?: Record<string, any>
+  /** The base URL—for example, the API base used */
+  baseUrl?: string
+  /** The tools used in the generation */
+  tools?: Record<string, any>
+}
+
+/** A run may either be a Span or a Generation */
+type RunMetadata = SpanMetadata | GenerationMetadata
+
+/** Storage for run metadata */
+type RunMetadataStorage = { [runId: string]: RunMetadata }
+
+export interface LangChainCallbackHandlerOptions {
+  client: PostHog
+  distinctId?: string | number
+  traceId?: string | number
+  properties?: Record<string, any>
+  privacyMode?: boolean
+  groups?: Record<string, any>
+  debug?: boolean
+}
+
+export class LangChainCallbackHandler extends BaseCallbackHandler {
+  public name = 'PosthogCallbackHandler'
+  private client: PostHog
+  private distinctId?: string | number
+  private traceId?: string | number
+  private properties: Record<string, any>
+  private privacyMode: boolean
+  private groups: Record<string, any>
+  private debug: boolean
+
+  private runs: RunMetadataStorage = {}
+  private parentTree: { [runId: string]: string } = {}
+
+  constructor(options: LangChainCallbackHandlerOptions) {
+    if (!options.client) {
+      throw new Error('PostHog client is required')
+    }
+    super()
+    this.client = options.client
+    this.distinctId = options.distinctId
+    this.traceId = options.traceId
+    this.properties = options.properties || {}
+    this.privacyMode = options.privacyMode || false
+    this.groups = options.groups || {}
+    this.debug = options.debug || false
+  }
+
+  // ===== CALLBACK METHODS =====
+
+  public handleChainStart(
+    chain: Serialized,
+    inputs: ChainValues,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    metadata?: Record<string, unknown>,
+    _runType?: string,
+    runName?: string,
+    extra?: Record<string, unknown>
+  ): void {
+    this._logDebugEvent('on_chain_start', runId, parentRunId, { inputs, tags })
+    this._setParentOfRun(runId, parentRunId)
+    this._setTraceOrSpanMetadata(chain, inputs, runId, parentRunId, metadata, tags, runName)
+    if (typeof extra?.posthogStartTime === 'number' && Number.isFinite(extra.posthogStartTime)) {
+      this.runs[runId].startTime = extra.posthogStartTime
+    }
+  }
+
+  public handleChainEnd(
+    outputs: ChainValues,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    _kwargs?: { inputs?: Record<string, unknown> }
+  ): void {
+    this._logAndPopTraceOrSpan('on_chain_end', runId, parentRunId, { outputs, tags }, outputs)
+  }
+
+  public handleChainError(
+    error: Error,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    _kwargs?: { inputs?: Record<string, unknown> }
+  ): void {
+    this._logAndPopTraceOrSpan('on_chain_error', runId, parentRunId, { error, tags }, error)
+  }
+
+  public handleChatModelStart(
+    serialized: Serialized,
+    messages: BaseMessage[][],
+    runId: string,
+    parentRunId?: string,
+    extraParams?: Record<string, unknown>,
+    tags?: string[],
+    metadata?: Record<string, unknown>,
+    runName?: string
+  ): void {
+    this._logDebugEvent('on_chat_model_start', runId, parentRunId, { messages, tags })
+    this._setParentOfRun(runId, parentRunId)
+    // Flatten the two-dimensional messages and convert each message to a plain object
+    const input = messages.flat().map((m) => this._convertMessageToDict(m))
+    this._setLLMMetadata(serialized, runId, input, metadata, extraParams, runName)
+  }
+
+  public handleLLMStart(
+    serialized: Serialized,
+    prompts: string[],
+    runId: string,
+    parentRunId?: string,
+    extraParams?: Record<string, unknown>,
+    tags?: string[],
+    metadata?: Record<string, unknown>,
+    runName?: string
+  ): void {
+    this._logDebugEvent('on_llm_start', runId, parentRunId, { prompts, tags })
+    this._setParentOfRun(runId, parentRunId)
+    this._setLLMMetadata(serialized, runId, prompts, metadata, extraParams, runName)
+  }
+
+  public handleLLMEnd(
+    output: LLMResult,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    _extraParams?: Record<string, unknown>
+  ): void {
+    this._logAndPopGeneration('on_llm_end', runId, parentRunId, { output, tags }, output)
+  }
+
+  public handleLLMError(
+    err: Error,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    _extraParams?: Record<string, unknown>
+  ): void {
+    this._logAndPopGeneration('on_llm_error', runId, parentRunId, { err, tags }, err)
+  }
+
+  public handleToolStart(
+    tool: Serialized,
+    input: string,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    metadata?: Record<string, unknown>,
+    runName?: string
+  ): void {
+    this._logAndSetTraceOrSpan(
+      'on_tool_start',
+      tool,
+      input,
+      runId,
+      parentRunId,
+      { input, tags },
+      tags,
+      metadata,
+      runName
+    )
+  }
+
+  public handleToolEnd(output: any, runId: string, parentRunId?: string, tags?: string[]): void {
+    this._logAndPopTraceOrSpan('on_tool_end', runId, parentRunId, { output, tags }, output)
+  }
+
+  public handleToolError(err: Error, runId: string, parentRunId?: string, tags?: string[]): void {
+    this._logAndPopTraceOrSpan('on_tool_error', runId, parentRunId, { err, tags }, err)
+  }
+
+  public handleRetrieverStart(
+    retriever: Serialized,
+    query: string,
+    runId: string,
+    parentRunId?: string,
+    tags?: string[],
+    metadata?: Record<string, unknown>,
+    name?: string
+  ): void {
+    this._logAndSetTraceOrSpan(
+      'on_retriever_start',
+      retriever,
+      query,
+      runId,
+      parentRunId,
+      { query, tags },
+      tags,
+      metadata,
+      name
+    )
+  }
+
+  public handleRetrieverEnd(
+    documents: DocumentInterface[],
+    runId: string,
+    parentRunId?: string,
+    tags?: string[]
+  ): void {
+    this._logAndPopTraceOrSpan('on_retriever_end', runId, parentRunId, { documents, tags }, documents)
+  }
+
+  public handleRetrieverError(err: Error, runId: string, parentRunId?: string, tags?: string[]): void {
+    this._logAndPopTraceOrSpan('on_retriever_error', runId, parentRunId, { err, tags }, err)
+  }
+
+  public handleAgentAction(action: AgentAction, runId: string, parentRunId?: string, tags?: string[]): void {
+    this._logDebugEvent('on_agent_action', runId, parentRunId, { action, tags })
+    this._setParentOfRun(runId, parentRunId)
+    this._setTraceOrSpanMetadata(null, action, runId, parentRunId)
+  }
+
+  public handleAgentEnd(action: AgentFinish, runId: string, parentRunId?: string, tags?: string[]): void {
+    this._logDebugEvent('on_agent_finish', runId, parentRunId, { action, tags })
+    this._popRunAndCaptureTraceOrSpan(runId, parentRunId, action)
+  }
+
+  // ===== PRIVATE HELPERS =====
+
+  private _logAndSetTraceOrSpan(
+    eventName: string,
+    serialized: Serialized,
+    input: any,
+    runId: string,
+    parentRunId: string | undefined,
+    debugPayload: Record<string, unknown>,
+    tags?: string[],
+    metadata?: Record<string, unknown>,
+    runName?: string
+  ): void {
+    this._logDebugEvent(eventName, runId, parentRunId, debugPayload)
+    this._setParentOfRun(runId, parentRunId)
+    this._setTraceOrSpanMetadata(serialized, input, runId, parentRunId, metadata, tags, runName)
+  }
+
+  private _logAndPopTraceOrSpan(
+    eventName: string,
+    runId: string,
+    parentRunId: string | undefined,
+    debugPayload: Record<string, unknown>,
+    result: any
+  ): void {
+    this._logDebugEvent(eventName, runId, parentRunId, debugPayload)
+    this._popRunAndCaptureTraceOrSpan(runId, parentRunId, result)
+  }
+
+  private _logAndPopGeneration(
+    eventName: string,
+    runId: string,
+    parentRunId: string | undefined,
+    debugPayload: Record<string, unknown>,
+    result: LLMResult | Error
+  ): void {
+    this._logDebugEvent(eventName, runId, parentRunId, debugPayload)
+    this._popRunAndCaptureGeneration(runId, parentRunId, result)
+  }
+
+  private _setParentOfRun(runId: string, parentRunId?: string): void {
+    if (parentRunId) {
+      this.parentTree[runId] = parentRunId
+    }
+  }
+
+  private _popParentOfRun(runId: string): void {
+    delete this.parentTree[runId]
+  }
+
+  private _findRootRun(runId: string): string {
+    let id = runId
+    while (this.parentTree[id]) {
+      id = this.parentTree[id]
+    }
+    return id
+  }
+
+  private _setTraceOrSpanMetadata(
+    serialized: any,
+    input: any,
+    runId: string,
+    parentRunId?: string,
+    ...args: any[]
+  ): void {
+    // Use default names if not provided: if this is a top-level run, we mark it as a trace, otherwise as a span.
+    const defaultName = parentRunId ? 'span' : 'trace'
+    const runName = this._getLangchainRunName(serialized, ...args) || defaultName
+    this.runs[runId] = {
+      name: runName,
+      input,
+      startTime: Date.now(),
+    }
+  }
+
+  private _setLLMMetadata(
+    serialized: Serialized | null,
+    runId: string,
+    messages: any,
+    metadata?: any,
+    extraParams?: any,
+    runName?: string
+  ): void {
+    const runNameFound = this._getLangchainRunName(serialized, { extraParams, runName }) || 'generation'
+    const generation: GenerationMetadata = {
+      name: runNameFound,
+      input: sanitizeLangChain(messages, this.client),
+      startTime: Date.now(),
+    }
+    if (extraParams) {
+      generation.modelParams = getModelParams(extraParams.invocation_params)
+
+      if (extraParams.invocation_params && extraParams.invocation_params.tools) {
+        generation.tools = extraParams.invocation_params.tools
+      }
+    }
+    if (metadata) {
+      if (metadata.ls_model_name) {
+        generation.model = metadata.ls_model_name
+      }
+      if (metadata.ls_provider) {
+        generation.provider = metadata.ls_provider
+      }
+    }
+    if (serialized && 'kwargs' in serialized && serialized.kwargs.openai_api_base) {
+      generation.baseUrl = serialized.kwargs.openai_api_base
+    }
+    this.runs[runId] = generation
+  }
+
+  private _popRunMetadata(runId: string): RunMetadata | undefined {
+    const endTime = Date.now()
+    const run = this.runs[runId]
+    if (!run) {
+      console.warn(`No run metadata found for run ${runId}`)
+      return undefined
+    }
+    run.endTime = endTime
+    delete this.runs[runId]
+    return run
+  }
+
+  private _getTraceId(runId: string): string {
+    return this.traceId ? String(this.traceId) : this._findRootRun(runId)
+  }
+
+  protected _getParentRunId(traceId: string, _runId: string, parentRunId?: string): string | undefined {
+    // Replace the parent-run if not found in our stored parent tree.
+    if (parentRunId && !this.parentTree[parentRunId]) {
+      return traceId
+    }
+    return parentRunId
+  }
+
+  private _safeCapture(message: EventMessage): void {
+    try {
+      captureAiEvent(this.client, message)
+    } catch {
+      // Telemetry delivery must never affect the LangChain callback lifecycle.
+    }
+  }
+
+  private _popRunAndCaptureTraceOrSpan(
+    runId: string,
+    parentRunId: string | undefined,
+    outputs: ChainValues | DocumentInterface[] | AgentFinish | Error | any
+  ): void {
+    const traceId = this._getTraceId(runId)
+    const isSpan = Boolean(parentRunId || this.parentTree[runId])
+    this._popParentOfRun(runId)
+    const run = this._popRunMetadata(runId)
+    if (!run) {
+      return
+    }
+    if ('modelParams' in run) {
+      console.warn(`Run ${runId} is a generation, but attempted to be captured as a trace/span.`)
+      return
+    }
+    const actualParentRunId = this._getParentRunId(traceId, runId, parentRunId)
+    this._captureTraceOrSpan(traceId, runId, run as SpanMetadata, outputs, isSpan, actualParentRunId)
+  }
+
+  private _captureTraceOrSpan(
+    traceId: string,
+    runId: string,
+    run: SpanMetadata,
+    outputs: ChainValues | DocumentInterface[] | AgentFinish | Error | any,
+    isSpan: boolean,
+    parentRunId?: string
+  ): void {
+    const eventName = isSpan ? '$ai_span' : '$ai_trace'
+    const latency = run.endTime ? (run.endTime - run.startTime) / 1000 : 0
+    const eventProperties: Record<string, any> = {
+      $ai_lib: 'posthog-ai',
+      $ai_lib_version: version,
+      $ai_trace_id: traceId,
+      $ai_input_state: withPrivacyMode(this.client, this.privacyMode, sanitizeLangChain(run.input, this.client)),
+      $ai_latency: latency,
+      $ai_span_name: run.name,
+      $ai_span_id: runId,
+      $ai_framework: 'langchain',
+    }
+    if (parentRunId) {
+      eventProperties['$ai_parent_id'] = parentRunId
+    }
+
+    Object.assign(eventProperties, this.properties)
+    if (!this.distinctId) {
+      eventProperties['$process_person_profile'] = false
+    }
+    if (outputs instanceof Error) {
+      if (isLangGraphControlFlow(outputs)) {
+        // GraphInterrupt carries the pending interrupts (e.g. the question posed to a human).
+        // Surface them under the same `__interrupt__` key LangGraph hands back to the caller,
+        // so an interrupted span stays distinguishable from a node that returned nothing.
+        const interrupts = (outputs as Error & { interrupts?: unknown }).interrupts
+        if (interrupts !== undefined) {
+          eventProperties['$ai_output_state'] = withPrivacyMode(
+            this.client,
+            this.privacyMode,
+            sanitizeLangChain({ __interrupt__: interrupts }, this.client)
+          )
+        }
+      } else {
+        eventProperties['$ai_error'] = stringifyError(outputs)
+        eventProperties['$ai_is_error'] = true
+      }
+    } else if (outputs !== undefined) {
+      eventProperties['$ai_output_state'] = withPrivacyMode(
+        this.client,
+        this.privacyMode,
+        sanitizeLangChain(outputs, this.client)
+      )
+    }
+    this._safeCapture({
+      distinctId: this.distinctId ? this.distinctId.toString() : runId,
+      event: eventName,
+      properties: eventProperties,
+      groups: this.groups,
+    })
+  }
+
+  private _popRunAndCaptureGeneration(
+    runId: string,
+    parentRunId: string | undefined,
+    response: LLMResult | Error
+  ): void {
+    const traceId = this._getTraceId(runId)
+    this._popParentOfRun(runId)
+    const run = this._popRunMetadata(runId)
+    if (!run || typeof run !== 'object' || !('modelParams' in run)) {
+      console.warn(`Run ${runId} is not a generation, but attempted to be captured as such.`)
+      return
+    }
+    const actualParentRunId = this._getParentRunId(traceId, runId, parentRunId)
+    this._captureGeneration(traceId, runId, run as GenerationMetadata, response, actualParentRunId)
+  }
+
+  private _captureGeneration(
+    traceId: string,
+    runId: string,
+    run: GenerationMetadata,
+    output: LLMResult | Error,
+    parentRunId?: string
+  ): void {
+    const latency = run.endTime ? (run.endTime - run.startTime) / 1000 : 0
+    warnIfPostHogAiGateway(run.baseUrl)
+    const eventProperties: Record<string, any> = {
+      $ai_lib: 'posthog-ai',
+      $ai_lib_version: version,
+      $ai_trace_id: traceId,
+      $ai_span_id: runId,
+      $ai_span_name: run.name,
+      $ai_provider: run.provider,
+      $ai_model: run.model,
+      $ai_model_parameters: run.modelParams,
+      $ai_input: withPrivacyMode(this.client, this.privacyMode, run.input),
+      $ai_http_status: 200,
+      $ai_latency: latency,
+      $ai_base_url: run.baseUrl,
+      $ai_framework: 'langchain',
+    }
+    if (parentRunId) {
+      eventProperties['$ai_parent_id'] = parentRunId
+    }
+
+    if (run.tools) {
+      eventProperties['$ai_tools'] = run.tools
+    }
+
+    if (output instanceof Error) {
+      eventProperties['$ai_http_status'] = (output as any).status || 500
+      eventProperties['$ai_error'] = stringifyError(output)
+      eventProperties['$ai_is_error'] = true
+    } else {
+      // Handle token usage
+      const [inputTokens, outputTokens, additionalTokenData] = this.parseUsage(output, run.provider, run.model)
+      eventProperties['$ai_input_tokens'] = inputTokens
+      eventProperties['$ai_output_tokens'] = outputTokens
+
+      // Add additional token data to properties
+      if (additionalTokenData.cacheReadInputTokens) {
+        eventProperties['$ai_cache_read_input_tokens'] = additionalTokenData.cacheReadInputTokens
+      }
+      if (additionalTokenData.cacheWriteInputTokens) {
+        eventProperties['$ai_cache_creation_input_tokens'] = additionalTokenData.cacheWriteInputTokens
+      }
+      if (
+        additionalTokenData.cacheWrite5mInputTokens !== undefined &&
+        additionalTokenData.cacheWrite1hInputTokens !== undefined
+      ) {
+        eventProperties['$ai_cache_creation_5m_input_tokens'] = additionalTokenData.cacheWrite5mInputTokens
+        eventProperties['$ai_cache_creation_1h_input_tokens'] = additionalTokenData.cacheWrite1hInputTokens
+      }
+      if (additionalTokenData.reasoningTokens) {
+        eventProperties['$ai_reasoning_tokens'] = additionalTokenData.reasoningTokens
+      }
+      if (additionalTokenData.webSearchCount !== undefined) {
+        eventProperties['$ai_web_search_count'] = additionalTokenData.webSearchCount
+      }
+
+      // Extract stop reason from generation info
+      const stopReason = this._extractStopReason(output)
+      if (stopReason) {
+        eventProperties['$ai_stop_reason'] = stopReason
+      }
+
+      // Handle generations/completions
+      let completions
+      if (output.generations && Array.isArray(output.generations)) {
+        const lastGeneration = output.generations[output.generations.length - 1]
+        if (Array.isArray(lastGeneration) && lastGeneration.length > 0) {
+          // Check if this is a ChatGeneration by looking at the first item
+          const isChatGeneration = 'message' in lastGeneration[0] && lastGeneration[0].message
+
+          if (isChatGeneration) {
+            // For ChatGeneration, convert messages to dict format
+            completions = lastGeneration.map((gen: any) => {
+              return this._convertMessageToDict(gen.message)
+            })
+          } else {
+            // For non-ChatGeneration, extract raw response
+            completions = lastGeneration.map((gen: any) => {
+              return this._extractRawResponse(gen)
+            })
+          }
+        }
+      }
+
+      if (completions) {
+        eventProperties['$ai_output_choices'] = withPrivacyMode(this.client, this.privacyMode, completions)
+      }
+    }
+
+    Object.assign(eventProperties, this.properties)
+    if (!this.distinctId) {
+      eventProperties['$process_person_profile'] = false
+    }
+
+    this._safeCapture({
+      distinctId: this.distinctId ? this.distinctId.toString() : traceId,
+      event: '$ai_generation',
+      properties: eventProperties,
+      groups: this.groups,
+    })
+  }
+
+  private _logDebugEvent(eventName: string, runId: string, parentRunId: string | undefined, extra: any): void {
+    if (this.debug) {
+      console.log(`Event: ${eventName}, runId: ${runId}, parentRunId: ${parentRunId}, extra:`, extra)
+    }
+  }
+
+  private _getLangchainRunName(serialized: any, ...args: any): string | undefined {
+    if (args && args.length > 0) {
+      for (const arg of args) {
+        // LangChain hands runName through as a bare string, not wrapped in an object
+        if (typeof arg === 'string' && arg) {
+          return arg
+        }
+        if (arg && typeof arg === 'object') {
+          if (arg.name) {
+            return arg.name
+          }
+          if (arg.runName) {
+            return arg.runName
+          }
+        }
+      }
+    }
+
+    if (serialized && serialized.name) {
+      return serialized.name
+    }
+    if (serialized && serialized.id) {
+      return Array.isArray(serialized.id) ? serialized.id[serialized.id.length - 1] : serialized.id
+    }
+    return undefined
+  }
+
+  private _convertLcToolCallsToOai(toolCalls: ToolCall[]): Record<string, any>[] {
+    return toolCalls.map((toolCall: ToolCall) => ({
+      type: 'function',
+      id: toolCall.id,
+      function: {
+        name: toolCall.name,
+        arguments: JSON.stringify(toolCall.args),
+      },
+    }))
+  }
+
+  private _extractRawResponse(generation: any): any {
+    // Extract the response from the last response of the LLM call
+    // We return the text of the response if not empty
+    if (generation.text != null && generation.text.trim() !== '') {
+      return generation.text.trim()
+    } else if (generation.message) {
+      // Additional kwargs contains the response in case of tool usage
+      return generation.message.additional_kwargs || generation.message.additionalKwargs || {}
+    } else {
+      // Not tool usage, some LLM responses can be simply empty
+      return ''
+    }
+  }
+
+  private _convertMessageToDict(message: any): Record<string, any> {
+    let messageDict: Record<string, any> = {}
+
+    const messageType: string = message.getType()
+
+    switch (messageType) {
+      case 'human':
+        messageDict = { role: 'user', content: message.content }
+        break
+      case 'ai':
+        messageDict = { role: 'assistant', content: message.content }
+
+        if (message.tool_calls) {
+          messageDict.tool_calls = this._convertLcToolCallsToOai(message.tool_calls)
+        }
+
+        break
+      case 'system':
+        messageDict = { role: 'system', content: message.content }
+        break
+      case 'tool':
+        messageDict = { role: 'tool', content: message.content }
+        break
+      case 'function':
+        messageDict = { role: 'function', content: message.content }
+        break
+      default:
+        messageDict = { role: messageType, content: toContentString(message.content) }
+        break
+    }
+
+    if (message.additional_kwargs) {
+      messageDict = { ...messageDict, ...message.additional_kwargs }
+    }
+
+    // Sanitize the message content to redact base64 images
+    return sanitizeLangChain(messageDict, this.client) as Record<string, any>
+  }
+
+  private _extractStopReason(output: LLMResult): string | undefined {
+    if (!output.generations || !Array.isArray(output.generations)) {
+      return undefined
+    }
+    const lastGeneration = output.generations[output.generations.length - 1]
+    if (!Array.isArray(lastGeneration) || lastGeneration.length === 0) {
+      return undefined
+    }
+    const gen = lastGeneration[0]
+    const messageResponseMetadata = (gen as any).message?.response_metadata
+    const generationResponseMetadata = gen.generationInfo?.response_metadata
+    const stopReason =
+      messageResponseMetadata?.finish_reason ||
+      messageResponseMetadata?.stop_reason ||
+      gen.generationInfo?.finish_reason ||
+      generationResponseMetadata?.stop_reason ||
+      generationResponseMetadata?.finish_reason ||
+      gen.generationInfo?.stop_reason
+
+    return stopReason != null ? String(stopReason) : undefined
+  }
+
+  private _extractCacheCreationTtlBreakdown(
+    cacheCreation: unknown,
+    aggregateValues: unknown[]
+  ): [number, number] | undefined {
+    if (!isObject(cacheCreation)) {
+      return undefined
+    }
+
+    const { ephemeral_5m_input_tokens: cache5m, ephemeral_1h_input_tokens: cache1h } = cacheCreation
+    const providedValues = [cache5m, cache1h].filter((value) => value != null)
+    if (
+      providedValues.length === 0 ||
+      !providedValues.every((value) => typeof value === 'number' && Number.isFinite(value) && value >= 0)
+    ) {
+      return undefined
+    }
+
+    const breakdown: [number, number] = [
+      typeof cache5m === 'number' ? cache5m : 0,
+      typeof cache1h === 'number' ? cache1h : 0,
+    ]
+    const total = breakdown[0] + breakdown[1]
+    const validAggregates = aggregateValues.filter(
+      (value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0
+    )
+    return total > 0 && !validAggregates.some((aggregate) => aggregate !== total) ? breakdown : undefined
+  }
+
+  private _extractBedrockCacheCreationTtlBreakdown(
+    cacheDetails: unknown,
+    aggregateValues: unknown[]
+  ): [number, number] | undefined {
+    if (!Array.isArray(cacheDetails)) {
+      return undefined
+    }
+
+    let cache5m = 0
+    let cache1h = 0
+
+    for (const detail of cacheDetails) {
+      if (!isObject(detail)) {
+        continue
+      }
+
+      const ttl = typeof detail.ttl === 'string' ? detail.ttl.toLowerCase() : undefined
+      const inputTokens = detail.inputTokens
+      if (
+        (ttl !== '5m' && ttl !== 't5m' && ttl !== '1h' && ttl !== 't1h') ||
+        typeof inputTokens !== 'number' ||
+        !Number.isFinite(inputTokens) ||
+        inputTokens < 0
+      ) {
+        continue
+      }
+
+      if (ttl === '5m' || ttl === 't5m') {
+        cache5m += inputTokens
+      } else {
+        cache1h += inputTokens
+      }
+    }
+
+    const total = cache5m + cache1h
+    const validAggregates = aggregateValues.filter(
+      (value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0
+    )
+    if (total === 0 || validAggregates.some((aggregate) => aggregate !== total)) {
+      return undefined
+    }
+
+    return [cache5m, cache1h]
+  }
+
+  private _parseUsageModel(
+    usage: any,
+    provider?: string,
+    model?: string,
+    inputIncludesCacheTokens = true,
+    rawUsage?: any
+  ): [number, number, Record<string, any>] {
+    const conversionList: Array<[string, 'input' | 'output']> = [
+      ['promptTokens', 'input'],
+      ['completionTokens', 'output'],
+      ['input_tokens', 'input'],
+      ['output_tokens', 'output'],
+      ['prompt_token_count', 'input'],
+      ['candidates_token_count', 'output'],
+      ['inputTokenCount', 'input'],
+      ['outputTokenCount', 'output'],
+      ['input_token_count', 'input'],
+      ['generated_token_count', 'output'],
+    ]
+
+    const parsedUsage = conversionList.reduce(
+      (acc: { input: number; output: number }, [modelKey, typeKey]) => {
+        const value = usage[modelKey]
+        if (value != null) {
+          const finalCount = Array.isArray(value)
+            ? value.reduce((sum: number, tokenCount: number) => sum + tokenCount, 0)
+            : value
+          acc[typeKey] = finalCount
+        }
+        return acc
+      },
+      { input: 0, output: 0 }
+    )
+
+    // Extract additional token details like cached tokens and reasoning tokens
+    const additionalTokenData: Record<string, any> = {}
+
+    // Check for cached tokens in various formats
+    if (usage.prompt_tokens_details?.cached_tokens != null) {
+      additionalTokenData.cacheReadInputTokens = usage.prompt_tokens_details.cached_tokens
+    } else if (usage.input_token_details?.cache_read != null) {
+      additionalTokenData.cacheReadInputTokens = usage.input_token_details.cache_read
+    } else if (usage.cachedPromptTokens != null) {
+      additionalTokenData.cacheReadInputTokens = usage.cachedPromptTokens
+    } else if (usage.cache_read_input_tokens != null) {
+      additionalTokenData.cacheReadInputTokens = usage.cache_read_input_tokens
+    }
+
+    // Check for cache write/creation tokens in various formats
+    if (usage.cache_creation_input_tokens != null) {
+      additionalTokenData.cacheWriteInputTokens = usage.cache_creation_input_tokens
+    } else if (usage.input_token_details?.cache_creation != null) {
+      additionalTokenData.cacheWriteInputTokens = usage.input_token_details.cache_creation
+    }
+
+    const directCacheCreationAggregates = [
+      usage.cache_creation_input_tokens,
+      usage.input_token_details?.cache_creation,
+      usage.cacheWriteInputTokens,
+      rawUsage?.cache_creation_input_tokens,
+      rawUsage?.input_token_details?.cache_creation,
+      rawUsage?.cacheWriteInputTokens,
+      additionalTokenData.cacheWriteInputTokens,
+    ]
+    const cacheCreationTtl =
+      this._extractCacheCreationTtlBreakdown(usage.cache_creation, directCacheCreationAggregates) ??
+      this._extractCacheCreationTtlBreakdown(rawUsage?.cache_creation, directCacheCreationAggregates) ??
+      this._extractBedrockCacheCreationTtlBreakdown(usage.cacheDetails, [
+        usage.cacheWriteInputTokens,
+        additionalTokenData.cacheWriteInputTokens,
+      ]) ??
+      this._extractBedrockCacheCreationTtlBreakdown(rawUsage?.cacheDetails, [
+        rawUsage?.cacheWriteInputTokens,
+        additionalTokenData.cacheWriteInputTokens,
+      ])
+    if (cacheCreationTtl) {
+      const [cacheWrite5mInputTokens, cacheWrite1hInputTokens] = cacheCreationTtl
+      additionalTokenData.cacheWrite5mInputTokens = cacheWrite5mInputTokens
+      additionalTokenData.cacheWrite1hInputTokens = cacheWrite1hInputTokens
+      additionalTokenData.cacheWriteInputTokens = cacheWrite5mInputTokens + cacheWrite1hInputTokens
+    }
+
+    // Check for reasoning tokens in various formats
+    if (usage.completion_tokens_details?.reasoning_tokens != null) {
+      additionalTokenData.reasoningTokens = usage.completion_tokens_details.reasoning_tokens
+    } else if (usage.output_token_details?.reasoning != null) {
+      additionalTokenData.reasoningTokens = usage.output_token_details.reasoning
+    } else if (usage.reasoningTokens != null) {
+      additionalTokenData.reasoningTokens = usage.reasoningTokens
+    }
+
+    // Extract web search counts from various provider formats
+    let webSearchCount: number | undefined
+
+    // Priority 1: Exact Count
+    // Check Anthropic format (server_tool_use.web_search_requests)
+    if (usage.server_tool_use?.web_search_requests !== undefined) {
+      webSearchCount = usage.server_tool_use.web_search_requests
+    }
+    // Priority 2: Binary Detection (1 or 0)
+    // Check for citations array (Perplexity)
+    else if (usage.citations && Array.isArray(usage.citations) && usage.citations.length > 0) {
+      webSearchCount = 1
+    }
+    // Check for search_results array (Perplexity via OpenRouter)
+    else if (usage.search_results && Array.isArray(usage.search_results) && usage.search_results.length > 0) {
+      webSearchCount = 1
+    }
+    // Check for search_context_size (Perplexity via OpenRouter)
+    else if (usage.search_context_size) {
+      webSearchCount = 1
+    }
+    // Check for annotations with url_citation type
+    else if (usage.annotations && Array.isArray(usage.annotations)) {
+      const hasUrlCitation = usage.annotations.some((ann: unknown) => {
+        return ann && typeof ann === 'object' && 'type' in ann && ann.type === 'url_citation'
+      })
+
+      if (hasUrlCitation) {
+        webSearchCount = 1
+      }
+    }
+    // Check Gemini format (grounding metadata - binary 0 or 1)
+    else if (
+      usage.grounding_metadata?.grounding_support !== undefined ||
+      usage.grounding_metadata?.web_search_queries !== undefined
+    ) {
+      webSearchCount = 1
+    }
+
+    if (webSearchCount !== undefined) {
+      additionalTokenData.webSearchCount = webSearchCount
+    }
+
+    // For Anthropic providers, LangChain reports input_tokens as the sum of all input tokens.
+    // Our cost calculation expects them to be separate for Anthropic, so we subtract cache tokens.
+    // Both cache_read and cache_write tokens should be subtracted since Anthropic's raw API
+    // reports input_tokens as tokens NOT read from or used to create a cache.
+    // For other providers (OpenAI, etc.), input_tokens already excludes cache tokens as expected.
+    // Match logic consistent with plugin-server: exact match on provider OR substring match on model
+    let isAnthropic = false
+    if (provider && provider.toLowerCase() === 'anthropic') {
+      isAnthropic = true
+    } else if (model && model.toLowerCase().includes('anthropic')) {
+      isAnthropic = true
+    }
+
+    if (isAnthropic && inputIncludesCacheTokens && parsedUsage.input) {
+      const cacheTokens =
+        (additionalTokenData.cacheReadInputTokens || 0) + (additionalTokenData.cacheWriteInputTokens || 0)
+      if (cacheTokens > 0) {
+        parsedUsage.input = Math.max(parsedUsage.input - cacheTokens, 0)
+      }
+    }
+
+    return [parsedUsage.input, parsedUsage.output, additionalTokenData]
+  }
+
+  private parseUsage(response: LLMResult, provider?: string, model?: string): [number, number, Record<string, any>] {
+    const isNonEmptyUsage = (usage: unknown): usage is Record<string, any> =>
+      isObject(usage) && Object.keys(usage).length > 0
+    const firstNonEmptyUsage = (...candidates: unknown[]): Record<string, any> | undefined =>
+      candidates.find(isNonEmptyUsage)
+
+    let normalizedGenerationUsage: any
+    let rawGenerationUsage: any
+    let fallbackGenerationUsage: any
+
+    for (const generation of response.generations ?? []) {
+      for (const genChunk of generation) {
+        const generationInfo = genChunk.generationInfo ?? {}
+        const message = 'message' in genChunk ? genChunk.message : undefined
+        const messageUsage =
+          message && typeof message === 'object' && 'usage_metadata' in message ? message.usage_metadata : undefined
+        normalizedGenerationUsage = firstNonEmptyUsage(
+          normalizedGenerationUsage,
+          messageUsage,
+          generationInfo.usage_metadata
+        )
+
+        const messageResponseMetadata =
+          message &&
+          typeof message === 'object' &&
+          'response_metadata' in message &&
+          isObject(message.response_metadata)
+            ? message.response_metadata
+            : undefined
+        const generationResponseMetadata = isObject(generationInfo.response_metadata)
+          ? generationInfo.response_metadata
+          : undefined
+        const messageStreamMetadata = isObject(messageResponseMetadata?.metadata)
+          ? messageResponseMetadata.metadata
+          : undefined
+        const generationStreamMetadata = isObject(generationResponseMetadata?.metadata)
+          ? generationResponseMetadata.metadata
+          : undefined
+        rawGenerationUsage = firstNonEmptyUsage(
+          rawGenerationUsage,
+          messageResponseMetadata?.usage,
+          messageStreamMetadata?.usage,
+          generationResponseMetadata?.usage,
+          generationStreamMetadata?.usage
+        )
+        fallbackGenerationUsage = firstNonEmptyUsage(
+          fallbackGenerationUsage,
+          messageResponseMetadata?.['amazon-bedrock-invocationMetrics'],
+          generationResponseMetadata?.['amazon-bedrock-invocationMetrics'],
+          generationInfo.usage_metadata
+        )
+      }
+    }
+
+    const isAnthropic = provider?.toLowerCase() === 'anthropic' || model?.toLowerCase().includes('anthropic') === true
+    if (isAnthropic && isNonEmptyUsage(normalizedGenerationUsage)) {
+      return this._parseUsageModel(normalizedGenerationUsage, provider, model, true, rawGenerationUsage)
+    }
+
+    const llmUsageKeys = ['token_usage', 'usage', 'tokenUsage']
+
+    if (response.llmOutput != null) {
+      for (const key of llmUsageKeys) {
+        const llmUsage = response.llmOutput[key]
+        if (!isNonEmptyUsage(llmUsage)) {
+          continue
+        }
+        return this._parseUsageModel(llmUsage, provider, model, key !== 'usage', llmUsage)
+      }
+    }
+
+    if (isNonEmptyUsage(normalizedGenerationUsage)) {
+      return this._parseUsageModel(normalizedGenerationUsage, provider, model, true, rawGenerationUsage)
+    }
+    if (isNonEmptyUsage(rawGenerationUsage)) {
+      return this._parseUsageModel(rawGenerationUsage, provider, model, false, rawGenerationUsage)
+    }
+    if (isNonEmptyUsage(fallbackGenerationUsage)) {
+      return this._parseUsageModel(fallbackGenerationUsage, provider, model)
+    }
+
+    return [0, 0, {}]
+  }
+}

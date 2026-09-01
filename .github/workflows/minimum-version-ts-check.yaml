@@ -1,0 +1,62 @@
+name: Minimum TypeScript version check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: Check minimum TS version
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        node-version: [20, 22, 24]
+        typescript-version:
+          - version: "4.7.4"
+            extra-flags: "--module commonjs --moduleResolution node"
+          - version: "5.9.2"
+            extra-flags: "--module commonjs --moduleResolution node"
+          - version: "6.0.3"
+            extra-flags: "--module commonjs --ignoreConfig"
+          - version: "latest"
+            extra-flags: "--module nodenext --moduleResolution nodenext --ignoreConfig"
+          - version: "7.1.0-dev.20260715.1"
+            extra-flags: "--module nodenext --moduleResolution nodenext --ignoreConfig"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+        with:
+          node_version: 24
+          build: true
+
+      - name: Prepare consumer fixture
+        run: |
+          cp -R .github/fixtures/minimum-version-ts "${RUNNER_TEMP}/minimum-version-ts"
+          PACKAGE_DEST="${RUNNER_TEMP}/minimum-version-ts" pnpm --filter=posthog-js package
+
+      - uses: ./.github/actions/setup
+        with:
+          node_version: ${{ matrix.node-version }}
+          install: false
+          build: false
+
+      - name: Install TypeScript version
+        env:
+          TS_VERSION: ${{ matrix.typescript-version.version }}
+        run: pnpm add --save-dev --save-exact "typescript@${TS_VERSION}"
+        working-directory: ${{ runner.temp }}/minimum-version-ts
+
+      - name: Test TypeScript Import
+        run: |
+          pnpm exec tsc --version
+          pnpm exec tsc ci-ts-file.ts --strict --target es2017 --skipLibCheck ${{ matrix.typescript-version.extra-flags }}
+          node ci-ts-file.js
+        working-directory: ${{ runner.temp }}/minimum-version-ts

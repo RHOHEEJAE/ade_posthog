@@ -1,0 +1,68 @@
+{
+    "name": "@posthog/react",
+    "version": "1.10.5",
+    "bugs": {
+        "url": "https://github.com/PostHog/posthog-js/issues"
+    },
+    "description": "Provides components and hooks for React integrations of PostHog.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/PostHog/posthog-js.git",
+        "directory": "packages/react"
+    },
+    "author": "engineering@posthog.com",
+    "license": "MIT",
+    "homepage": "https://posthog.com/docs/libraries/react",
+    "packageManager": "pnpm@10.12.4",
+    "scripts": {
+        "clean": "rimraf dist",
+        "build": "rollup -c",
+        "dev": "rollup -cw",
+        "test:unit": "jest",
+        "lint": "eslint src",
+        "test:debug": "jest --runInBand",
+        "prepublishOnly": "pnpm lint && pnpm test:unit && pnpm build",
+        "package": "pnpm pack --out $PACKAGE_DEST/%s.tgz"
+    },
+    "main": "dist/umd/index.js",
+    "module": "dist/esm/index.js",
+    "types": "dist/types/index.d.ts",
+    "files": [
+        "dist",
+        "src",
+        "surveys",
+        "slim"
+    ],
+    "peerDependencies": {
+        "@types/react": ">=16.8.0",
+        "posthog-js": ">=1.257.2",
+        "react": ">=16.8.0"
+    },
+    "peerDependenciesMeta": {
+        "@types/react": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "@babel/preset-env": "catalog:",
+        "@babel/preset-react": "catalog:",
+        "@babel/preset-typescript": "catalog:",
+        "@posthog-tooling/rollup-utils": "workspace:*",
+        "@testing-library/dom": "catalog:",
+        "@testing-library/jest-dom": "catalog:",
+        "@testing-library/react": "catalog:",
+        "@types/react": "catalog:",
+        "@types/jest": "catalog:",
+        "cross-env": "^7.0.3",
+        "jest": "catalog:",
+        "jest-environment-jsdom": "catalog:",
+        "posthog-js": "workspace:^",
+        "react": "catalog:",
+        "react-dom": "catalog:",
+        "react-test-renderer": "catalog:",
+        "rollup": "catalog:",
+        "rollup-plugin-copy": "^3.5.0",
+        "tslib": "catalog:",
+        "typescript": "catalog:"
+    }
+}
