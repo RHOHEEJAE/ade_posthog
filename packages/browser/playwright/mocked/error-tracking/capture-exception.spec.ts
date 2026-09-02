@@ -32,7 +32,7 @@ test.describe('ErrorTracking captureException', () => {
             ph.captureException(errorWithCause)
         })
         exceptionMatch(exception, 'Error', 'wat even am I', 2)
-        expect(exception.properties.$exception_list[1].stacktrace).toBeUndefined()
+        expect(exception.properties.exception_list[1].stacktrace).toBeUndefined()
     })
 
     test('captureException(Error) with cyclic causes', async ({ events, posthog }) => {
@@ -128,9 +128,9 @@ async function bootstrap(posthog: PosthogPage, events: EventsPage, cb: (ph: Post
         request_batching: false,
     })
     await posthog.evaluate(cb)
-    const exception = await events.waitForEvent('$exception')
+    const exception = await events.waitForEvent('ade_exception')
     events.expectCountMap({
-        $exception: 1,
+        ade_exception: 1,
     })
     return exception
 }
@@ -142,14 +142,14 @@ async function exceptionMatch(
     exceptionCount: number = 1,
     hasStacktrace: boolean = true
 ) {
-    expect(exception.event).toEqual('$exception')
-    expect(exception.properties.$exception_source).toBeUndefined()
-    expect(exception.properties.$exception_list).toHaveLength(exceptionCount)
-    expect(exception.properties.$exception_list[0].type).toEqual(type)
-    expect(exception.properties.$exception_list[0].value).toEqual(value)
+    expect(exception.event).toEqual('ade_exception')
+    expect(exception.properties.ade_exception_source).toBeUndefined()
+    expect(exception.properties.exception_list).toHaveLength(exceptionCount)
+    expect(exception.properties.exception_list[0].type).toEqual(type)
+    expect(exception.properties.exception_list[0].value).toEqual(value)
     if (hasStacktrace) {
-        expect(exception.properties.$exception_list[0].stacktrace).toBeDefined()
+        expect(exception.properties.exception_list[0].stacktrace).toBeDefined()
     } else {
-        expect(exception.properties.$exception_list[0].stacktrace).toBeUndefined()
+        expect(exception.properties.exception_list[0].stacktrace).toBeUndefined()
     }
 }

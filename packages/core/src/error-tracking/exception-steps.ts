@@ -1,8 +1,8 @@
 import { isArray, isNumber, isObject, isString, safeJsonStringify } from '@/utils'
 
 export const EXCEPTION_STEP_INTERNAL_FIELDS = {
-  MESSAGE: '$message',
-  TIMESTAMP: '$timestamp',
+  MESSAGE: 'message',
+  TIMESTAMP: 'timestamp',
 } as const
 
 const RESERVED_EXCEPTION_STEP_KEYS = new Set<string>([

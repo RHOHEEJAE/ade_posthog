@@ -171,7 +171,7 @@ describe('PostHog Feature Flags v1', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -243,7 +243,7 @@ describe('PostHog Feature Flags v1', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -270,7 +270,7 @@ describe('PostHog Feature Flags v1', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -348,7 +348,7 @@ describe('PostHog Feature Flags v1', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -375,7 +375,7 @@ describe('PostHog Feature Flags v1', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -411,7 +411,7 @@ describe('PostHog Feature Flags v1', () => {
       it('should reload if groups are set', async () => {
         posthog.group('my-group', 'is-great')
         await waitForPromises()
-        // 3 calls: 1 for flags reload, 1 for $groupidentify batch, 1 for flags decide
+        // 3 calls: 1 for flags reload, 1 for ade_groupidentify batch, 1 for flags decide
         expect(mocks.fetch).toHaveBeenCalledTimes(3)
         // The flags reload call contains the group
         const flagsCall = mocks.fetch.mock.calls.find((call) => {
@@ -428,7 +428,7 @@ describe('PostHog Feature Flags v1', () => {
         })
       })
 
-      it('should capture $feature_flag_called when called', async () => {
+      it('should capture ade_feature_flag_called when called', async () => {
         expect(posthog.getFeatureFlag('feature-1')).toEqual(true)
         await waitForPromises()
         expect(mocks.fetch).toHaveBeenCalledTimes(2)
@@ -436,13 +436,13 @@ describe('PostHog Feature Flags v1', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_response: true,
-                '$feature/feature-1': true,
-                $used_bootstrap_value: false,
+                feature_flag: 'feature-1',
+                feature_flag_response: true,
+                'feature/feature-1': true,
+                used_bootstrap_value: false,
               },
             },
           ],
@@ -453,7 +453,7 @@ describe('PostHog Feature Flags v1', () => {
         expect(mocks.fetch).toHaveBeenCalledTimes(2)
       })
 
-      it('should not capture $feature_flag_called again if reloaded flags keep the same value', async () => {
+      it('should not capture ade_feature_flag_called again if reloaded flags keep the same value', async () => {
         expect(posthog.getFeatureFlag('feature-1')).toEqual(true)
         await waitForPromises()
         expect(mocks.fetch).toHaveBeenCalledTimes(2)
@@ -461,13 +461,13 @@ describe('PostHog Feature Flags v1', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_response: true,
-                '$feature/feature-1': true,
-                $used_bootstrap_value: false,
+                feature_flag: 'feature-1',
+                feature_flag_response: true,
+                'feature/feature-1': true,
+                used_bootstrap_value: false,
               },
             },
           ],
@@ -480,7 +480,7 @@ describe('PostHog Feature Flags v1', () => {
         expect(mocks.fetch).toHaveBeenCalledTimes(3)
       })
 
-      it('should capture $feature_flag_called when called, but not add all cached flags', async () => {
+      it('should capture ade_feature_flag_called when called, but not add all cached flags', async () => {
         expect(posthog.getFeatureFlag('feature-1')).toEqual(true)
         await waitForPromises()
         expect(mocks.fetch).toHaveBeenCalledTimes(2)
@@ -488,13 +488,13 @@ describe('PostHog Feature Flags v1', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_response: true,
-                '$feature/feature-1': true,
-                $used_bootstrap_value: false,
+                feature_flag: 'feature-1',
+                feature_flag_response: true,
+                'feature/feature-1': true,
+                used_bootstrap_value: false,
               },
             },
           ],
@@ -533,11 +533,11 @@ describe('PostHog Feature Flags v1', () => {
               event: 'test-event',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $active_feature_flags: ['feature-1', 'feature-2', 'feature-variant', 'json-payload'],
-                '$feature/feature-1': true,
-                '$feature/feature-2': true,
-                '$feature/json-payload': true,
-                '$feature/feature-variant': 'variant',
+                active_feature_flags: ['feature-1', 'feature-2', 'feature-variant', 'json-payload'],
+                'feature/feature-1': true,
+                'feature/feature-2': true,
+                'feature/json-payload': true,
+                'feature/feature-variant': 'variant',
               },
             },
           ],
@@ -589,7 +589,7 @@ describe('PostHog Feature Flags v1', () => {
             groups: {},
             person_properties: {},
             group_properties: {},
-            $anon_distinct_id: posthog.getAnonymousId(),
+            anon_distinct_id: posthog.getAnonymousId(),
           }),
           method: 'POST',
           headers: {
@@ -687,7 +687,7 @@ describe('PostHog Feature Flags v1', () => {
       expect(posthog.getFeatureFlag('not-in-featureFlags')).toEqual(true)
     })
 
-    it('getFeatureFlag should capture $feature_flag_called with bootstrapped values', async () => {
+    it('getFeatureFlag should capture ade_feature_flag_called with bootstrapped values', async () => {
       expect(posthog.getFeatureFlag('bootstrap-1')).toEqual('variant-1')
 
       await waitForPromises()
@@ -696,15 +696,15 @@ describe('PostHog Feature Flags v1', () => {
       expect(parseBody(mocks.fetch.mock.calls[0])).toMatchObject({
         batch: [
           {
-            event: '$feature_flag_called',
+            event: 'ade_feature_flag_called',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $feature_flag: 'bootstrap-1',
-              $feature_flag_response: 'variant-1',
-              '$feature/bootstrap-1': 'variant-1',
-              $feature_flag_bootstrapped_response: 'variant-1',
-              $feature_flag_bootstrapped_payload: { some: 'key' },
-              $used_bootstrap_value: true,
+              feature_flag: 'bootstrap-1',
+              feature_flag_response: 'variant-1',
+              'feature/bootstrap-1': 'variant-1',
+              feature_flag_bootstrapped_response: 'variant-1',
+              feature_flag_bootstrapped_payload: { some: 'key' },
+              used_bootstrap_value: true,
             },
           },
         ],
@@ -792,7 +792,7 @@ describe('PostHog Feature Flags v1', () => {
             groups: {},
             person_properties: {},
             group_properties: {},
-            $anon_distinct_id: 'tomato',
+            anon_distinct_id: 'tomato',
           }),
           method: 'POST',
           headers: {
@@ -818,7 +818,7 @@ describe('PostHog Feature Flags v1', () => {
             groups: {},
             person_properties: {},
             group_properties: {},
-            $anon_distinct_id: 'tomato',
+            anon_distinct_id: 'tomato',
           }),
           method: 'POST',
           headers: {
@@ -833,7 +833,7 @@ describe('PostHog Feature Flags v1', () => {
         expect(posthog.getFeatureFlagPayload('feature-variant')).toEqual([5])
       })
 
-      it('should capture $feature_flag_called with bootstrapped values', async () => {
+      it('should capture ade_feature_flag_called with bootstrapped values', async () => {
         expect(posthog.getFeatureFlag('feature-1')).toEqual(true)
 
         await waitForPromises()
@@ -842,15 +842,15 @@ describe('PostHog Feature Flags v1', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_response: true,
-                '$feature/feature-1': true,
-                $feature_flag_bootstrapped_response: 'feature-1-bootstrap-value',
-                $feature_flag_bootstrapped_payload: { color: 'feature-1-bootstrap-color' },
-                $used_bootstrap_value: false,
+                feature_flag: 'feature-1',
+                feature_flag_response: true,
+                'feature/feature-1': true,
+                feature_flag_bootstrapped_response: 'feature-1-bootstrap-value',
+                feature_flag_bootstrapped_payload: { color: 'feature-1-bootstrap-color' },
+                used_bootstrap_value: false,
               },
             },
           ],

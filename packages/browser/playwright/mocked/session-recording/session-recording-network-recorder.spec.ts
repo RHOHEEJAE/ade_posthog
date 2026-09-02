@@ -120,11 +120,11 @@ test.beforeEach(async ({ context }) => {
                         },
                     })
                     const capturedEvents = await page.capturedEvents()
-                    const snapshots = capturedEvents.filter((c) => c.event === '$snapshot')
+                    const snapshots = capturedEvents.filter((c) => c.event === 'ade_snapshot')
 
                     const capturedRequests: Record<string, any>[] = []
                     for (const snapshot of snapshots) {
-                        for (const snapshotData of snapshot.properties['$snapshot_data']) {
+                        for (const snapshotData of snapshot.properties['snapshot_data']) {
                             if (snapshotData.type === 6) {
                                 for (const req of snapshotData.data.payload.requests) {
                                     capturedRequests.push(req)

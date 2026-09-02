@@ -485,7 +485,7 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
         const updated = producer()
 
         expect(updated).not.toBe(first)
-        expect(updated).toMatchObject({ '$feature/changed': true, $active_feature_flags: ['changed'] })
+        expect(updated).toMatchObject({ 'feature/changed': true, active_feature_flags: ['changed'] })
 
         featureFlags.getFeatureFlag('changed')
         expect(producer()).toBe(updated)
@@ -588,9 +588,9 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
             [PERSISTENCE_FEATURE_FLAG_REQUEST_ID]: 'cached-request-id',
         })
         if (includesFlag) {
-            expect(properties).toHaveProperty('$feature/cached-flag', 'control')
+            expect(properties).toHaveProperty('feature/cached-flag', 'control')
         } else {
-            expect(properties).not.toHaveProperty('$feature/cached-flag')
+            expect(properties).not.toHaveProperty('feature/cached-flag')
         }
         featureFlags.dispose()
     })
@@ -604,8 +604,8 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
         const featureFlags = new PostHogFeatureFlags(new MutableFeatureFlagsConfigSource(defaultConfig()))
         await featureFlags.setup(posthog._getBrowserClientAdapter())
         posthog.persistence?.register({
-            $feature_flag_request_id: 'request-id',
-            $override_feature_flags: { overridden: true },
+            feature_flag_request_id: 'request-id',
+            override_feature_flags: { overridden: true },
         })
         featureFlags.updateFlags(
             { active: true, variant: 'control' },
@@ -613,26 +613,26 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
         )
 
         const enqueue = jest.spyOn(posthog._requestQueue!, 'enqueue')
-        posthog.capture('$snapshot', { explicitly_supplied: 'snapshot-value' })
+        posthog.capture('ade_snapshot', { explicitly_supplied: 'snapshot-value' })
         posthog.capture('ordinary-event')
 
         expect(enqueue).toHaveBeenNthCalledWith(
             1,
             expect.objectContaining({
                 data: expect.objectContaining({
-                    event: '$snapshot',
+                    event: 'ade_snapshot',
                     properties: expect.objectContaining({ explicitly_supplied: 'snapshot-value' }),
                 }),
             })
         )
         const snapshotProperties = enqueue.mock.calls[0][0].data.properties
         for (const property of [
-            '$active_feature_flags',
-            '$feature_flag_payloads',
-            '$feature_flag_request_id',
-            '$override_feature_flags',
-            '$feature/active',
-            '$feature/variant',
+            'active_feature_flags',
+            'feature_flag_payloads',
+            'feature_flag_request_id',
+            'override_feature_flags',
+            'feature/active',
+            'feature/variant',
         ]) {
             expect(snapshotProperties).not.toHaveProperty(property)
         }
@@ -643,15 +643,15 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
                 data: expect.objectContaining({
                     event: 'ordinary-event',
                     properties: expect.objectContaining({
-                        $active_feature_flags: ['active', 'variant'],
-                        $feature_flag_payloads: {
+                        active_feature_flags: ['active', 'variant'],
+                        feature_flag_payloads: {
                             active: { configured: true },
                             variant: 'payload',
                         },
-                        $feature_flag_request_id: 'request-id',
-                        $override_feature_flags: { overridden: true },
-                        '$feature/active': true,
-                        '$feature/variant': 'control',
+                        feature_flag_request_id: 'request-id',
+                        override_feature_flags: { overridden: true },
+                        'feature/active': true,
+                        'feature/variant': 'control',
                     }),
                 }),
             })
@@ -659,10 +659,10 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
 
         expect(posthog.calculateEventProperties('segment-event', {})).toEqual(
             expect.objectContaining({
-                $active_feature_flags: ['active', 'variant'],
-                $feature_flag_request_id: 'request-id',
-                '$feature/active': true,
-                '$feature/variant': 'control',
+                active_feature_flags: ['active', 'variant'],
+                feature_flag_request_id: 'request-id',
+                'feature/active': true,
+                'feature/variant': 'control',
             })
         )
         featureFlags.dispose()
@@ -730,7 +730,7 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
         expect(sendRequest).toHaveBeenCalledTimes(2)
         expect(sendRequest.mock.calls[1][1]?.body).toMatchObject({
             distinct_id: 'identified-id',
-            $anon_distinct_id: 'anonymous-id',
+            anon_distinct_id: 'anonymous-id',
         })
 
         resolveRequests[1]({ statusCode: 200, json: { featureFlags: { current: true } } })
@@ -872,7 +872,7 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
 
         const capture = jest.spyOn(posthog, 'capture')
         featureFlags.getFeatureFlag('test-flag')
-        expect(capture).toHaveBeenCalledWith('$feature_flag_called', expect.any(Object))
+        expect(capture).toHaveBeenCalledWith('ade_feature_flag_called', expect.any(Object))
 
         const reload = jest.spyOn(featureFlags, 'reloadFeatureFlags')
         featureFlags.setPersonPropertiesForFlags({ plan: 'pro' })
@@ -881,7 +881,7 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
 
         capture.mockClear()
         featureFlags.updateEarlyAccessFeatureEnrollment('test-flag', true)
-        expect(capture).toHaveBeenCalledWith('$feature_enrollment_update', expect.any(Object))
+        expect(capture).toHaveBeenCalledWith('ade_feature_enrollment_update', expect.any(Object))
         featureFlags.dispose()
     })
 
@@ -902,10 +902,10 @@ describe('PostHogFeatureFlags extension lifecycle', () => {
         expect(setPersistence).toHaveBeenCalledWith({
             [PERSISTENCE_ACTIVE_FEATURE_FLAGS]: ['test-flag'],
             [ENABLED_FEATURE_FLAGS]: { 'test-flag': true },
-            [STORED_PERSON_PROPERTIES_KEY]: { '$feature_enrollment/test-flag': true },
+            [STORED_PERSON_PROPERTIES_KEY]: { 'feature_enrollment/test-flag': true },
         })
         expect(callback).toHaveBeenCalledTimes(1)
-        expect(capture).toHaveBeenCalledWith('$feature_enrollment_update', expect.any(Object))
+        expect(capture).toHaveBeenCalledWith('ade_feature_enrollment_update', expect.any(Object))
         featureFlags.dispose()
     })
 

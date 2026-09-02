@@ -178,8 +178,8 @@ export class BrowserClientAdapter implements Client, Disposable {
         const captureOptions: CaptureOptions = {
             timestamp: options.timestamp,
             uuid: options.uuid,
-            $set: options.set as Properties | undefined,
-            $set_once: options.setOnce as Properties | undefined,
+            ade_set: options.set as Properties | undefined,
+            ade_set_once: options.setOnce as Properties | undefined,
         }
         this.instance.capture(event as EventName, properties, captureOptions)
     }

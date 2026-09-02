@@ -24,8 +24,8 @@ export function sampleByDistinctId(percent: number): BeforeSendFn {
                   ...captureResult,
                   properties: {
                       ...captureResult.properties,
-                      $sample_type: ['sampleByDistinctId'],
-                      $sample_threshold: percent,
+                      sample_type: ['sampleByDistinctId'],
+                      sample_threshold: percent,
                   },
               }
             : null
@@ -48,13 +48,13 @@ export function sampleBySessionId(percent: number): BeforeSendFn {
             return null
         }
 
-        return sampleOnProperty(captureResult.properties.$session_id, percent)
+        return sampleOnProperty(captureResult.properties.session_id, percent)
             ? {
                   ...captureResult,
                   properties: {
                       ...captureResult.properties,
-                      $sample_type: appendArray(captureResult.properties.$sample_type, 'sampleBySessionId'),
-                      $sample_threshold: updateThreshold(captureResult.properties.$sample_threshold, percent),
+                      sample_type: appendArray(captureResult.properties.sample_type, 'sampleBySessionId'),
+                      sample_threshold: updateThreshold(captureResult.properties.sample_threshold, percent),
                   },
               }
             : null
@@ -85,9 +85,9 @@ export function sampleByEvent(eventNames: (KnownEventName | string)[], percent: 
                   ...captureResult,
                   properties: {
                       ...captureResult.properties,
-                      $sample_type: appendArray(captureResult.properties?.$sample_type, 'sampleByEvent'),
-                      $sample_threshold: updateThreshold(captureResult.properties?.$sample_threshold, percent),
-                      $sampled_events: appendArray(captureResult.properties?.$sampled_events, eventNames),
+                      sample_type: appendArray(captureResult.properties?.sample_type, 'sampleByEvent'),
+                      sample_threshold: updateThreshold(captureResult.properties?.sample_threshold, percent),
+                      sampled_events: appendArray(captureResult.properties?.sampled_events, eventNames),
                   },
               }
             : null

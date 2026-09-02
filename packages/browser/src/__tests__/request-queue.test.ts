@@ -57,7 +57,7 @@ describe('RequestQueue', () => {
                 url: '/e',
             })
             queue.enqueue({
-                data: { event: '$identify', timestamp: EPOCH - 2000 },
+                data: { event: 'ade_identify', timestamp: EPOCH - 2000 },
                 url: '/identify',
             })
             queue.enqueue({
@@ -91,7 +91,7 @@ describe('RequestQueue', () => {
                 [
                     {
                         url: '/identify',
-                        data: [{ event: '$identify', offset: 2000 }],
+                        data: [{ event: 'ade_identify', offset: 2000 }],
                     },
                 ],
                 [
@@ -107,7 +107,7 @@ describe('RequestQueue', () => {
         it('handles unload', () => {
             queue.enqueue({ url: '/s', data: { recording_payload: 'example' } })
             queue.enqueue({ url: '/e', data: { event: 'foo', timestamp: 1_610_000_000 } })
-            queue.enqueue({ url: '/identify', data: { event: '$identify', timestamp: 1_620_000_000 } })
+            queue.enqueue({ url: '/identify', data: { event: 'ade_identify', timestamp: 1_620_000_000 } })
             queue.enqueue({ url: '/e', data: { event: 'bar', timestamp: 1_630_000_000 } })
             queue.unload()
 
@@ -128,7 +128,7 @@ describe('RequestQueue', () => {
             })
             expect(sendRequest).toHaveBeenNthCalledWith(3, {
                 url: '/identify',
-                data: [{ event: '$identify', timestamp: 1_620_000_000 }],
+                data: [{ event: 'ade_identify', timestamp: 1_620_000_000 }],
                 transport: 'sendBeacon',
             })
         })
@@ -141,7 +141,7 @@ describe('RequestQueue', () => {
             })
             queue = new RequestQueue(sendRequest, {})
             queue.enqueue({ url: '/e', data: { event: 'foo', timestamp: EPOCH - 3000 } })
-            queue.enqueue({ url: '/identify', data: { event: '$identify', timestamp: EPOCH - 2000 } })
+            queue.enqueue({ url: '/identify', data: { event: 'ade_identify', timestamp: EPOCH - 2000 } })
 
             queue.enable()
             expect(() => jest.runOnlyPendingTimers()).not.toThrow()
@@ -172,7 +172,7 @@ describe('RequestQueue', () => {
 
         it('handles unload with batchKeys', () => {
             queue.enqueue({ url: '/e', data: { event: 'foo', timestamp: 1_610_000_000 }, transport: 'XHR' })
-            queue.enqueue({ url: '/identify', data: { event: '$identify', timestamp: 1_620_000_000 } })
+            queue.enqueue({ url: '/identify', data: { event: 'ade_identify', timestamp: 1_620_000_000 } })
             queue.enqueue({ url: '/e', data: { event: 'bar', timestamp: 1_630_000_000 } })
             queue.enqueue({
                 url: '/e',
@@ -199,7 +199,7 @@ describe('RequestQueue', () => {
                 url: '/e',
             })
             expect(sendRequest).toHaveBeenNthCalledWith(3, {
-                data: [{ event: '$identify', timestamp: 1620000000 }],
+                data: [{ event: 'ade_identify', timestamp: 1620000000 }],
                 transport: 'sendBeacon',
                 url: '/identify',
             })

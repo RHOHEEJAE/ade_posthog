@@ -85,18 +85,18 @@ export const SurveyEventName = {
 export type SurveyEventName = (typeof SurveyEventName)[keyof typeof SurveyEventName]
 
 export const SurveyEventProperties = {
-    SURVEY_ID: '$survey_id',
-    SURVEY_NAME: '$survey_name',
-    SURVEY_RESPONSE: '$survey_response',
-    SURVEY_ITERATION: '$survey_iteration',
-    SURVEY_ITERATION_START_DATE: '$survey_iteration_start_date',
-    SURVEY_PARTIALLY_COMPLETED: '$survey_partially_completed',
-    SURVEY_SUBMISSION_ID: '$survey_submission_id',
-    SURVEY_QUESTIONS: '$survey_questions',
-    SURVEY_COMPLETED: '$survey_completed',
-    PRODUCT_TOUR_ID: '$product_tour_id',
-    SURVEY_LAST_SEEN_DATE: '$survey_last_seen_date',
-    SURVEY_LANGUAGE: '$survey_language',
+    SURVEY_ID: 'survey_id',
+    SURVEY_NAME: 'survey_name',
+    SURVEY_RESPONSE: 'survey_response',
+    SURVEY_ITERATION: 'survey_iteration',
+    SURVEY_ITERATION_START_DATE: 'survey_iteration_start_date',
+    SURVEY_PARTIALLY_COMPLETED: 'survey_partially_completed',
+    SURVEY_SUBMISSION_ID: 'survey_submission_id',
+    SURVEY_QUESTIONS: 'survey_questions',
+    SURVEY_COMPLETED: 'survey_completed',
+    PRODUCT_TOUR_ID: 'product_tour_id',
+    SURVEY_LAST_SEEN_DATE: 'survey_last_seen_date',
+    SURVEY_LANGUAGE: 'survey_language',
 } as const
 export type SurveyEventProperties = (typeof SurveyEventProperties)[keyof typeof SurveyEventProperties]
 
@@ -246,7 +246,7 @@ export type ActionStepStringMatching = 'contains' | 'exact' | 'regex'
 export interface ActionStepType {
     event?: string | null
     selector?: string | null
-    /** Pre-compiled regex pattern for matching selector against `$elements_chain`. */
+    /** Pre-compiled regex pattern for matching selector against `elements_chain`. */
     selector_regex?: string | null
     /** @deprecated Only `selector` should be used now. */
     tag_name?: string

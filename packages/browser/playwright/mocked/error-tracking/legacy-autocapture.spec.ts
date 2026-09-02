@@ -31,11 +31,11 @@ test('captures exceptions with the posthog-js 1.140.1 core', async ({ posthog, p
     await expect
         .poll(() =>
             page.evaluate(() =>
-                (window as any).__legacyCapturedEvents.find(({ event }: { event: string }) => event === '$exception')
+                (window as any).__legacyCapturedEvents.find(({ event }: { event: string }) => event === 'ade_exception')
             )
         )
         .toEqual({
-            event: '$exception',
+            event: 'ade_exception',
             options: expect.objectContaining({ _noHeatmaps: true }),
         })
 })
@@ -62,5 +62,5 @@ test('respects legacy exception exclusion rules', async ({ posthog, page, networ
 
     await page.click('[data-cy-button-throws-error]')
 
-    expect(await page.evaluate(() => (window as any).__legacyCapturedEvents)).not.toContain('$exception')
+    expect(await page.evaluate(() => (window as any).__legacyCapturedEvents)).not.toContain('ade_exception')
 })

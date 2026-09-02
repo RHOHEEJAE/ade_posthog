@@ -21,12 +21,12 @@ test.describe('ingestion', () => {
 
     test('Custom events work and are accessible via /api/event', async ({ page, events, posthog, ingestion }) => {
         await posthog.init()
-        await events.waitForEvent('$pageview')
+        await events.waitForEvent('ade_pageview')
         await page.click('[data-cy-custom-event-button]')
         await events.waitForEvent('custom-event')
         events.expectCountMap({
-            $pageview: 1,
-            $autocapture: 1,
+            ade_pageview: 1,
+            ade_autocapture: 1,
             'custom-event': 1,
         })
         await page.delay(1000)
@@ -40,8 +40,8 @@ test.describe('ingestion', () => {
         await page.click('[data-cy-button-sensitive-attributes]')
         await page.delay(1000)
         events.expectCountMap({
-            $pageview: 1,
-            $autocapture: 2,
+            ade_pageview: 1,
+            ade_autocapture: 2,
         })
         await page.delay(1000)
         ingestion.addSessionCheck(posthog, 3, assertAutocapturedEventsWorkAndAreAccessibleViaApi)
@@ -57,8 +57,8 @@ test.describe('ingestion', () => {
         await page.click('[data-cy-button-sensitive-attributes]')
         await page.delay(1000)
         events.expectCountMap({
-            $pageview: 1,
-            $autocapture: 2,
+            ade_pageview: 1,
+            ade_autocapture: 2,
         })
         await page.delay(1000)
         ingestion.addSessionCheck(posthog, 3, assertConfigOptionsChangeAutocaptureBehaviourAccordingly)

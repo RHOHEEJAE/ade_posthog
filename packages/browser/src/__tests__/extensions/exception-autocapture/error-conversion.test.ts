@@ -44,8 +44,8 @@ describe('Error conversion', () => {
 
     it('should convert a string to an error', () => {
         const expected: ErrorProperties = {
-            $exception_level: 'error',
-            $exception_list: [
+            exception_level: 'error',
+            exception_list: [
                 {
                     type: 'InternalError',
                     value: 'but somehow still a string',
@@ -60,8 +60,8 @@ describe('Error conversion', () => {
 
     it('should convert a plain object to an error', () => {
         const expected: ErrorProperties = {
-            $exception_level: 'error',
-            $exception_list: [
+            exception_level: 'error',
+            exception_list: [
                 {
                     type: 'Error',
                     value: 'Object captured as exception with keys: foo, string',
@@ -74,8 +74,8 @@ describe('Error conversion', () => {
 
     it('should convert a plain Event to an error', () => {
         const expected: ErrorProperties = {
-            $exception_level: 'error',
-            $exception_list: [
+            exception_level: 'error',
+            exception_list: [
                 {
                     type: 'MouseEvent',
                     value: 'MouseEvent captured as exception with keys: isTrusted',
@@ -96,15 +96,15 @@ describe('Error conversion', () => {
         }
 
         expect(Object.keys(errorProperties)).toHaveLength(2)
-        expect(errorProperties.$exception_level).toEqual('error')
+        expect(errorProperties.exception_level).toEqual('error')
         // the stack trace changes between runs, so we just check that it's there
-        expect(errorProperties.$exception_list).toBeDefined()
-        expect(errorProperties.$exception_list[0].type).toEqual('Error')
-        expect(errorProperties.$exception_list[0].value).toEqual('oh no an error has happened')
-        expect(errorProperties.$exception_list[0].stacktrace.frames[0].in_app).toEqual(true)
-        expect(errorProperties.$exception_list[0].stacktrace.frames[0].filename).toBeDefined()
-        expect(errorProperties.$exception_list[0].mechanism.synthetic).toEqual(false)
-        expect(errorProperties.$exception_list[0].mechanism.handled).toEqual(true)
+        expect(errorProperties.exception_list).toBeDefined()
+        expect(errorProperties.exception_list[0].type).toEqual('Error')
+        expect(errorProperties.exception_list[0].value).toEqual('oh no an error has happened')
+        expect(errorProperties.exception_list[0].stacktrace.frames[0].in_app).toEqual(true)
+        expect(errorProperties.exception_list[0].stacktrace.frames[0].filename).toBeDefined()
+        expect(errorProperties.exception_list[0].mechanism.synthetic).toEqual(false)
+        expect(errorProperties.exception_list[0].mechanism.handled).toEqual(true)
     })
 
     class FakeDomError {
@@ -117,8 +117,8 @@ describe('Error conversion', () => {
 
     it('should convert a DOM Error to an error', () => {
         const expected: ErrorProperties = {
-            $exception_level: 'error',
-            $exception_list: [
+            exception_level: 'error',
+            exception_list: [
                 {
                     type: 'DOMError',
                     value: 'click: foo',
@@ -139,14 +139,14 @@ describe('Error conversion', () => {
         }
 
         expect(Object.keys(errorProperties)).toHaveLength(2)
-        expect(errorProperties.$exception_list[0].type).toEqual('DOMException')
-        expect(errorProperties.$exception_list[0].value).toEqual('dom-exception: oh no disaster')
+        expect(errorProperties.exception_list[0].type).toEqual('DOMException')
+        expect(errorProperties.exception_list[0].value).toEqual('dom-exception: oh no disaster')
 
-        expect(errorProperties.$exception_level).toEqual('error')
+        expect(errorProperties.exception_level).toEqual('error')
         // the stack trace changes between runs, so we just check that it's there
-        expect(errorProperties.$exception_list).toBeDefined()
-        expect(errorProperties.$exception_list[0].stacktrace.frames[0].in_app).toEqual(true)
-        expect(errorProperties.$exception_list[0].stacktrace.frames[0].filename).toBeDefined()
+        expect(errorProperties.exception_list).toBeDefined()
+        expect(errorProperties.exception_list[0].stacktrace.frames[0].in_app).toEqual(true)
+        expect(errorProperties.exception_list[0].stacktrace.frames[0].filename).toBeDefined()
     })
 
     it('should convert an error event to an error', () => {
@@ -158,15 +158,15 @@ describe('Error conversion', () => {
         }
 
         expect(Object.keys(errorProperties)).toHaveLength(2)
-        expect(errorProperties.$exception_list[0].type).toEqual('Error')
-        expect(errorProperties.$exception_list[0].value).toEqual('the real error is hidden inside')
-        expect(errorProperties.$exception_level).toEqual('error')
+        expect(errorProperties.exception_list[0].type).toEqual('Error')
+        expect(errorProperties.exception_list[0].value).toEqual('the real error is hidden inside')
+        expect(errorProperties.exception_level).toEqual('error')
         // the stack trace changes between runs, so we just check that it's there
-        expect(errorProperties.$exception_list).toBeDefined()
-        expect(errorProperties.$exception_list[0].stacktrace.frames[0].in_app).toEqual(true)
-        expect(errorProperties.$exception_list[0].stacktrace.frames[0].filename).toBeDefined()
-        expect(errorProperties.$exception_list[0].mechanism.synthetic).toEqual(false)
-        expect(errorProperties.$exception_list[0].mechanism.handled).toEqual(true)
+        expect(errorProperties.exception_list).toBeDefined()
+        expect(errorProperties.exception_list[0].stacktrace.frames[0].in_app).toEqual(true)
+        expect(errorProperties.exception_list[0].stacktrace.frames[0].filename).toBeDefined()
+        expect(errorProperties.exception_list[0].mechanism.synthetic).toEqual(false)
+        expect(errorProperties.exception_list[0].mechanism.handled).toEqual(true)
     })
 
     it('should convert unhandled promise rejection', () => {
@@ -179,13 +179,13 @@ describe('Error conversion', () => {
             { handled: false }
         )
         expect(Object.keys(errorProperties)).toHaveLength(2)
-        expect(errorProperties.$exception_list[0].type).toEqual('PromiseRejectionEvent')
-        expect(errorProperties.$exception_list[0].value).toEqual(
+        expect(errorProperties.exception_list[0].type).toEqual('PromiseRejectionEvent')
+        expect(errorProperties.exception_list[0].value).toEqual(
             'PromiseRejectionEvent captured as exception with keys: isTrusted, promise, reason'
         )
-        expect(errorProperties.$exception_level).toEqual('error')
-        expect(errorProperties.$exception_list[0].mechanism.synthetic).toEqual(true)
-        expect(errorProperties.$exception_list[0].mechanism.handled).toEqual(false)
+        expect(errorProperties.exception_level).toEqual('error')
+        expect(errorProperties.exception_list[0].mechanism.synthetic).toEqual(true)
+        expect(errorProperties.exception_list[0].mechanism.handled).toEqual(false)
     })
 
     it('should use cause when it is an error', () => {
@@ -199,19 +199,19 @@ describe('Error conversion', () => {
         const error = new Error('my error', { cause: originalError })
         const errorProperties: ErrorProperties = errorToProperties({ error, event: undefined })
         expect(Object.keys(errorProperties)).toHaveLength(2)
-        expect(errorProperties.$exception_list).toHaveLength(2)
-        expect(errorProperties.$exception_list[0].type).toEqual('Error')
-        expect(errorProperties.$exception_list[0].value).toEqual('my error')
-        expect(errorProperties.$exception_level).toEqual('error')
-        expect(errorProperties.$exception_list[0].mechanism.synthetic).toEqual(false)
-        expect(errorProperties.$exception_list[0].mechanism.handled).toEqual(true)
-        expect(errorProperties.$exception_list[1].type).toEqual('CustomError')
-        expect(errorProperties.$exception_list[1].value).toEqual('my original error')
-        expect(errorProperties.$exception_list.every((exception) => exception.stacktrace.frames.length > 0)).toBe(true)
+        expect(errorProperties.exception_list).toHaveLength(2)
+        expect(errorProperties.exception_list[0].type).toEqual('Error')
+        expect(errorProperties.exception_list[0].value).toEqual('my error')
+        expect(errorProperties.exception_level).toEqual('error')
+        expect(errorProperties.exception_list[0].mechanism.synthetic).toEqual(false)
+        expect(errorProperties.exception_list[0].mechanism.handled).toEqual(true)
+        expect(errorProperties.exception_list[1].type).toEqual('CustomError')
+        expect(errorProperties.exception_list[1].value).toEqual('my original error')
+        expect(errorProperties.exception_list.every((exception) => exception.stacktrace.frames.length > 0)).toBe(true)
 
         expect({
             ...errorProperties,
-            $exception_list: errorProperties.$exception_list.map(({ stacktrace, ...exception }) => ({
+            exception_list: errorProperties.exception_list.map(({ stacktrace, ...exception }) => ({
                 ...exception,
                 stacktrace: { ...stacktrace, frames: '<normalized stack frames>' },
             })),
@@ -223,14 +223,14 @@ describe('Error conversion', () => {
         const error = new Error('my error', { cause: originalError })
         const errorProperties: ErrorProperties = errorToProperties({ error, event: undefined })
         expect(Object.keys(errorProperties)).toHaveLength(2)
-        expect(errorProperties.$exception_list.length).toEqual(2)
-        expect(errorProperties.$exception_list[0].type).toEqual('Error')
-        expect(errorProperties.$exception_list[0].value).toEqual('my error')
-        expect(errorProperties.$exception_level).toEqual('error')
-        expect(errorProperties.$exception_list[0].mechanism.synthetic).toEqual(false)
-        expect(errorProperties.$exception_list[0].mechanism.handled).toEqual(true)
-        expect(errorProperties.$exception_list[1].type).toEqual('Error')
-        expect(errorProperties.$exception_list[1].value).toEqual('original test')
+        expect(errorProperties.exception_list.length).toEqual(2)
+        expect(errorProperties.exception_list[0].type).toEqual('Error')
+        expect(errorProperties.exception_list[0].value).toEqual('my error')
+        expect(errorProperties.exception_level).toEqual('error')
+        expect(errorProperties.exception_list[0].mechanism.synthetic).toEqual(false)
+        expect(errorProperties.exception_list[0].mechanism.handled).toEqual(true)
+        expect(errorProperties.exception_list[1].type).toEqual('Error')
+        expect(errorProperties.exception_list[1].value).toEqual('original test')
     })
 
     it('should not forward handled prop when using cause', () => {
@@ -239,10 +239,10 @@ describe('Error conversion', () => {
         const metadata = { handled: false, syntheticException: new Error('Synthetic') }
         const errorProperties: ErrorProperties = errorToProperties({ error, event: undefined }, metadata)
         expect(Object.keys(errorProperties)).toHaveLength(2)
-        expect(errorProperties.$exception_list.length).toEqual(2)
-        expect(errorProperties.$exception_list[0].mechanism.synthetic).toEqual(false)
-        expect(errorProperties.$exception_list[0].mechanism.handled).toEqual(false)
-        expect(errorProperties.$exception_list[1].mechanism.synthetic).toEqual(false)
-        expect(errorProperties.$exception_list[1].mechanism.handled).toEqual(true)
+        expect(errorProperties.exception_list.length).toEqual(2)
+        expect(errorProperties.exception_list[0].mechanism.synthetic).toEqual(false)
+        expect(errorProperties.exception_list[0].mechanism.handled).toEqual(false)
+        expect(errorProperties.exception_list[1].mechanism.synthetic).toEqual(false)
+        expect(errorProperties.exception_list[1].mechanism.handled).toEqual(true)
     })
 })

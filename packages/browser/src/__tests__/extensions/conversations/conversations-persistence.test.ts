@@ -6,10 +6,10 @@ const TEST_TOKEN = 'phc_test_token_123'
 const STORAGE_KEY = 'ph_conv_' + TEST_TOKEN
 
 // Legacy PostHog persistence keys (for migration tests)
-const LEGACY_WIDGET_SESSION_ID = '$conversations_widget_session_id'
-const LEGACY_TICKET_ID = '$conversations_ticket_id'
-const LEGACY_WIDGET_STATE = '$conversations_widget_state'
-const LEGACY_USER_TRAITS = '$conversations_user_traits'
+const LEGACY_WIDGET_SESSION_ID = 'conversations_widget_session_id'
+const LEGACY_TICKET_ID = 'conversations_ticket_id'
+const LEGACY_WIDGET_STATE = 'conversations_widget_state'
+const LEGACY_USER_TRAITS = 'conversations_user_traits'
 
 // Legacy PostHog persistence blob key
 const LEGACY_PH_KEY = 'ph_' + TEST_TOKEN + '_posthog'

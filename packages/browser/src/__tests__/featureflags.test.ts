@@ -225,23 +225,23 @@ describe('featureflags', () => {
         mockWarn = jest.spyOn(window.console, 'warn').mockImplementation()
 
         instance.persistence.register({
-            $feature_flag_payloads: {
+            feature_flag_payloads: {
                 'beta-feature': {
                     some: 'payload',
                 },
                 'alpha-feature-2': 200,
             },
-            $active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
-            $enabled_feature_flags: {
+            active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
+            enabled_feature_flags: {
                 'beta-feature': true,
                 'alpha-feature-2': true,
                 'multivariate-flag': 'variant-1',
                 'disabled-flag': false,
             },
-            $override_feature_flags: false,
+            override_feature_flags: false,
         })
 
-        instance.persistence.unregister('$flag_call_reported')
+        instance.persistence.unregister('flag_call_reported')
     })
 
     it('should return flags from persistence even if /flags endpoint was not hit', () => {
@@ -265,15 +265,15 @@ describe('featureflags', () => {
         ])
     })
 
-    it('getAllFeatureFlags does not send a $feature_flag_called event or report a flag call', () => {
+    it('getAllFeatureFlags does not send a ade_feature_flag_called event or report a flag call', () => {
         featureFlags.getAllFeatureFlags()
-        expect(instance.capture).not.toHaveBeenCalledWith('$feature_flag_called', expect.anything())
-        expect(instance.get_property('$flag_call_reported')).toEqual(undefined)
+        expect(instance.capture).not.toHaveBeenCalledWith('ade_feature_flag_called', expect.anything())
+        expect(instance.get_property('flag_call_reported')).toEqual(undefined)
     })
 
     it('should return flag details from persistence even if /flags endpoint was not hit', () => {
         instance.persistence.register({
-            $feature_flag_details: {
+            feature_flag_details: {
                 'beta-feature': {
                     key: 'beta-feature',
                     enabled: true,
@@ -291,7 +291,7 @@ describe('featureflags', () => {
                     },
                 },
             },
-            $override_feature_flags: false,
+            override_feature_flags: false,
         })
         featureFlags._hasLoadedFlags = false
 
@@ -318,8 +318,8 @@ describe('featureflags', () => {
     it('should warn if /flags endpoint was not hit and no flags exist', () => {
         ;(window as any).POSTHOG_DEBUG = true
         featureFlags._hasLoadedFlags = false
-        instance.persistence.unregister('$enabled_feature_flags')
-        instance.persistence.unregister('$active_feature_flags')
+        instance.persistence.unregister('enabled_feature_flags')
+        instance.persistence.unregister('active_feature_flags')
 
         expect(featureFlags.getFlags()).toEqual([])
         expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(undefined)
@@ -400,8 +400,8 @@ describe('featureflags', () => {
 
         it('should return defaultValue when flags have not loaded', () => {
             featureFlags._hasLoadedFlags = false
-            instance.persistence.unregister('$enabled_feature_flags')
-            instance.persistence.unregister('$active_feature_flags')
+            instance.persistence.unregister('enabled_feature_flags')
+            instance.persistence.unregister('active_feature_flags')
 
             expect(featureFlags.isFeatureEnabled('beta-feature', { defaultValue: true })).toEqual(true)
         })
@@ -438,7 +438,7 @@ describe('featureflags', () => {
         // It should not call `capture` on subsequent calls
         expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
         expect(instance.capture).toHaveBeenCalledTimes(3)
-        expect(instance.get_property('$flag_call_reported')).toEqual({
+        expect(instance.get_property('flag_call_reported')).toEqual({
             'beta-feature': ['true'],
             'multivariate-flag': ['variant-1'],
             random: ['undefined'],
@@ -449,7 +449,7 @@ describe('featureflags', () => {
         featureFlags._hasLoadedFlags = true
 
         instance.persistence.register({
-            $enabled_feature_flags: {
+            enabled_feature_flags: {
                 'beta-feature': true,
             },
         })
@@ -459,7 +459,7 @@ describe('featureflags', () => {
         })
         expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
 
-        expect(instance.get_property('$flag_call_reported')).toEqual({ 'beta-feature': ['true'] })
+        expect(instance.get_property('flag_call_reported')).toEqual({ 'beta-feature': ['true'] })
 
         expect(instance.capture).toHaveBeenCalledTimes(1)
 
@@ -468,7 +468,7 @@ describe('featureflags', () => {
         expect(instance.capture).toHaveBeenCalledTimes(1)
 
         instance.persistence.register({
-            $enabled_feature_flags: {},
+            enabled_feature_flags: {},
         })
         featureFlags._hasLoadedFlags = false
         expect(featureFlags.getFlagVariants()).toEqual({})
@@ -478,14 +478,14 @@ describe('featureflags', () => {
 
         featureFlags._hasLoadedFlags = true
         instance.persistence.register({
-            $enabled_feature_flags: { x: 'y' },
+            enabled_feature_flags: { x: 'y' },
         })
         expect(featureFlags.getFlagVariants()).toEqual({ x: 'y' })
         expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(undefined)
         expect(instance.capture).toHaveBeenCalledTimes(2)
 
         instance.persistence.register({
-            $enabled_feature_flags: {
+            enabled_feature_flags: {
                 'beta-feature': 'variant-1',
             },
         })
@@ -493,7 +493,7 @@ describe('featureflags', () => {
         expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
         expect(instance.capture).toHaveBeenCalledTimes(3)
 
-        expect(instance.get_property('$flag_call_reported')).toEqual({
+        expect(instance.get_property('flag_call_reported')).toEqual({
             'beta-feature': ['true', 'undefined', 'variant-1'],
         })
     })
@@ -507,13 +507,13 @@ describe('featureflags', () => {
             instance.get_session_id = () => currentSessionId
         })
 
-        it('should re-emit $feature_flag_called when session changes', () => {
+        it('should re-emit ade_feature_flag_called when session changes', () => {
             featureFlags._hasLoadedFlags = true
 
             expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
             expect(instance.capture).toHaveBeenCalledTimes(1)
-            expect(instance.get_property('$flag_call_reported')).toEqual({ 'beta-feature': ['true'] })
-            expect(instance.get_property('$flag_call_reported_session_id')).toEqual('session-1')
+            expect(instance.get_property('flag_call_reported')).toEqual({ 'beta-feature': ['true'] })
+            expect(instance.get_property('flag_call_reported_session_id')).toEqual('session-1')
 
             // Same session: should NOT re-emit
             expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
@@ -523,8 +523,8 @@ describe('featureflags', () => {
             currentSessionId = 'session-2'
             expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
             expect(instance.capture).toHaveBeenCalledTimes(2)
-            expect(instance.get_property('$flag_call_reported')).toEqual({ 'beta-feature': ['true'] })
-            expect(instance.get_property('$flag_call_reported_session_id')).toEqual('session-2')
+            expect(instance.get_property('flag_call_reported')).toEqual({ 'beta-feature': ['true'] })
+            expect(instance.get_property('flag_call_reported_session_id')).toEqual('session-2')
         })
 
         it('should not re-emit when option is off (default behavior)', () => {
@@ -548,11 +548,11 @@ describe('featureflags', () => {
 
             // Change flag value within same session
             instance.persistence.register({
-                $enabled_feature_flags: { 'beta-feature': 'variant-1' },
+                enabled_feature_flags: { 'beta-feature': 'variant-1' },
             })
             expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
             expect(instance.capture).toHaveBeenCalledTimes(2)
-            expect(instance.get_property('$flag_call_reported')).toEqual({
+            expect(instance.get_property('flag_call_reported')).toEqual({
                 'beta-feature': ['true', 'variant-1'],
             })
         })
@@ -563,7 +563,7 @@ describe('featureflags', () => {
             expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
             expect(featureFlags.isFeatureEnabled('multivariate-flag')).toEqual(true)
             expect(instance.capture).toHaveBeenCalledTimes(2)
-            expect(instance.get_property('$flag_call_reported')).toEqual({
+            expect(instance.get_property('flag_call_reported')).toEqual({
                 'beta-feature': ['true'],
                 'multivariate-flag': ['variant-1'],
             })
@@ -573,11 +573,11 @@ describe('featureflags', () => {
             expect(featureFlags.isFeatureEnabled('beta-feature')).toEqual(true)
             expect(instance.capture).toHaveBeenCalledTimes(3)
             // Previous session's multivariate-flag entry is gone
-            expect(instance.get_property('$flag_call_reported')).toEqual({ 'beta-feature': ['true'] })
+            expect(instance.get_property('flag_call_reported')).toEqual({ 'beta-feature': ['true'] })
 
             expect(featureFlags.isFeatureEnabled('multivariate-flag')).toEqual(true)
             expect(instance.capture).toHaveBeenCalledTimes(4)
-            expect(instance.get_property('$flag_call_reported')).toEqual({
+            expect(instance.get_property('flag_call_reported')).toEqual({
                 'beta-feature': ['true'],
                 'multivariate-flag': ['variant-1'],
             })
@@ -633,7 +633,7 @@ describe('featureflags', () => {
                 variant: undefined,
                 payload: { some: 'payload' },
             })
-            expect(instance.capture).toHaveBeenCalledWith('$feature_flag_called', expect.any(Object))
+            expect(instance.capture).toHaveBeenCalledWith('ade_feature_flag_called', expect.any(Object))
         })
 
         it('should return the result with variant for multivariate flags', () => {
@@ -688,10 +688,10 @@ describe('featureflags', () => {
         it('should return raw string payload when JSON parsing fails', () => {
             featureFlags._hasLoadedFlags = true
             instance.persistence.register({
-                $feature_flag_payloads: {
+                feature_flag_payloads: {
                     'invalid-json-flag': 'not valid json {{{',
                 },
-                $enabled_feature_flags: {
+                enabled_feature_flags: {
                     'invalid-json-flag': true,
                 },
             })
@@ -786,12 +786,12 @@ describe('featureflags', () => {
             // Common setup used across multiple tests
             instance.__loaded = true
             instance.persistence.props = {
-                $active_feature_flags: ['beta-feature', 'alpha-feature-2'],
-                $enabled_feature_flags: {
+                active_feature_flags: ['beta-feature', 'alpha-feature-2'],
+                enabled_feature_flags: {
                     'beta-feature': true,
                     'alpha-feature-2': true,
                 },
-                $feature_flag_payloads: {
+                feature_flag_payloads: {
                     'beta-feature': { original: 'payload' },
                     'alpha-feature-2': 123,
                 },
@@ -883,7 +883,7 @@ describe('featureflags', () => {
 
             it('supports basic flag details overrides with warning behavior', () => {
                 instance.persistence.props = {
-                    $feature_flag_details: {
+                    feature_flag_details: {
                         'beta-feature': {
                             key: 'beta-feature',
                             enabled: true,
@@ -995,7 +995,7 @@ describe('featureflags', () => {
 
             it('supports payload overrides with details', () => {
                 instance.persistence.props = {
-                    $feature_flag_details: {
+                    feature_flag_details: {
                         'beta-feature': {
                             key: 'beta-feature',
                             enabled: true,
@@ -1099,13 +1099,13 @@ describe('featureflags', () => {
 
                 featureFlags.getFeatureFlag('beta-feature')
 
-                expect(instance.capture).toHaveBeenCalledWith('$feature_flag_called', {
-                    $feature_flag: 'beta-feature',
-                    $feature_flag_response: true,
-                    $feature_flag_payload: { overridden: 'payload' },
-                    $feature_flag_bootstrapped_response: null,
-                    $feature_flag_bootstrapped_payload: null,
-                    $used_bootstrap_value: true,
+                expect(instance.capture).toHaveBeenCalledWith('ade_feature_flag_called', {
+                    feature_flag: 'beta-feature',
+                    feature_flag_response: true,
+                    feature_flag_payload: { overridden: 'payload' },
+                    feature_flag_bootstrapped_response: null,
+                    feature_flag_bootstrapped_payload: null,
+                    used_bootstrap_value: true,
                 })
             })
 
@@ -1114,25 +1114,25 @@ describe('featureflags', () => {
                     featureFlags: { 'beta-feature': false },
                     featureFlagPayloads: { 'beta-feature': false },
                 }
-                instance.persistence.props.$feature_flag_payloads = { 'beta-feature': false }
+                instance.persistence.props.feature_flag_payloads = { 'beta-feature': false }
                 instance.capture = jest.fn()
                 featureFlags._hasLoadedFlags = true
 
                 featureFlags.getFeatureFlag('beta-feature')
 
                 expect(instance.capture).toHaveBeenCalledWith(
-                    '$feature_flag_called',
+                    'ade_feature_flag_called',
                     expect.objectContaining({
-                        $feature_flag_payload: false,
-                        $feature_flag_bootstrapped_response: false,
-                        $feature_flag_bootstrapped_payload: false,
+                        feature_flag_payload: false,
+                        feature_flag_bootstrapped_response: false,
+                        feature_flag_bootstrapped_payload: false,
                     })
                 )
             })
 
             it('includes original values in feature flag called event when details are available', () => {
                 instance.persistence.props = {
-                    $feature_flag_details: {
+                    feature_flag_details: {
                         'beta-feature': {
                             key: 'beta-feature',
                             enabled: false,
@@ -1166,46 +1166,46 @@ describe('featureflags', () => {
 
                 featureFlags.getFeatureFlag('beta-feature')
 
-                expect(instance.capture).toHaveBeenCalledWith('$feature_flag_called', {
-                    $feature_flag: 'beta-feature',
-                    $feature_flag_response: true,
-                    $feature_flag_payload: { overridden: { status: 'overridden' } },
-                    $feature_flag_bootstrapped_response: null,
-                    $feature_flag_bootstrapped_payload: null,
-                    $used_bootstrap_value: true,
-                    $feature_flag_original_response: false,
-                    $feature_flag_original_payload: { status: 'original' },
-                    $feature_flag_request_id: undefined,
+                expect(instance.capture).toHaveBeenCalledWith('ade_feature_flag_called', {
+                    feature_flag: 'beta-feature',
+                    feature_flag_response: true,
+                    feature_flag_payload: { overridden: { status: 'overridden' } },
+                    feature_flag_bootstrapped_response: null,
+                    feature_flag_bootstrapped_payload: null,
+                    used_bootstrap_value: true,
+                    feature_flag_original_response: false,
+                    feature_flag_original_payload: { status: 'original' },
+                    feature_flag_request_id: undefined,
                 })
 
                 instance.capture.mockClear()
 
                 featureFlags.getFeatureFlag('alpha-feature-2')
 
-                expect(instance.capture).toHaveBeenCalledWith('$feature_flag_called', {
-                    $feature_flag: 'alpha-feature-2',
-                    $feature_flag_response: 'variant-1',
-                    $feature_flag_payload: null,
-                    $feature_flag_bootstrapped_response: null,
-                    $feature_flag_bootstrapped_payload: null,
-                    $used_bootstrap_value: true,
-                    $feature_flag_original_response: false,
-                    $feature_flag_request_id: undefined,
+                expect(instance.capture).toHaveBeenCalledWith('ade_feature_flag_called', {
+                    feature_flag: 'alpha-feature-2',
+                    feature_flag_response: 'variant-1',
+                    feature_flag_payload: null,
+                    feature_flag_bootstrapped_response: null,
+                    feature_flag_bootstrapped_payload: null,
+                    used_bootstrap_value: true,
+                    feature_flag_original_response: false,
+                    feature_flag_request_id: undefined,
                 })
 
                 instance.capture.mockClear()
 
                 featureFlags.getFeatureFlag('multivariate-flag')
 
-                expect(instance.capture).toHaveBeenCalledWith('$feature_flag_called', {
-                    $feature_flag: 'multivariate-flag',
-                    $feature_flag_response: false,
-                    $feature_flag_payload: null,
-                    $feature_flag_bootstrapped_response: null,
-                    $feature_flag_bootstrapped_payload: null,
-                    $used_bootstrap_value: true,
-                    $feature_flag_original_response: 'multivariate-variant-1',
-                    $feature_flag_request_id: undefined,
+                expect(instance.capture).toHaveBeenCalledWith('ade_feature_flag_called', {
+                    feature_flag: 'multivariate-flag',
+                    feature_flag_response: false,
+                    feature_flag_payload: null,
+                    feature_flag_bootstrapped_response: null,
+                    feature_flag_bootstrapped_payload: null,
+                    used_bootstrap_value: true,
+                    feature_flag_original_response: 'multivariate-variant-1',
+                    feature_flag_request_id: undefined,
                 })
             })
         })
@@ -1305,7 +1305,7 @@ describe('featureflags', () => {
 
         it('builds a representative flags request', () => {
             instance.getGroups = () => ({ organization: 'org-42', project: 'project-7' })
-            instance.persistence.register({ $device_id: 'device-123' })
+            instance.persistence.register({ device_id: 'device-123' })
             featureFlags.setAnonymousDistinctId('anonymous-456')
             featureFlags.setPersonPropertiesForFlags({ plan: 'enterprise', seats: 25 }, false)
             featureFlags.setGroupPropertiesForFlags(
@@ -1325,7 +1325,7 @@ describe('featureflags', () => {
             const request = instance._send_request.mock.calls[0][0]
             expect(request.callback).toEqual(expect.any(Function))
             expect(request.data.timezone).toEqual(expect.any(String))
-            expect(request.data.person_properties.$lib_version).toEqual(expect.any(String))
+            expect(request.data.person_properties.lib_version).toEqual(expect.any(String))
             expect({
                 ...request,
                 callback: '<request-callback>',
@@ -1334,7 +1334,7 @@ describe('featureflags', () => {
                     timezone: '<runtime-timezone>',
                     person_properties: {
                         ...request.data.person_properties,
-                        $lib_version: '<sdk-version>',
+                        lib_version: '<sdk-version>',
                     },
                 },
             }).toMatchSnapshot()
@@ -1424,7 +1424,7 @@ describe('featureflags', () => {
                     'other-flag': unrequestedFlagDetail,
                 },
             })
-            expect(instance.persistence.props.$enabled_feature_flags).toEqual({
+            expect(instance.persistence.props.enabled_feature_flags).toEqual({
                 'checkout-redesign': true,
                 'other-flag': true,
             })
@@ -1444,7 +1444,7 @@ describe('featureflags', () => {
             featureFlags.reloadFeatureFlags()
             await jest.runOnlyPendingTimersAsync()
 
-            expect(instance.persistence.props.$enabled_feature_flags).toEqual({
+            expect(instance.persistence.props.enabled_feature_flags).toEqual({
                 'checkout-redesign': true,
             })
         })
@@ -1798,7 +1798,7 @@ describe('featureflags', () => {
             )
             expect(instance._send_request).toHaveBeenCalledTimes(1)
 
-            expect(instance.persistence.props.$early_access_features).toEqual([EARLY_ACCESS_FEATURE_FIRST])
+            expect(instance.persistence.props.early_access_features).toEqual([EARLY_ACCESS_FEATURE_FIRST])
 
             instance._send_request = jest.fn().mockImplementation(({ callback }) =>
                 callback({
@@ -1833,7 +1833,7 @@ describe('featureflags', () => {
             )
             expect(instance._send_request).toHaveBeenCalledTimes(1)
 
-            expect(instance.persistence.props.$early_access_features).toEqual([EARLY_ACCESS_FEATURE_FIRST])
+            expect(instance.persistence.props.early_access_features).toEqual([EARLY_ACCESS_FEATURE_FIRST])
 
             instance._send_request = jest.fn().mockImplementation(({ callback }) =>
                 callback({
@@ -1904,7 +1904,7 @@ describe('featureflags', () => {
         })
 
         it('getEarlyAccessFeatures replaces existing features completely instead of merging', async () => {
-            instance.persistence.props.$early_access_features = [
+            instance.persistence.props.early_access_features = [
                 EARLY_ACCESS_FEATURE_FIRST,
                 { ...EARLY_ACCESS_FEATURE_SECOND, flagKey: 'old-feature' },
             ]
@@ -1916,10 +1916,10 @@ describe('featureflags', () => {
             await jest.runAllTimersAsync()
 
             expect(registerSpy).toHaveBeenCalledWith({
-                $early_access_features: [EARLY_ACCESS_FEATURE_FIRST],
+                early_access_features: [EARLY_ACCESS_FEATURE_FIRST],
             })
-            expect(instance.persistence.props.$early_access_features).toEqual([EARLY_ACCESS_FEATURE_FIRST])
-            expect(instance.persistence.props.$early_access_features).not.toContainEqual(
+            expect(instance.persistence.props.early_access_features).toEqual([EARLY_ACCESS_FEATURE_FIRST])
+            expect(instance.persistence.props.early_access_features).not.toContainEqual(
                 expect.objectContaining({ flagKey: 'old-feature' })
             )
         })
@@ -1959,11 +1959,11 @@ describe('featureflags', () => {
             featureFlags.updateEarlyAccessFeatureEnrollment('first-flag', true)
 
             expect(instance.capture).toHaveBeenCalledTimes(1)
-            expect(instance.capture).toHaveBeenCalledWith('$feature_enrollment_update', {
-                $feature_enrollment: true,
-                $feature_flag: 'first-flag',
-                $set: {
-                    '$feature_enrollment/first-flag': true,
+            expect(instance.capture).toHaveBeenCalledWith('ade_feature_enrollment_update', {
+                feature_enrollment: true,
+                feature_flag: 'first-flag',
+                ade_set: {
+                    'feature_enrollment/first-flag': true,
                 },
             })
 
@@ -1980,11 +1980,11 @@ describe('featureflags', () => {
             featureFlags.updateEarlyAccessFeatureEnrollment('first-flag', false)
 
             expect(instance.capture).toHaveBeenCalledTimes(2)
-            expect(instance.capture).toHaveBeenCalledWith('$feature_enrollment_update', {
-                $feature_enrollment: false,
-                $feature_flag: 'first-flag',
-                $set: {
-                    '$feature_enrollment/first-flag': false,
+            expect(instance.capture).toHaveBeenCalledWith('ade_feature_enrollment_update', {
+                feature_enrollment: false,
+                feature_flag: 'first-flag',
+                ade_set: {
+                    'feature_enrollment/first-flag': false,
                 },
             })
 
@@ -2002,12 +2002,12 @@ describe('featureflags', () => {
             featureFlags.updateEarlyAccessFeatureEnrollment('stage-flag', true, 'beta')
 
             expect(instance.capture).toHaveBeenCalledTimes(1)
-            expect(instance.capture).toHaveBeenCalledWith('$feature_enrollment_update', {
-                $feature_enrollment: true,
-                $feature_flag: 'stage-flag',
-                $feature_enrollment_stage: 'beta',
-                $set: {
-                    '$feature_enrollment/stage-flag': true,
+            expect(instance.capture).toHaveBeenCalledWith('ade_feature_enrollment_update', {
+                feature_enrollment: true,
+                feature_flag: 'stage-flag',
+                feature_enrollment_stage: 'beta',
+                ade_set: {
+                    'feature_enrollment/stage-flag': true,
                 },
             })
 
@@ -2015,12 +2015,12 @@ describe('featureflags', () => {
             featureFlags.updateEarlyAccessFeatureEnrollment('concept-flag', false, 'concept')
 
             expect(instance.capture).toHaveBeenCalledTimes(2)
-            expect(instance.capture).toHaveBeenLastCalledWith('$feature_enrollment_update', {
-                $feature_enrollment: false,
-                $feature_flag: 'concept-flag',
-                $feature_enrollment_stage: 'concept',
-                $set: {
-                    '$feature_enrollment/concept-flag': false,
+            expect(instance.capture).toHaveBeenLastCalledWith('ade_feature_enrollment_update', {
+                feature_enrollment: false,
+                feature_flag: 'concept-flag',
+                feature_enrollment_stage: 'concept',
+                ade_set: {
+                    'feature_enrollment/concept-flag': false,
                 },
             })
 
@@ -2028,26 +2028,26 @@ describe('featureflags', () => {
             featureFlags.updateEarlyAccessFeatureEnrollment('no-stage-flag', true)
 
             expect(instance.capture).toHaveBeenCalledTimes(3)
-            expect(instance.capture).toHaveBeenLastCalledWith('$feature_enrollment_update', {
-                $feature_enrollment: true,
-                $feature_flag: 'no-stage-flag',
-                $set: {
-                    '$feature_enrollment/no-stage-flag': true,
+            expect(instance.capture).toHaveBeenLastCalledWith('ade_feature_enrollment_update', {
+                feature_enrollment: true,
+                feature_flag: 'no-stage-flag',
+                ade_set: {
+                    'feature_enrollment/no-stage-flag': true,
                 },
             })
             // Should not have stage property when not provided
-            expect(instance.capture.mock.calls[2][1]).not.toHaveProperty('$feature_enrollment_stage')
+            expect(instance.capture.mock.calls[2][1]).not.toHaveProperty('feature_enrollment_stage')
         })
 
         it('reloading flags after update enrollment should send properties', () => {
             featureFlags.updateEarlyAccessFeatureEnrollment('x-flag', true)
 
             expect(instance.capture).toHaveBeenCalledTimes(1)
-            expect(instance.capture).toHaveBeenCalledWith('$feature_enrollment_update', {
-                $feature_enrollment: true,
-                $feature_flag: 'x-flag',
-                $set: {
-                    '$feature_enrollment/x-flag': true,
+            expect(instance.capture).toHaveBeenCalledWith('ade_feature_enrollment_update', {
+                feature_enrollment: true,
+                feature_flag: 'x-flag',
+                ade_set: {
+                    'feature_enrollment/x-flag': true,
                 },
             })
 
@@ -2066,13 +2066,13 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    '$feature_enrollment/x-flag': true,
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    'feature_enrollment/x-flag': true,
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2082,9 +2082,9 @@ describe('featureflags', () => {
     describe('device_id in flags requests', () => {
         beforeEach(() => {
             // Clear persistence before each test in this suite
-            instance.persistence.unregister('$device_id')
-            instance.persistence.unregister('$stored_person_properties')
-            instance.persistence.unregister('$stored_group_properties')
+            instance.persistence.unregister('device_id')
+            instance.persistence.unregister('stored_person_properties')
+            instance.persistence.unregister('stored_group_properties')
 
             instance._send_request = jest.fn().mockImplementation(({ callback }) =>
                 callback({
@@ -2101,14 +2101,14 @@ describe('featureflags', () => {
 
         afterEach(() => {
             // Clean up after each test
-            instance.persistence.unregister('$device_id')
-            instance.persistence.unregister('$stored_person_properties')
-            instance.persistence.unregister('$stored_group_properties')
+            instance.persistence.unregister('device_id')
+            instance.persistence.unregister('stored_person_properties')
+            instance.persistence.unregister('stored_group_properties')
         })
 
         it('should include device_id in flags request when available', () => {
             instance.persistence.register({
-                $device_id: 'test-device-uuid-123',
+                device_id: 'test-device-uuid-123',
             })
 
             featureFlags.reloadFeatureFlags()
@@ -2118,13 +2118,13 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
-                $device_id: 'test-device-uuid-123',
+                anon_distinct_id: undefined,
+                device_id: 'test-device-uuid-123',
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2132,7 +2132,7 @@ describe('featureflags', () => {
 
         it('should omit device_id when it is null (cookieless mode)', () => {
             instance.persistence.register({
-                $device_id: null,
+                device_id: null,
             })
 
             featureFlags.reloadFeatureFlags()
@@ -2142,16 +2142,16 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
-            expect(instance._send_request.mock.calls[0][0].data).not.toHaveProperty('$device_id')
+            expect(instance._send_request.mock.calls[0][0].data).not.toHaveProperty('device_id')
         })
 
         it('should omit device_id when it is undefined', () => {
@@ -2163,21 +2163,21 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
-            expect(instance._send_request.mock.calls[0][0].data).not.toHaveProperty('$device_id')
+            expect(instance._send_request.mock.calls[0][0].data).not.toHaveProperty('device_id')
         })
 
-        it('should include device_id along with $anon_distinct_id on identify', () => {
+        it('should include device_id along with anon_distinct_id on identify', () => {
             instance.persistence.register({
-                $device_id: 'device-uuid-456',
+                device_id: 'device-uuid-456',
             })
 
             featureFlags.setAnonymousDistinctId('anon_id_789')
@@ -2188,13 +2188,13 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $device_id: 'device-uuid-456',
-                $anon_distinct_id: 'anon_id_789',
+                device_id: 'device-uuid-456',
+                anon_distinct_id: 'anon_id_789',
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2202,7 +2202,7 @@ describe('featureflags', () => {
 
         it('should include device_id with person_properties', () => {
             instance.persistence.register({
-                $device_id: 'device-uuid-999',
+                device_id: 'device-uuid-999',
             })
 
             featureFlags.setPersonPropertiesForFlags({ plan: 'pro', beta_tester: true })
@@ -2212,15 +2212,15 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
-                $device_id: 'device-uuid-999',
+                anon_distinct_id: undefined,
+                device_id: 'device-uuid-999',
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
                     plan: 'pro',
                     beta_tester: true,
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2228,7 +2228,7 @@ describe('featureflags', () => {
 
         it('should include device_id with group_properties', () => {
             instance.persistence.register({
-                $device_id: 'device-uuid-888',
+                device_id: 'device-uuid-888',
             })
 
             featureFlags.setGroupPropertiesForFlags({ company: { name: 'Acme', seats: 50 } })
@@ -2238,12 +2238,12 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
-                $device_id: 'device-uuid-888',
+                anon_distinct_id: undefined,
+                device_id: 'device-uuid-888',
                 groups: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 group_properties: { company: { name: 'Acme', seats: 50 } },
                 timezone: expect.any(String),
@@ -2277,16 +2277,16 @@ describe('featureflags', () => {
                 second: true,
             })
 
-            // check the request sent $anon_distinct_id
+            // check the request sent anon_distinct_id
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: 'rando_id',
+                anon_distinct_id: 'rando_id',
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2304,16 +2304,16 @@ describe('featureflags', () => {
                 second: true,
             })
 
-            // check the request sent $anon_distinct_id
+            // check the request sent anon_distinct_id
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: 'rando_id',
+                anon_distinct_id: 'rando_id',
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2322,16 +2322,16 @@ describe('featureflags', () => {
             featureFlags.reloadFeatureFlags()
             await jest.runAllTimersAsync()
 
-            // check the request didn't send $anon_distinct_id the second time around
+            // check the request didn't send anon_distinct_id the second time around
             expect(instance._send_request.mock.calls[1][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2339,16 +2339,16 @@ describe('featureflags', () => {
             featureFlags.reloadFeatureFlags()
             await jest.runAllTimersAsync()
 
-            // check the request didn't send $anon_distinct_id the second time around
+            // check the request didn't send anon_distinct_id the second time around
             expect(instance._send_request.mock.calls[2][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2371,14 +2371,14 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
                     a: 'b',
                     c: 'd',
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2390,7 +2390,7 @@ describe('featureflags', () => {
                 advanced_disable_feature_flags: true,
             }
             instance.persistence.register({
-                $enabled_feature_flags: {
+                enabled_feature_flags: {
                     'beta-feature': true,
                     'random-feature': 'xatu',
                 },
@@ -2465,15 +2465,15 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
                     a: 'b',
                     c: 'e',
                     x: 'y',
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2500,23 +2500,23 @@ describe('featureflags', () => {
             featureFlags.setPersonPropertiesForFlags({ x: 'y', c: 'e' }, false)
             jest.runAllTimers()
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual({ a: 'b', c: 'e', x: 'y' })
+            expect(instance.persistence.props.stored_person_properties).toEqual({ a: 'b', c: 'e', x: 'y' })
 
             featureFlags.resetPersonPropertiesForFlags()
             jest.runAllTimers()
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual(undefined)
+            expect(instance.persistence.props.stored_person_properties).toEqual(undefined)
 
             // check the request did not send person properties
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2526,12 +2526,12 @@ describe('featureflags', () => {
             featureFlags.setPersonPropertiesForFlags({ a: 'b', c: 'd' }, false)
             jest.runAllTimers()
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual({ a: 'b', c: 'd' })
+            expect(instance.persistence.props.stored_person_properties).toEqual({ a: 'b', c: 'd' })
 
             featureFlags.resetPersonPropertiesForFlags(false)
             jest.runAllTimers()
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual(undefined)
+            expect(instance.persistence.props.stored_person_properties).toEqual(undefined)
             expect(instance._send_request).not.toHaveBeenCalled()
         })
 
@@ -2539,7 +2539,7 @@ describe('featureflags', () => {
             featureFlags.setPersonPropertiesForFlags({ a: 'b', c: 'd' }, false)
             jest.runAllTimers()
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual({ a: 'b', c: 'd' })
+            expect(instance.persistence.props.stored_person_properties).toEqual({ a: 'b', c: 'd' })
 
             featureFlags.resetPersonPropertiesForFlags()
             featureFlags.reloadFeatureFlags()
@@ -2550,27 +2550,27 @@ describe('featureflags', () => {
             // guarantee a single /flags request.
             expect(instance._send_request).toHaveBeenCalledTimes(1)
             expect(instance._send_request.mock.calls[0][0].data.person_properties).toEqual({
-                $lib: 'web',
-                $lib_version: expect.any(String),
+                lib: 'web',
+                lib_version: expect.any(String),
             })
         })
 
         it('set_once properties skip keys that already exist in the cache', () => {
             featureFlags.resetPersonPropertiesForFlags(false)
-            featureFlags.setPersonPropertiesForFlags({ $set_once: { first_date: '2025-01-01', plan: 'free' } }, false)
+            featureFlags.setPersonPropertiesForFlags({ ade_set_once: { first_date: '2025-01-01', plan: 'free' } }, false)
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual({
+            expect(instance.persistence.props.stored_person_properties).toEqual({
                 first_date: '2025-01-01',
                 plan: 'free',
             })
 
             // Calling again with set_once should NOT overwrite existing keys
             featureFlags.setPersonPropertiesForFlags(
-                { $set_once: { first_date: '2026-03-30', new_key: 'hello' } },
+                { ade_set_once: { first_date: '2026-03-30', new_key: 'hello' } },
                 false
             )
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual({
+            expect(instance.persistence.props.stored_person_properties).toEqual({
                 first_date: '2025-01-01',
                 plan: 'free',
                 new_key: 'hello',
@@ -2579,19 +2579,19 @@ describe('featureflags', () => {
 
         it('set properties overwrite existing keys even when set_once does not', () => {
             featureFlags.resetPersonPropertiesForFlags(false)
-            featureFlags.setPersonPropertiesForFlags({ $set_once: { first_date: '2025-01-01' } }, false)
+            featureFlags.setPersonPropertiesForFlags({ ade_set_once: { first_date: '2025-01-01' } }, false)
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual({
+            expect(instance.persistence.props.stored_person_properties).toEqual({
                 first_date: '2025-01-01',
             })
 
-            // $set should overwrite, $set_once should not
+            // ade_set should overwrite, ade_set_once should not
             featureFlags.setPersonPropertiesForFlags(
-                { $set: { first_date: 'overwritten' }, $set_once: { first_date: 'ignored-by-set-once' } },
+                { ade_set: { first_date: 'overwritten' }, ade_set_once: { first_date: 'ignored-by-set-once' } },
                 false
             )
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual({
+            expect(instance.persistence.props.stored_person_properties).toEqual({
                 first_date: 'overwritten',
             })
         })
@@ -2599,11 +2599,11 @@ describe('featureflags', () => {
         it('set_once properties are included in /flags request', () => {
             featureFlags.resetPersonPropertiesForFlags(false)
             featureFlags.setPersonPropertiesForFlags(
-                { $set: { plan: 'pro' }, $set_once: { first_date: '2025-01-01' } },
+                { ade_set: { plan: 'pro' }, ade_set_once: { first_date: '2025-01-01' } },
                 false
             )
 
-            expect(instance.persistence.props.$stored_person_properties).toEqual({
+            expect(instance.persistence.props.stored_person_properties).toEqual({
                 plan: 'pro',
                 first_date: '2025-01-01',
             })
@@ -2614,14 +2614,14 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 group_properties: undefined,
                 person_properties: {
                     plan: 'pro',
                     first_date: '2025-01-01',
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 timezone: expect.any(String),
             })
@@ -2633,7 +2633,7 @@ describe('featureflags', () => {
         it('on providing groupProperties updates properties successively', async () => {
             featureFlags.setGroupPropertiesForFlags({ orgs: { a: 'b', c: 'd' }, projects: { x: 'y', c: 'e' } })
 
-            expect(instance.persistence.props.$stored_group_properties).toEqual({
+            expect(instance.persistence.props.stored_group_properties).toEqual({
                 orgs: { a: 'b', c: 'd' },
                 projects: { x: 'y', c: 'e' },
             })
@@ -2649,11 +2649,11 @@ describe('featureflags', () => {
             expect(instance._send_request.mock.calls[0][0].data).toEqual({
                 token: 'random fake token',
                 distinct_id: 'blah id',
-                $anon_distinct_id: undefined,
+                anon_distinct_id: undefined,
                 groups: undefined,
                 person_properties: {
-                    $lib: 'web',
-                    $lib_version: expect.any(String),
+                    lib: 'web',
+                    lib_version: expect.any(String),
                 },
                 group_properties: { orgs: { a: 'b', c: 'd' }, projects: { x: 'y', c: 'e' } },
                 timezone: expect.any(String),
@@ -2663,14 +2663,14 @@ describe('featureflags', () => {
         it('handles groupProperties updates', () => {
             featureFlags.setGroupPropertiesForFlags({ orgs: { a: 'b', c: 'd' }, projects: { x: 'y', c: 'e' } })
 
-            expect(instance.persistence.props.$stored_group_properties).toEqual({
+            expect(instance.persistence.props.stored_group_properties).toEqual({
                 orgs: { a: 'b', c: 'd' },
                 projects: { x: 'y', c: 'e' },
             })
 
             featureFlags.setGroupPropertiesForFlags({ orgs: { w: '1' }, other: { z: '2' } })
 
-            expect(instance.persistence.props.$stored_group_properties).toEqual({
+            expect(instance.persistence.props.stored_group_properties).toEqual({
                 orgs: { a: 'b', c: 'd', w: '1' },
                 projects: { x: 'y', c: 'e' },
                 other: { z: '2' },
@@ -2678,7 +2678,7 @@ describe('featureflags', () => {
 
             featureFlags.resetGroupPropertiesForFlags('orgs')
 
-            expect(instance.persistence.props.$stored_group_properties).toEqual({
+            expect(instance.persistence.props.stored_group_properties).toEqual({
                 orgs: {},
                 projects: { x: 'y', c: 'e' },
                 other: { z: '2' },
@@ -2686,7 +2686,7 @@ describe('featureflags', () => {
 
             featureFlags.resetGroupPropertiesForFlags()
 
-            expect(instance.persistence.props.$stored_group_properties).toEqual(undefined)
+            expect(instance.persistence.props.stored_group_properties).toEqual(undefined)
 
             jest.runAllTimers()
         })
@@ -2741,20 +2741,20 @@ describe('featureflags', () => {
         beforeEach(() => {
             // Need to register v2 flags to test v2 behavior.
             instance.persistence.register({
-                $feature_flag_payloads: {
+                feature_flag_payloads: {
                     'beta-feature': {
                         some: 'payload',
                     },
                     'alpha-feature-2': 200,
                 },
-                $active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
-                $enabled_feature_flags: {
+                active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
+                enabled_feature_flags: {
                     'beta-feature': true,
                     'alpha-feature-2': true,
                     'multivariate-flag': 'variant-1',
                     'disabled-flag': false,
                 },
-                $feature_flag_details: {
+                feature_flag_details: {
                     'beta-feature': {
                         key: 'beta-feature',
                         enabled: true,
@@ -2780,7 +2780,7 @@ describe('featureflags', () => {
                         metadata: undefined,
                     },
                 },
-                $override_feature_flags: false,
+                override_feature_flags: false,
             })
             instance._send_request = jest.fn().mockImplementation(({ callback }) =>
                 callback({
@@ -2815,20 +2815,20 @@ describe('featureflags', () => {
     describe('when subsequent /flags?v=2 calls return failed flags with errorsWhileComputingFlags', () => {
         beforeEach(() => {
             instance.persistence.register({
-                $feature_flag_payloads: {
+                feature_flag_payloads: {
                     'beta-feature': {
                         some: 'payload',
                     },
                     'alpha-feature-2': 200,
                 },
-                $active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
-                $enabled_feature_flags: {
+                active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
+                enabled_feature_flags: {
                     'beta-feature': true,
                     'alpha-feature-2': true,
                     'multivariate-flag': 'variant-1',
                     'disabled-flag': false,
                 },
-                $feature_flag_details: {
+                feature_flag_details: {
                     'beta-feature': {
                         key: 'beta-feature',
                         enabled: true,
@@ -2854,7 +2854,7 @@ describe('featureflags', () => {
                         metadata: undefined,
                     },
                 },
-                $override_feature_flags: false,
+                override_feature_flags: false,
             })
             instance._send_request = jest.fn().mockImplementation(({ callback }) =>
                 callback({
@@ -2936,7 +2936,7 @@ describe('featureflags', () => {
 
         it('should not change the existing flags', () => {
             instance.persistence.register({
-                $enabled_feature_flags: {
+                enabled_feature_flags: {
                     'beta-feature': true,
                     'random-feature': 'xatu',
                 },
@@ -2958,7 +2958,7 @@ describe('featureflags', () => {
             let _errors = undefined
 
             instance.persistence.register({
-                $enabled_feature_flags: {},
+                enabled_feature_flags: {},
             })
 
             featureFlags.onFeatureFlags((flags, variants, errors) => {
@@ -3051,7 +3051,7 @@ describe('featureflags', () => {
                 requestId: TEST_REQUEST_ID,
             })
 
-            expect(instance.get_property('$feature_flag_request_id')).toEqual(TEST_REQUEST_ID)
+            expect(instance.get_property('feature_flag_request_id')).toEqual(TEST_REQUEST_ID)
         })
 
         it('saves evaluatedAt from /flags response', () => {
@@ -3061,7 +3061,7 @@ describe('featureflags', () => {
                 evaluatedAt: TEST_EVALUATED_AT,
             })
 
-            expect(instance.get_property('$feature_flag_evaluated_at')).toEqual(TEST_EVALUATED_AT)
+            expect(instance.get_property('feature_flag_evaluated_at')).toEqual(TEST_EVALUATED_AT)
         })
 
         it('includes requestId in feature flag called event', () => {
@@ -3078,11 +3078,11 @@ describe('featureflags', () => {
 
             // Verify capture call includes requestId
             expect(instance.capture).toHaveBeenCalledWith(
-                '$feature_flag_called',
+                'ade_feature_flag_called',
                 expect.objectContaining({
-                    $feature_flag: 'test-flag',
-                    $feature_flag_response: true,
-                    $feature_flag_request_id: TEST_REQUEST_ID,
+                    feature_flag: 'test-flag',
+                    feature_flag_response: true,
+                    feature_flag_request_id: TEST_REQUEST_ID,
                 })
             )
         })
@@ -3101,11 +3101,11 @@ describe('featureflags', () => {
 
             // Verify capture call includes evaluatedAt
             expect(instance.capture).toHaveBeenCalledWith(
-                '$feature_flag_called',
+                'ade_feature_flag_called',
                 expect.objectContaining({
-                    $feature_flag: 'test-flag',
-                    $feature_flag_response: true,
-                    $feature_flag_evaluated_at: TEST_EVALUATED_AT,
+                    feature_flag: 'test-flag',
+                    feature_flag_response: true,
+                    feature_flag_evaluated_at: TEST_EVALUATED_AT,
                 })
             )
         })
@@ -3140,22 +3140,22 @@ describe('featureflags', () => {
             })
             featureFlags._hasLoadedFlags = true
             featureFlags._flagsLoadedFromRemote = true
-            instance.persistence.unregister('$feature_flag_errors')
+            instance.persistence.unregister('feature_flag_errors')
 
             // Test flag call
             featureFlags.getFeatureFlag('test-flag')
 
             expect(instance.capture).toHaveBeenCalledTimes(1)
             expect(instance.capture).toHaveBeenCalledWith(
-                '$feature_flag_called',
+                'ade_feature_flag_called',
                 expect.objectContaining({
-                    $feature_flag: 'test-flag',
-                    $feature_flag_response: 'variant-1',
-                    $feature_flag_request_id: TEST_REQUEST_ID,
-                    $feature_flag_evaluated_at: TEST_EVALUATED_AT,
-                    $feature_flag_version: 42,
-                    $feature_flag_reason: 'Matched condition set 1',
-                    $feature_flag_id: 23,
+                    feature_flag: 'test-flag',
+                    feature_flag_response: 'variant-1',
+                    feature_flag_request_id: TEST_REQUEST_ID,
+                    feature_flag_evaluated_at: TEST_EVALUATED_AT,
+                    feature_flag_version: 42,
+                    feature_flag_reason: 'Matched condition set 1',
+                    feature_flag_id: 23,
                 })
             )
             expect(instance.capture.mock.calls[0]).toMatchSnapshot()
@@ -3169,7 +3169,7 @@ describe('featureflags', () => {
                 requestId: TEST_REQUEST_ID,
             })
 
-            expect(instance.get_property('$feature_flag_request_id')).toEqual(TEST_REQUEST_ID)
+            expect(instance.get_property('feature_flag_request_id')).toEqual(TEST_REQUEST_ID)
 
             // Second /flags response with new ID
             const NEW_REQUEST_ID = 'new-request-id-456'
@@ -3179,16 +3179,16 @@ describe('featureflags', () => {
                 requestId: NEW_REQUEST_ID,
             })
 
-            expect(instance.get_property('$feature_flag_request_id')).toEqual(NEW_REQUEST_ID)
+            expect(instance.get_property('feature_flag_request_id')).toEqual(NEW_REQUEST_ID)
 
             // Verify new ID is used in events
             featureFlags._hasLoadedFlags = true
             featureFlags.getFeatureFlag('test-flag')
 
             expect(instance.capture).toHaveBeenCalledWith(
-                '$feature_flag_called',
+                'ade_feature_flag_called',
                 expect.objectContaining({
-                    $feature_flag_request_id: NEW_REQUEST_ID,
+                    feature_flag_request_id: NEW_REQUEST_ID,
                 })
             )
         })
@@ -3201,7 +3201,7 @@ describe('featureflags', () => {
                 evaluatedAt: TEST_EVALUATED_AT,
             })
 
-            expect(instance.get_property('$feature_flag_evaluated_at')).toEqual(TEST_EVALUATED_AT)
+            expect(instance.get_property('feature_flag_evaluated_at')).toEqual(TEST_EVALUATED_AT)
 
             // Second /flags response with new timestamp
             const NEW_EVALUATED_AT = 9876543210
@@ -3211,16 +3211,16 @@ describe('featureflags', () => {
                 evaluatedAt: NEW_EVALUATED_AT,
             })
 
-            expect(instance.get_property('$feature_flag_evaluated_at')).toEqual(NEW_EVALUATED_AT)
+            expect(instance.get_property('feature_flag_evaluated_at')).toEqual(NEW_EVALUATED_AT)
 
             // Verify new timestamp is used in events
             featureFlags._hasLoadedFlags = true
             featureFlags.getFeatureFlag('test-flag')
 
             expect(instance.capture).toHaveBeenCalledWith(
-                '$feature_flag_called',
+                'ade_feature_flag_called',
                 expect.objectContaining({
-                    $feature_flag_evaluated_at: NEW_EVALUATED_AT,
+                    feature_flag_evaluated_at: NEW_EVALUATED_AT,
                 })
             )
         })
@@ -3244,43 +3244,43 @@ describe('featureflags', () => {
             featureFlags._hasLoadedFlags = true
         }
 
-        it('includes $feature_flag_has_experiment true when server reports has_experiment true', () => {
+        it('includes feature_flag_has_experiment true when server reports has_experiment true', () => {
             receiveFlagWithMetadata({ id: 1, version: 2, has_experiment: true })
 
             featureFlags.getFeatureFlag('test-flag')
 
             expect(instance.capture).toHaveBeenCalledWith(
-                '$feature_flag_called',
+                'ade_feature_flag_called',
                 expect.objectContaining({
-                    $feature_flag: 'test-flag',
-                    $feature_flag_has_experiment: true,
+                    feature_flag: 'test-flag',
+                    feature_flag_has_experiment: true,
                 })
             )
         })
 
-        it('includes $feature_flag_has_experiment false when server reports has_experiment false', () => {
+        it('includes feature_flag_has_experiment false when server reports has_experiment false', () => {
             receiveFlagWithMetadata({ id: 1, version: 2, has_experiment: false })
 
             featureFlags.getFeatureFlag('test-flag')
 
             expect(instance.capture).toHaveBeenCalledWith(
-                '$feature_flag_called',
+                'ade_feature_flag_called',
                 expect.objectContaining({
-                    $feature_flag: 'test-flag',
-                    $feature_flag_has_experiment: false,
+                    feature_flag: 'test-flag',
+                    feature_flag_has_experiment: false,
                 })
             )
         })
 
-        it('omits $feature_flag_has_experiment when server omits has_experiment', () => {
+        it('omits feature_flag_has_experiment when server omits has_experiment', () => {
             receiveFlagWithMetadata({ id: 1, version: 2 })
 
             featureFlags.getFeatureFlag('test-flag')
 
             expect(instance.capture).toHaveBeenCalledWith(
-                '$feature_flag_called',
+                'ade_feature_flag_called',
                 expect.not.objectContaining({
-                    $feature_flag_has_experiment: expect.anything(),
+                    feature_flag_has_experiment: expect.anything(),
                 })
             )
         })
@@ -3307,22 +3307,22 @@ describe('featureflags', () => {
         it('persists the gate from the flags response and never exposes it as an event property', () => {
             receiveFlags({ minimalFlagCalledEvents: true })
 
-            expect(instance.persistence.props['$minimal_flag_called_events']).toBe(true)
-            expect(instance.persistence.properties()).not.toHaveProperty('$minimal_flag_called_events')
+            expect(instance.persistence.props['minimal_flag_called_events']).toBe(true)
+            expect(instance.persistence.properties()).not.toHaveProperty('minimal_flag_called_events')
         })
 
         it('flips the gate off when a new flags response omits the field', () => {
             receiveFlags({ minimalFlagCalledEvents: true })
             receiveFlags({})
 
-            expect(instance.persistence.props['$minimal_flag_called_events']).toBe(false)
+            expect(instance.persistence.props['minimal_flag_called_events']).toBe(false)
         })
 
         it('flips the gate off on a legacy v1 array response', () => {
             receiveFlags({ minimalFlagCalledEvents: true })
             featureFlags.receivedFeatureFlags({ featureFlags: ['test-flag'] } as any)
 
-            expect(instance.persistence.props['$minimal_flag_called_events']).toBe(false)
+            expect(instance.persistence.props['minimal_flag_called_events']).toBe(false)
         })
     })
 })
@@ -3352,18 +3352,18 @@ describe('parseFlagsResponse', () => {
         parseFlagsResponse(flagsResponse, persistence)
 
         expect(persistence.register).toHaveBeenCalledWith({
-            $minimal_flag_called_events: false,
-            $active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
-            $enabled_feature_flags: {
+            minimal_flag_called_events: false,
+            active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
+            enabled_feature_flags: {
                 'beta-feature': true,
                 'alpha-feature-2': true,
                 'multivariate-flag': 'variant-1',
             },
-            $feature_flag_payloads: {
+            feature_flag_payloads: {
                 'beta-feature': 300,
                 'alpha-feature-2': 'fake-payload',
             },
-            $feature_flag_details: {},
+            feature_flag_details: {},
         })
         expect(window.console.warn).toHaveBeenCalledWith(
             '[PostHog.js] [FeatureFlags]',
@@ -3388,18 +3388,18 @@ describe('parseFlagsResponse', () => {
         parseFlagsResponse(flagsResponse, persistence)
 
         expect(persistence.register).toHaveBeenCalledWith({
-            $minimal_flag_called_events: false,
-            $active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
-            $enabled_feature_flags: {
+            minimal_flag_called_events: false,
+            active_feature_flags: ['beta-feature', 'alpha-feature-2', 'multivariate-flag'],
+            enabled_feature_flags: {
                 'beta-feature': true,
                 'alpha-feature-2': true,
                 'multivariate-flag': 'variant-1',
             },
-            $feature_flag_payloads: {
+            feature_flag_payloads: {
                 'beta-feature': 300,
                 'alpha-feature-2': '"fake-payload"',
             },
-            $feature_flag_details: {},
+            feature_flag_details: {},
         })
         expect(window.console.warn).toHaveBeenCalledWith(
             '[PostHog.js] [FeatureFlags]',
@@ -3479,19 +3479,19 @@ describe('parseFlagsResponse', () => {
         parseFlagsResponse(flagsResponse, persistence)
 
         expect(persistence.register).toHaveBeenCalledWith({
-            $minimal_flag_called_events: false,
-            $active_feature_flags: ['beta-feature', 'alpha-feature', 'multivariate-flag'],
-            $enabled_feature_flags: {
+            minimal_flag_called_events: false,
+            active_feature_flags: ['beta-feature', 'alpha-feature', 'multivariate-flag'],
+            enabled_feature_flags: {
                 'alpha-feature': true,
                 'beta-feature': 'beta-variant-1',
                 'disabled-feature': false,
                 'multivariate-flag': 'multi-variant-2',
             },
-            $feature_flag_payloads: {
+            feature_flag_payloads: {
                 'beta-feature': 300,
                 'multivariate-flag': '"fake-payload"',
             },
-            $feature_flag_details: {
+            feature_flag_details: {
                 'beta-feature': {
                     key: 'beta-feature',
                     enabled: true,
@@ -3569,9 +3569,9 @@ describe('parseFlagsResponse', () => {
         parseFlagsResponse(flagsResponse, persistence)
 
         expect(persistence.register).toHaveBeenLastCalledWith({
-            $minimal_flag_called_events: false,
-            $active_feature_flags: ['beta-feature', 'alpha-feature-2'],
-            $enabled_feature_flags: { 'beta-feature': true, 'alpha-feature-2': true },
+            minimal_flag_called_events: false,
+            active_feature_flags: ['beta-feature', 'alpha-feature-2'],
+            enabled_feature_flags: { 'beta-feature': true, 'alpha-feature-2': true },
         })
         expect(window.console.warn).toHaveBeenCalledWith(
             '[PostHog.js] [FeatureFlags]',
@@ -3601,7 +3601,7 @@ describe('parseFlagsResponse', () => {
         },
         // A project with no feature flags returns a valid v2 response that omits `flags` — must not warn.
         { name: 'valid v2 response with no flags', response: {}, shouldWarn: false },
-    ])('older-endpoint warning — $name (warns: $shouldWarn)', ({ response, shouldWarn }) => {
+    ])('older-endpoint warning — name (warns: $shouldWarn)', ({ response, shouldWarn }) => {
         // Ensure warnings would actually be emitted so the assertions below are meaningful, and
         // restore the previous value so this test stays self-contained.
         const previousDebug = (window as any).POSTHOG_DEBUG
@@ -3630,12 +3630,12 @@ describe('parseFlagsResponse', () => {
         parseFlagsResponse(flagsResponse, persistence)
 
         expect(persistence.register).toHaveBeenCalledWith({
-            $minimal_flag_called_events: false,
-            $active_feature_flags: ['test-flag'],
-            $enabled_feature_flags: { 'test-flag': true },
-            $feature_flag_details: {},
-            $feature_flag_payloads: {},
-            $feature_flag_request_id: 'test-request-id-123',
+            minimal_flag_called_events: false,
+            active_feature_flags: ['test-flag'],
+            enabled_feature_flags: { 'test-flag': true },
+            feature_flag_details: {},
+            feature_flag_payloads: {},
+            feature_flag_request_id: 'test-request-id-123',
         })
         expect(window.console.warn).toHaveBeenCalledWith(
             '[PostHog.js] [FeatureFlags]',
@@ -3669,10 +3669,10 @@ describe('parseFlagsResponse', () => {
         parseFlagsResponse(flagsResponse, persistence)
 
         expect(persistence.register).toHaveBeenCalledWith({
-            $minimal_flag_called_events: false,
-            $active_feature_flags: ['test-flag'],
-            $enabled_feature_flags: { 'test-flag': true },
-            $feature_flag_details: {
+            minimal_flag_called_events: false,
+            active_feature_flags: ['test-flag'],
+            enabled_feature_flags: { 'test-flag': true },
+            feature_flag_details: {
                 'test-flag': {
                     key: 'test-flag',
                     enabled: true,
@@ -3690,8 +3690,8 @@ describe('parseFlagsResponse', () => {
                     },
                 },
             },
-            $feature_flag_payloads: {},
-            $feature_flag_request_id: 'test-request-id-123',
+            feature_flag_payloads: {},
+            feature_flag_request_id: 'test-request-id-123',
         })
     })
 
@@ -3744,7 +3744,7 @@ describe('parseFlagsResponse', () => {
                 expectedDetails: { 'survey-flag': surveyFlagDetail },
             },
         ])(
-            '$name',
+            'name',
             ({
                 existingFlags,
                 existingPayloads,
@@ -3767,9 +3767,9 @@ describe('parseFlagsResponse', () => {
 
                 expect(persistence.register).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        $enabled_feature_flags: expectedFlags,
-                        $feature_flag_payloads: expectedPayloads,
-                        $feature_flag_details: expectedDetails,
+                        enabled_feature_flags: expectedFlags,
+                        feature_flag_payloads: expectedPayloads,
+                        feature_flag_details: expectedDetails,
                     })
                 )
             }
@@ -3829,11 +3829,11 @@ describe('getRemoteConfigPayload', () => {
 
         const requestData = instance._send_request.mock.calls[0][0].data
         expect(requestData.person_properties).toEqual({
-            $lib: 'web',
-            $lib_version: expect.any(String),
+            lib: 'web',
+            lib_version: expect.any(String),
         })
-        expect(requestData).not.toHaveProperty('$lib')
-        expect(requestData).not.toHaveProperty('$lib_version')
+        expect(requestData).not.toHaveProperty('lib')
+        expect(requestData).not.toHaveProperty('lib_version')
         expect(instance._send_request).toHaveBeenCalledWith(
             expect.objectContaining({
                 method: 'POST',
@@ -4076,7 +4076,7 @@ describe('updateFlags', () => {
         posthog.identify('identified-user')
         posthog.getFeatureFlag('test-flag')
 
-        expect(capture.mock.calls.filter(([event]) => event === '$feature_flag_called')).toHaveLength(2)
+        expect(capture.mock.calls.filter(([event]) => event === 'ade_feature_flag_called')).toHaveLength(2)
     })
 
     it('merge does not bake an active override into the stored flags', async () => {
@@ -4266,7 +4266,7 @@ describe('updateFlags', () => {
         )
 
         // Verify persistence was updated with correct data
-        expect(posthog.persistence?.props.$feature_flag_details).toEqual({
+        expect(posthog.persistence?.props.feature_flag_details).toEqual({
             'persisted-flag': {
                 key: 'persisted-flag',
                 enabled: true,
@@ -4287,15 +4287,15 @@ describe('updateFlags', () => {
                 metadata: undefined,
             },
         })
-        expect(posthog.persistence?.props.$enabled_feature_flags).toEqual({
+        expect(posthog.persistence?.props.enabled_feature_flags).toEqual({
             'persisted-flag': true,
             'variant-flag': 'control',
         })
-        expect(posthog.persistence?.props.$active_feature_flags).toEqual(['persisted-flag', 'variant-flag'])
+        expect(posthog.persistence?.props.active_feature_flags).toEqual(['persisted-flag', 'variant-flag'])
     })
 })
 
-describe('$feature_flag_error tracking', () => {
+describe('feature_flag_error tracking', () => {
     let instance: any
     let featureFlags: PostHogFeatureFlags
     let mockWarn: jest.SpyInstance
@@ -4328,8 +4328,8 @@ describe('$feature_flag_error tracking', () => {
 
         featureFlags = createFeatureFlags(instance)
         mockWarn = jest.spyOn(window.console, 'warn').mockImplementation()
-        instance.persistence.unregister('$flag_call_reported')
-        instance.persistence.unregister('$feature_flag_errors')
+        instance.persistence.unregister('flag_call_reported')
+        instance.persistence.unregister('feature_flag_errors')
     })
 
     afterEach(() => {
@@ -4338,7 +4338,7 @@ describe('$feature_flag_error tracking', () => {
         jest.clearAllMocks()
     })
 
-    it('should set $feature_flag_error to api_error_{status} on server error', async () => {
+    it('should set feature_flag_error to api_error_{status} on server error', async () => {
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
             callback({
                 statusCode: 500,
@@ -4349,10 +4349,10 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.reloadFeatureFlags()
         await jest.advanceTimersByTimeAsync(10)
 
-        expect(instance.persistence.props.$feature_flag_errors).toEqual(['api_error_500'])
+        expect(instance.persistence.props.feature_flag_errors).toEqual(['api_error_500'])
     })
 
-    it('should set $feature_flag_error to connection_error on network failure', async () => {
+    it('should set feature_flag_error to connection_error on network failure', async () => {
         const networkError = new Error('Network request failed')
         networkError.name = 'TypeError'
 
@@ -4367,10 +4367,10 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.reloadFeatureFlags()
         await jest.advanceTimersByTimeAsync(10)
 
-        expect(instance.persistence.props.$feature_flag_errors).toEqual([FeatureFlagError.CONNECTION_ERROR])
+        expect(instance.persistence.props.feature_flag_errors).toEqual([FeatureFlagError.CONNECTION_ERROR])
     })
 
-    it('should set $feature_flag_error to timeout when request times out (AbortError)', async () => {
+    it('should set feature_flag_error to timeout when request times out (AbortError)', async () => {
         const abortError = new Error('Aborted')
         abortError.name = 'AbortError'
 
@@ -4385,10 +4385,10 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.reloadFeatureFlags()
         await jest.advanceTimersByTimeAsync(10)
 
-        expect(instance.persistence.props.$feature_flag_errors).toEqual([FeatureFlagError.TIMEOUT])
+        expect(instance.persistence.props.feature_flag_errors).toEqual([FeatureFlagError.TIMEOUT])
     })
 
-    it('should set $feature_flag_error to errors_while_computing_flags when errorsWhileComputingFlags is true', async () => {
+    it('should set feature_flag_error to errors_while_computing_flags when errorsWhileComputingFlags is true', async () => {
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
             callback({
                 statusCode: 200,
@@ -4404,10 +4404,10 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.reloadFeatureFlags()
         await jest.advanceTimersByTimeAsync(10)
 
-        expect(instance.persistence.props.$feature_flag_errors).toEqual([FeatureFlagError.ERRORS_WHILE_COMPUTING])
+        expect(instance.persistence.props.feature_flag_errors).toEqual([FeatureFlagError.ERRORS_WHILE_COMPUTING])
     })
 
-    it('should set $feature_flag_error to quota_limited when quota limited', async () => {
+    it('should set feature_flag_error to quota_limited when quota limited', async () => {
         window.POSTHOG_DEBUG = true
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
             callback({
@@ -4422,14 +4422,14 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.reloadFeatureFlags()
         await jest.advanceTimersByTimeAsync(10)
 
-        expect(instance.persistence.props.$feature_flag_errors).toEqual([FeatureFlagError.QUOTA_LIMITED])
+        expect(instance.persistence.props.feature_flag_errors).toEqual([FeatureFlagError.QUOTA_LIMITED])
         expect(mockWarn).toHaveBeenCalledWith(
             '[PostHog.js] [FeatureFlags]',
             expect.stringContaining('You have hit your feature flags quota limit')
         )
     })
 
-    it('should set $feature_flag_error to unknown_error when error is not an Error instance', async () => {
+    it('should set feature_flag_error to unknown_error when error is not an Error instance', async () => {
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
             callback({
                 statusCode: 0,
@@ -4441,11 +4441,11 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.reloadFeatureFlags()
         await jest.advanceTimersByTimeAsync(10)
 
-        expect(instance.persistence.props.$feature_flag_errors).toEqual([FeatureFlagError.UNKNOWN_ERROR])
+        expect(instance.persistence.props.feature_flag_errors).toEqual([FeatureFlagError.UNKNOWN_ERROR])
     })
 
     it.each([401, 403, 404, 502, 503])(
-        'should set $feature_flag_error to api_error_%i for status %i',
+        'should set feature_flag_error to api_error_%i for status %i',
         async (status) => {
             instance._send_request = jest
                 .fn()
@@ -4454,11 +4454,11 @@ describe('$feature_flag_error tracking', () => {
             featureFlags.reloadFeatureFlags()
             await jest.advanceTimersByTimeAsync(10)
 
-            expect(instance.persistence.props.$feature_flag_errors).toEqual([`api_error_${status}`])
+            expect(instance.persistence.props.feature_flag_errors).toEqual([`api_error_${status}`])
         }
     )
 
-    it('should include $feature_flag_error in $feature_flag_called event capture', async () => {
+    it('should include feature_flag_error in ade_feature_flag_called event capture', async () => {
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
             callback({
                 statusCode: 200,
@@ -4477,16 +4477,16 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.getFeatureFlag('test-flag')
 
         expect(instance.capture).toHaveBeenCalledWith(
-            '$feature_flag_called',
+            'ade_feature_flag_called',
             expect.objectContaining({
-                $feature_flag: 'test-flag',
-                $feature_flag_response: true,
-                $feature_flag_error: FeatureFlagError.ERRORS_WHILE_COMPUTING,
+                feature_flag: 'test-flag',
+                feature_flag_response: true,
+                feature_flag_error: FeatureFlagError.ERRORS_WHILE_COMPUTING,
             })
         )
     })
 
-    it('should set $feature_flag_error to flag_missing when flag is not in response', async () => {
+    it('should set feature_flag_error to flag_missing when flag is not in response', async () => {
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
             callback({
                 statusCode: 200,
@@ -4504,11 +4504,11 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.getFeatureFlag('non-existent-flag')
 
         expect(instance.capture).toHaveBeenCalledWith(
-            '$feature_flag_called',
+            'ade_feature_flag_called',
             expect.objectContaining({
-                $feature_flag: 'non-existent-flag',
-                $feature_flag_response: undefined,
-                $feature_flag_error: FeatureFlagError.FLAG_MISSING,
+                feature_flag: 'non-existent-flag',
+                feature_flag_response: undefined,
+                feature_flag_error: FeatureFlagError.FLAG_MISSING,
             })
         )
     })
@@ -4531,16 +4531,16 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.getFeatureFlag('missing-flag')
 
         expect(instance.capture).toHaveBeenCalledWith(
-            '$feature_flag_called',
+            'ade_feature_flag_called',
             expect.objectContaining({
-                $feature_flag: 'missing-flag',
-                $feature_flag_response: undefined,
-                $feature_flag_error: `${FeatureFlagError.ERRORS_WHILE_COMPUTING},${FeatureFlagError.FLAG_MISSING}`,
+                feature_flag: 'missing-flag',
+                feature_flag_response: undefined,
+                feature_flag_error: `${FeatureFlagError.ERRORS_WHILE_COMPUTING},${FeatureFlagError.FLAG_MISSING}`,
             })
         )
     })
 
-    it('should not include $feature_flag_error when there are no errors', async () => {
+    it('should not include feature_flag_error when there are no errors', async () => {
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
             callback({
                 statusCode: 200,
@@ -4559,9 +4559,9 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.getFeatureFlag('success-flag')
 
         expect(instance.capture).toHaveBeenCalledWith(
-            '$feature_flag_called',
+            'ade_feature_flag_called',
             expect.not.objectContaining({
-                $feature_flag_error: expect.anything(),
+                feature_flag_error: expect.anything(),
             })
         )
     })
@@ -4578,7 +4578,7 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.reloadFeatureFlags()
         await jest.advanceTimersByTimeAsync(10)
 
-        expect(instance.persistence.props.$feature_flag_errors).toEqual(['api_error_500'])
+        expect(instance.persistence.props.feature_flag_errors).toEqual(['api_error_500'])
 
         // Second successful request
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
@@ -4595,7 +4595,7 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.reloadFeatureFlags()
         await jest.advanceTimersByTimeAsync(10)
 
-        expect(instance.persistence.props.$feature_flag_errors).toEqual([])
+        expect(instance.persistence.props.feature_flag_errors).toEqual([])
     })
 
     it('should track quota_limited and flag_missing together', async () => {
@@ -4615,16 +4615,16 @@ describe('$feature_flag_error tracking', () => {
         featureFlags.getFeatureFlag('some-flag')
 
         expect(instance.capture).toHaveBeenCalledWith(
-            '$feature_flag_called',
+            'ade_feature_flag_called',
             expect.objectContaining({
-                $feature_flag: 'some-flag',
-                $feature_flag_response: undefined,
-                $feature_flag_error: `${FeatureFlagError.QUOTA_LIMITED},${FeatureFlagError.FLAG_MISSING}`,
+                feature_flag: 'some-flag',
+                feature_flag_response: undefined,
+                feature_flag_error: `${FeatureFlagError.QUOTA_LIMITED},${FeatureFlagError.FLAG_MISSING}`,
             })
         )
     })
 
-    it('should include persisted errors in $feature_flag_called event after reload', async () => {
+    it('should include persisted errors in ade_feature_flag_called event after reload', async () => {
         // Setup: flags loaded with errors_while_computing
         instance._send_request = jest.fn().mockImplementation(({ callback }) =>
             callback({
@@ -4645,10 +4645,10 @@ describe('$feature_flag_error tracking', () => {
         newFeatureFlags.getFeatureFlag('test-flag')
 
         expect(instance.capture).toHaveBeenCalledWith(
-            '$feature_flag_called',
+            'ade_feature_flag_called',
             expect.objectContaining({
-                $feature_flag: 'test-flag',
-                $feature_flag_error: FeatureFlagError.ERRORS_WHILE_COMPUTING,
+                feature_flag: 'test-flag',
+                feature_flag_error: FeatureFlagError.ERRORS_WHILE_COMPUTING,
             })
         )
     })
@@ -4659,7 +4659,7 @@ describe('$feature_flag_error tracking', () => {
 
             // Set up flags in persistence for TTL tests
             instance.persistence.register({
-                $enabled_feature_flags: {
+                enabled_feature_flags: {
                     'beta-feature': true,
                     'alpha-feature-2': true,
                     'multivariate-flag': 'variant-1',
@@ -4674,7 +4674,7 @@ describe('$feature_flag_error tracking', () => {
             // Set evaluated_at to 2 hours ago (stale)
             const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000
             instance.persistence.register({
-                $feature_flag_evaluated_at: twoHoursAgo,
+                feature_flag_evaluated_at: twoHoursAgo,
             })
 
             featureFlags._hasLoadedFlags = true
@@ -4693,7 +4693,7 @@ describe('$feature_flag_error tracking', () => {
             // Set evaluated_at to 30 minutes ago (fresh)
             const thirtyMinutesAgo = Date.now() - 30 * 60 * 1000
             instance.persistence.register({
-                $feature_flag_evaluated_at: thirtyMinutesAgo,
+                feature_flag_evaluated_at: thirtyMinutesAgo,
             })
 
             featureFlags._hasLoadedFlags = true
@@ -4708,7 +4708,7 @@ describe('$feature_flag_error tracking', () => {
             // Set evaluated_at to a long time ago
             const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000
             instance.persistence.register({
-                $feature_flag_evaluated_at: oneYearAgo,
+                feature_flag_evaluated_at: oneYearAgo,
             })
 
             featureFlags._hasLoadedFlags = true
@@ -4724,7 +4724,7 @@ describe('$feature_flag_error tracking', () => {
             // Set evaluated_at to a long time ago
             const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000
             instance.persistence.register({
-                $feature_flag_evaluated_at: oneYearAgo,
+                feature_flag_evaluated_at: oneYearAgo,
             })
 
             featureFlags._hasLoadedFlags = true
@@ -4738,7 +4738,7 @@ describe('$feature_flag_error tracking', () => {
             instance.config.feature_flag_cache_ttl_ms = 60 * 60 * 1000
 
             // No evaluated_at set
-            instance.persistence.unregister('$feature_flag_evaluated_at')
+            instance.persistence.unregister('feature_flag_evaluated_at')
 
             featureFlags._hasLoadedFlags = true
 
@@ -4756,7 +4756,7 @@ describe('$feature_flag_error tracking', () => {
             // Set evaluated_at to 2 hours ago (stale)
             const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000
             instance.persistence.register({
-                $feature_flag_evaluated_at: twoHoursAgo,
+                feature_flag_evaluated_at: twoHoursAgo,
             })
 
             featureFlags._hasLoadedFlags = true
@@ -4773,7 +4773,7 @@ describe('$feature_flag_error tracking', () => {
             // Set evaluated_at to 2 hours ago (stale)
             const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000
             instance.persistence.register({
-                $feature_flag_evaluated_at: twoHoursAgo,
+                feature_flag_evaluated_at: twoHoursAgo,
             })
 
             featureFlags._hasLoadedFlags = true
@@ -4798,7 +4798,7 @@ describe('$feature_flag_error tracking', () => {
             // Set evaluated_at to 2 hours ago (stale)
             const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000
             instance.persistence.register({
-                $feature_flag_evaluated_at: twoHoursAgo,
+                feature_flag_evaluated_at: twoHoursAgo,
             })
 
             featureFlags._hasLoadedFlags = true
@@ -4810,13 +4810,13 @@ describe('$feature_flag_error tracking', () => {
             // Simulate successful flag load with fresh timestamp
             const now = Date.now()
             instance.persistence.register({
-                $feature_flag_evaluated_at: now,
+                feature_flag_evaluated_at: now,
             })
             featureFlags.receivedFeatureFlags({ featureFlags: { 'beta-feature': true } }, false)
 
             // Make cache stale again
             instance.persistence.register({
-                $feature_flag_evaluated_at: twoHoursAgo,
+                feature_flag_evaluated_at: twoHoursAgo,
             })
 
             // Should trigger reload again since flag was reset
@@ -4828,7 +4828,7 @@ describe('$feature_flag_error tracking', () => {
     })
 })
 
-describe('minimal $feature_flag_called events', () => {
+describe('minimal ade_feature_flag_called events', () => {
     beforeEach(() => {
         // Events are dropped via before_send (expected warn) and bootstrap flags go through
         // the legacy-shape path (expected upgrade warn).
@@ -4872,13 +4872,13 @@ describe('minimal $feature_flag_called events', () => {
         return { posthog, events }
     }
 
-    const findFlagCalledEvent = (events: any[]) => events.find((e) => e.event === '$feature_flag_called')
+    const findFlagCalledEvent = (events: any[]) => events.find((e) => e.event === 'ade_feature_flag_called')
 
     it('sends exactly the allowlisted properties when gated and the flag has no experiment', async () => {
         const { posthog, events } = await createInstanceWithCapturedEvents({}, 'minimal-flag-snapshot-token')
         // Super properties must be structurally excluded from the minimal event
         posthog.register({ super_prop: 'super_value' })
-        // $groups must survive minimization — it feeds ingestion dedup and group-flag routing
+        // groups must survive minimization — it feeds ingestion dedup and group-flag routing
         posthog.group('organization', 'org-1')
         posthog.featureFlags.receivedFeatureFlags(
             gatedFlagsResponse({ minimalFlagCalledEvents: true, hasExperiment: false })
@@ -4894,40 +4894,40 @@ describe('minimal $feature_flag_called events', () => {
                 'token',
                 'distinct_id',
                 // the strict allowlist
-                '$feature_flag',
-                '$feature_flag_response',
-                '$feature_flag_has_experiment',
-                '$feature_flag_id',
-                '$feature_flag_version',
-                '$feature_flag_request_id',
-                '$feature_flag_evaluated_at',
-                '$groups',
-                '$current_url',
-                '$pathname',
+                'feature_flag',
+                'feature_flag_response',
+                'feature_flag_has_experiment',
+                'feature_flag_id',
+                'feature_flag_version',
+                'feature_flag_request_id',
+                'feature_flag_evaluated_at',
+                'groups',
+                'current_url',
+                'pathname',
                 // session-level attribution props survive minimization so a flag-called
                 // event firing first doesn't null out the session's UTM/channel
-                '$referring_domain',
-                '$session_id',
-                '$window_id',
-                '$lib',
-                '$lib_version',
-                '$device_id',
-                '$process_person_profile',
+                'referring_domain',
+                'session_id',
+                'window_id',
+                'lib',
+                'lib_version',
+                'device_id',
+                'process_person_profile',
             ].sort()
         )
         expect(event.properties).toMatchObject({
-            $feature_flag: 'test-flag',
-            $feature_flag_response: true,
-            $feature_flag_has_experiment: false,
-            $feature_flag_id: 42,
-            $feature_flag_version: 3,
-            $feature_flag_request_id: 'minimal-request-id',
-            $feature_flag_evaluated_at: 1700000000000,
-            $groups: { organization: 'org-1' },
+            feature_flag: 'test-flag',
+            feature_flag_response: true,
+            feature_flag_has_experiment: false,
+            feature_flag_id: 42,
+            feature_flag_version: 3,
+            feature_flag_request_id: 'minimal-request-id',
+            feature_flag_evaluated_at: 1700000000000,
+            groups: { organization: 'org-1' },
         })
-        expect(event.$set_once).toBeUndefined()
+        expect(event.ade_set_once).toBeUndefined()
         expect(
-            normalizeCaptureResult(event, ['distinct_id', '$device_id', '$session_id', '$window_id', '$lib_version'])
+            normalizeCaptureResult(event, ['distinct_id', 'device_id', 'session_id', 'window_id', 'lib_version'])
         ).toMatchSnapshot()
     })
 
@@ -4941,8 +4941,8 @@ describe('minimal $feature_flag_called events', () => {
 
         posthog.register({
             ...campaignProperties,
-            $referring_domain: 'referring.example',
-            $referrer: 'https://referring.example/path?private=value',
+            referring_domain: 'referring.example',
+            referrer: 'https://referring.example/path?private=value',
             unrelated_superproperty: 'must-be-stripped',
         })
         posthog.featureFlags.receivedFeatureFlags(
@@ -4955,9 +4955,9 @@ describe('minimal $feature_flag_called events', () => {
         expect(event).toBeDefined()
         expect(event.properties).toMatchObject({
             ...campaignProperties,
-            $referring_domain: 'referring.example',
+            referring_domain: 'referring.example',
         })
-        expect(event.properties).not.toHaveProperty('$referrer')
+        expect(event.properties).not.toHaveProperty('referrer')
         expect(event.properties).not.toHaveProperty('unrelated_superproperty')
     })
 
@@ -4969,32 +4969,32 @@ describe('minimal $feature_flag_called events', () => {
 
         const overrideTimestamp = new Date(Date.now() - 1000)
         posthog.capture(
-            '$feature_flag_called',
-            { $feature_flag: 'test-flag', $feature_flag_response: true, $feature_flag_has_experiment: false },
+            'ade_feature_flag_called',
+            { feature_flag: 'test-flag', feature_flag_response: true, feature_flag_has_experiment: false },
             { timestamp: overrideTimestamp }
         )
 
         const event = findFlagCalledEvent(events)
         expect(event).toBeDefined()
-        expect(event.properties).not.toHaveProperty('$event_time_override_provided')
-        expect(event.properties).not.toHaveProperty('$event_time_override_system_time')
+        expect(event.properties).not.toHaveProperty('event_time_override_provided')
+        expect(event.properties).not.toHaveProperty('event_time_override_system_time')
         expect(Object.keys(event.properties).sort()).toEqual(
             [
                 'token',
                 'distinct_id',
-                '$feature_flag',
-                '$feature_flag_response',
-                '$feature_flag_has_experiment',
-                '$feature_flag_request_id',
-                '$current_url',
-                '$pathname',
-                '$referring_domain',
-                '$session_id',
-                '$window_id',
-                '$lib',
-                '$lib_version',
-                '$device_id',
-                '$process_person_profile',
+                'feature_flag',
+                'feature_flag_response',
+                'feature_flag_has_experiment',
+                'feature_flag_request_id',
+                'current_url',
+                'pathname',
+                'referring_domain',
+                'session_id',
+                'window_id',
+                'lib',
+                'lib_version',
+                'device_id',
+                'process_person_profile',
             ].sort()
         )
         // The transport-level timestamp itself is untouched by minimization
@@ -5012,11 +5012,11 @@ describe('minimal $feature_flag_called events', () => {
 
         const event = findFlagCalledEvent(events)
         expect(event.properties).toMatchObject({
-            $feature_flag_has_experiment: true,
+            feature_flag_has_experiment: true,
             super_prop: 'super_value',
-            '$feature/test-flag': true,
-            $active_feature_flags: ['test-flag'],
-            $used_bootstrap_value: expect.any(Boolean),
+            'feature/test-flag': true,
+            active_feature_flags: ['test-flag'],
+            used_bootstrap_value: expect.any(Boolean),
         })
         expect(normalizeCaptureResult(event)).toMatchSnapshot()
     })
@@ -5035,7 +5035,7 @@ describe('minimal $feature_flag_called events', () => {
         const event = findFlagCalledEvent(events)
         expect(event.properties).toMatchObject({
             super_prop: 'super_value',
-            '$feature/test-flag': true,
+            'feature/test-flag': true,
         })
     })
 
@@ -5048,9 +5048,9 @@ describe('minimal $feature_flag_called events', () => {
 
         const event = findFlagCalledEvent(events)
         expect(event.properties).toMatchObject({
-            $feature_flag: 'test-flag',
-            $used_bootstrap_value: true,
-            '$feature/test-flag': true,
+            feature_flag: 'test-flag',
+            used_bootstrap_value: true,
+            'feature/test-flag': true,
         })
     })
 
@@ -5081,10 +5081,10 @@ describe('minimal $feature_flag_called events', () => {
 
         const event = findFlagCalledEvent(events)
         expect(event).toBeDefined()
-        expect(event.properties.$feature_flag_has_experiment).toBe(false)
-        expect(event.properties).not.toHaveProperty('$feature/test-flag')
-        expect(event.properties).not.toHaveProperty('$active_feature_flags')
-        expect(event.properties).not.toHaveProperty('$used_bootstrap_value')
-        expect(event.properties).not.toHaveProperty('$browser')
+        expect(event.properties.feature_flag_has_experiment).toBe(false)
+        expect(event.properties).not.toHaveProperty('feature/test-flag')
+        expect(event.properties).not.toHaveProperty('active_feature_flags')
+        expect(event.properties).not.toHaveProperty('used_bootstrap_value')
+        expect(event.properties).not.toHaveProperty('browser')
     })
 })

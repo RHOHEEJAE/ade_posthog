@@ -177,7 +177,7 @@ describe('PostHog Feature Flags v4', () => {
 
     it('should execute pending reload after current request completes', async () => {
       // This test verifies the fix for the race condition where identify() calls
-      // with $anon_distinct_id were dropped when preloadFeatureFlags was in flight.
+      // with anon_distinct_id were dropped when preloadFeatureFlags was in flight.
       // See: https://github.com/PostHog/posthog-ios/issues/456
 
       let resolveFirstRequest: () => void
@@ -323,7 +323,7 @@ describe('PostHog Feature Flags v4', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -428,7 +428,7 @@ describe('PostHog Feature Flags v4', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -455,7 +455,7 @@ describe('PostHog Feature Flags v4', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -675,7 +675,7 @@ describe('PostHog Feature Flags v4', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -702,7 +702,7 @@ describe('PostHog Feature Flags v4', () => {
               groups: {},
               person_properties: {},
               group_properties: {},
-              $anon_distinct_id: posthog.getAnonymousId(),
+              anon_distinct_id: posthog.getAnonymousId(),
             }),
             method: 'POST',
             headers: {
@@ -738,7 +738,7 @@ describe('PostHog Feature Flags v4', () => {
       it('should reload if groups are set', async () => {
         posthog.group('my-group', 'is-great')
         await waitForPromises()
-        // 3 calls: 1 for flags reload, 1 for $groupidentify batch, 1 for flags decide
+        // 3 calls: 1 for flags reload, 1 for ade_groupidentify batch, 1 for flags decide
         expect(mocks.fetch).toHaveBeenCalledTimes(3)
         // The flags reload call contains the group
         const flagsCall = mocks.fetch.mock.calls.find((call) => {
@@ -794,18 +794,18 @@ describe('PostHog Feature Flags v4', () => {
           expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
             batch: [
               {
-                event: '$feature_flag_called',
+                event: 'ade_feature_flag_called',
                 distinct_id: posthog.getDistinctId(),
                 properties: {
-                  $feature_flag: key,
-                  $feature_flag_response: expected_response,
-                  $feature_flag_id: expected_id,
-                  $feature_flag_version: expected_version,
-                  $feature_flag_reason: expected_reason,
-                  '$feature/feature-1': true,
-                  $used_bootstrap_value: false,
-                  $feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
-                  $feature_flag_evaluated_at: expect.any(Number),
+                  feature_flag: key,
+                  feature_flag_response: expected_response,
+                  feature_flag_id: expected_id,
+                  feature_flag_version: expected_version,
+                  feature_flag_reason: expected_reason,
+                  'feature/feature-1': true,
+                  used_bootstrap_value: false,
+                  feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
+                  feature_flag_evaluated_at: expect.any(Number),
                 },
               },
             ],
@@ -817,7 +817,7 @@ describe('PostHog Feature Flags v4', () => {
         }
       )
 
-      describe('$feature_flag_has_experiment', () => {
+      describe('feature_flag_has_experiment', () => {
         const mockFlagsWithMetadata = (metadata: Record<string, any>): void => {
           mocks.fetch.mockImplementation((url) => {
             if (url.includes('/flags/?v=2')) {
@@ -853,17 +853,17 @@ describe('PostHog Feature Flags v4', () => {
           await waitForPromises()
           const event = mocks.fetch.mock.calls
             .flatMap((call) => parseBody(call)?.batch ?? [])
-            .find((e: any) => e.event === '$feature_flag_called')
+            .find((e: any) => e.event === 'ade_feature_flag_called')
           return event.properties
         }
 
-        it('should send $feature_flag_has_experiment true when the server reports has_experiment true', async () => {
+        it('should send feature_flag_has_experiment true when the server reports has_experiment true', async () => {
           mockFlagsWithMetadata({ id: 1, version: 1, description: undefined, payload: undefined, has_experiment: true })
 
-          expect(await getFlagCalledProperties()).toMatchObject({ $feature_flag_has_experiment: true })
+          expect(await getFlagCalledProperties()).toMatchObject({ feature_flag_has_experiment: true })
         })
 
-        it('should send $feature_flag_has_experiment false when the server reports has_experiment false', async () => {
+        it('should send feature_flag_has_experiment false when the server reports has_experiment false', async () => {
           mockFlagsWithMetadata({
             id: 1,
             version: 1,
@@ -872,17 +872,17 @@ describe('PostHog Feature Flags v4', () => {
             has_experiment: false,
           })
 
-          expect(await getFlagCalledProperties()).toMatchObject({ $feature_flag_has_experiment: false })
+          expect(await getFlagCalledProperties()).toMatchObject({ feature_flag_has_experiment: false })
         })
 
-        it('should omit $feature_flag_has_experiment when the server omits has_experiment', async () => {
+        it('should omit feature_flag_has_experiment when the server omits has_experiment', async () => {
           mockFlagsWithMetadata({ id: 1, version: 1, description: undefined, payload: undefined })
 
-          expect(await getFlagCalledProperties()).not.toHaveProperty('$feature_flag_has_experiment')
+          expect(await getFlagCalledProperties()).not.toHaveProperty('feature_flag_has_experiment')
         })
       })
 
-      describe('minimal $feature_flag_called events', () => {
+      describe('minimal ade_feature_flag_called events', () => {
         const flagsResponseJson = (options: { minimalFlagCalledEvents?: boolean; hasExperiment?: boolean }): any => ({
           flags: {
             'feature-1': {
@@ -932,7 +932,7 @@ describe('PostHog Feature Flags v4', () => {
           await waitForPromises()
           const event = mocks.fetch.mock.calls
             .flatMap((call) => parseBody(call)?.batch ?? [])
-            .find((e: any) => e.event === '$feature_flag_called')
+            .find((e: any) => e.event === 'ade_feature_flag_called')
           return event.properties
         }
 
@@ -943,23 +943,23 @@ describe('PostHog Feature Flags v4', () => {
 
           expect(Object.keys(properties).sort()).toEqual(
             [
-              '$feature_flag',
-              '$feature_flag_response',
-              '$feature_flag_has_experiment',
-              '$feature_flag_id',
-              '$feature_flag_version',
-              '$feature_flag_request_id',
-              '$feature_flag_evaluated_at',
-              '$session_id',
-              '$lib',
-              '$lib_version',
-              '$process_person_profile',
+              'feature_flag',
+              'feature_flag_response',
+              'feature_flag_has_experiment',
+              'feature_flag_id',
+              'feature_flag_version',
+              'feature_flag_request_id',
+              'feature_flag_evaluated_at',
+              'session_id',
+              'lib',
+              'lib_version',
+              'process_person_profile',
             ].sort()
           )
           expect(properties).toMatchObject({
-            $feature_flag: 'feature-1',
-            $feature_flag_response: true,
-            $feature_flag_has_experiment: false,
+            feature_flag: 'feature-1',
+            feature_flag_response: true,
+            feature_flag_has_experiment: false,
           })
         })
 
@@ -969,10 +969,10 @@ describe('PostHog Feature Flags v4', () => {
           const properties = await getFlagCalledProperties()
 
           expect(properties).toMatchObject({
-            $feature_flag_has_experiment: true,
+            feature_flag_has_experiment: true,
             super_prop: 'super_value',
-            '$feature/feature-1': true,
-            $active_feature_flags: ['feature-1'],
+            'feature/feature-1': true,
+            active_feature_flags: ['feature-1'],
           })
         })
 
@@ -987,7 +987,7 @@ describe('PostHog Feature Flags v4', () => {
 
           expect(properties).toMatchObject({
             super_prop: 'super_value',
-            '$feature/feature-1': true,
+            'feature/feature-1': true,
           })
         })
 
@@ -1001,7 +1001,7 @@ describe('PostHog Feature Flags v4', () => {
 
           expect(properties).toMatchObject({
             super_prop: 'super_value',
-            '$feature/feature-1': true,
+            'feature/feature-1': true,
           })
         })
 
@@ -1049,15 +1049,15 @@ describe('PostHog Feature Flags v4', () => {
 
           const event = restartedMocks.fetch.mock.calls
             .flatMap((call) => parseBody(call)?.batch ?? [])
-            .find((e: any) => e.event === '$feature_flag_called')
-          expect(event.properties.$feature_flag_has_experiment).toBe(false)
-          expect(event.properties).not.toHaveProperty('$feature/feature-1')
-          expect(event.properties).not.toHaveProperty('$active_feature_flags')
-          expect(event.properties).not.toHaveProperty('$used_bootstrap_value')
+            .find((e: any) => e.event === 'ade_feature_flag_called')
+          expect(event.properties.feature_flag_has_experiment).toBe(false)
+          expect(event.properties).not.toHaveProperty('feature/feature-1')
+          expect(event.properties).not.toHaveProperty('active_feature_flags')
+          expect(event.properties).not.toHaveProperty('used_bootstrap_value')
         })
       })
 
-      it('should not capture $feature_flag_called again if reloaded flags keep the same value', async () => {
+      it('should not capture ade_feature_flag_called again if reloaded flags keep the same value', async () => {
         expect(posthog.getFeatureFlag('feature-1')).toEqual(true)
         await waitForPromises()
         expect(mocks.fetch).toHaveBeenCalledTimes(2)
@@ -1065,15 +1065,15 @@ describe('PostHog Feature Flags v4', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_response: true,
-                '$feature/feature-1': true,
-                $used_bootstrap_value: false,
-                $feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
-                $feature_flag_evaluated_at: expect.any(Number),
+                feature_flag: 'feature-1',
+                feature_flag_response: true,
+                'feature/feature-1': true,
+                used_bootstrap_value: false,
+                feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
+                feature_flag_evaluated_at: expect.any(Number),
               },
             },
           ],
@@ -1086,7 +1086,7 @@ describe('PostHog Feature Flags v4', () => {
         expect(mocks.fetch).toHaveBeenCalledTimes(3)
       })
 
-      it('should capture $feature_flag_called when called, but not add all cached flags', async () => {
+      it('should capture ade_feature_flag_called when called, but not add all cached flags', async () => {
         expect(posthog.getFeatureFlag('feature-1')).toEqual(true)
         await waitForPromises()
         expect(mocks.fetch).toHaveBeenCalledTimes(2)
@@ -1094,13 +1094,13 @@ describe('PostHog Feature Flags v4', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_response: true,
-                '$feature/feature-1': true,
-                $used_bootstrap_value: false,
+                feature_flag: 'feature-1',
+                feature_flag_response: true,
+                'feature/feature-1': true,
+                used_bootstrap_value: false,
               },
             },
           ],
@@ -1140,11 +1140,11 @@ describe('PostHog Feature Flags v4', () => {
               event: 'test-event',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $active_feature_flags: ['feature-1', 'feature-2', 'feature-variant', 'json-payload'],
-                '$feature/feature-1': true,
-                '$feature/feature-2': true,
-                '$feature/json-payload': true,
-                '$feature/feature-variant': 'variant',
+                active_feature_flags: ['feature-1', 'feature-2', 'feature-variant', 'json-payload'],
+                'feature/feature-1': true,
+                'feature/feature-2': true,
+                'feature/json-payload': true,
+                'feature/feature-variant': 'variant',
               },
             },
           ],
@@ -1155,10 +1155,10 @@ describe('PostHog Feature Flags v4', () => {
         ['a string variant', 'server-value'],
         ['boolean false (client-side disable)', false],
         ['null', null],
-      ])('lets a caller-supplied $feature/* value (%s) override the cached value', async (_case, overrideValue) => {
+      ])('lets a caller-supplied feature/* value (%s) override the cached value', async (_case, overrideValue) => {
         posthog.capture('test-event', {
-          '$feature/feature-1': overrideValue,
-          $active_feature_flags: ['server-flag'],
+          'feature/feature-1': overrideValue,
+          active_feature_flags: ['server-flag'],
         })
 
         await waitForPromises()
@@ -1168,9 +1168,9 @@ describe('PostHog Feature Flags v4', () => {
             {
               event: 'test-event',
               properties: {
-                '$feature/feature-1': overrideValue,
-                $active_feature_flags: ['server-flag'],
-                '$feature/feature-2': true,
+                'feature/feature-1': overrideValue,
+                active_feature_flags: ['server-flag'],
+                'feature/feature-2': true,
               },
             },
           ],
@@ -1211,11 +1211,11 @@ describe('PostHog Feature Flags v4', () => {
           expect(freshPosthog.getAllFeatureFlags()).toEqual([])
         })
 
-        it('does not send a $feature_flag_called event', async () => {
+        it('does not send a ade_feature_flag_called event', async () => {
           posthog.getAllFeatureFlags()
           await waitForPromises()
           const calledEvents = mocks.fetch.mock.calls.filter((call) =>
-            JSON.stringify(call).includes('$feature_flag_called')
+            JSON.stringify(call).includes('ade_feature_flag_called')
           )
           expect(calledEvents).toHaveLength(0)
         })
@@ -1309,7 +1309,7 @@ describe('PostHog Feature Flags v4', () => {
           expect(legacyPosthog.getFeatureFlagPayload('missing-flag')).toEqual(null)
         })
 
-        it('should send $feature_flag_called event on first call', async () => {
+        it('should send ade_feature_flag_called event on first call', async () => {
           posthog.getFeatureFlagResult('feature-1')
           await waitForPromises()
           expect(mocks.fetch).toHaveBeenCalledTimes(2)
@@ -1317,17 +1317,17 @@ describe('PostHog Feature Flags v4', () => {
           expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
             batch: [
               {
-                event: '$feature_flag_called',
+                event: 'ade_feature_flag_called',
                 distinct_id: posthog.getDistinctId(),
                 properties: {
-                  $feature_flag: 'feature-1',
-                  $feature_flag_response: true,
-                  $feature_flag_id: 1,
-                  $feature_flag_version: 1,
-                  $feature_flag_reason: 'matched condition set 1',
-                  $used_bootstrap_value: false,
-                  $feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
-                  $feature_flag_evaluated_at: 1640995200000,
+                  feature_flag: 'feature-1',
+                  feature_flag_response: true,
+                  feature_flag_id: 1,
+                  feature_flag_version: 1,
+                  feature_flag_reason: 'matched condition set 1',
+                  used_bootstrap_value: false,
+                  feature_flag_request_id: '0152a345-295f-4fba-adac-2e6ea9c91082',
+                  feature_flag_evaluated_at: 1640995200000,
                 },
               },
             ],
@@ -1401,17 +1401,17 @@ describe('PostHog Feature Flags v4', () => {
           expect(noEventMocks.fetch).toHaveBeenCalledTimes(1)
         })
 
-        it('should include $feature_flag_error FLAG_MISSING for a missing flag when flags are cached', async () => {
+        it('should include feature_flag_error FLAG_MISSING for a missing flag when flags are cached', async () => {
           posthog.getFeatureFlagResult('nonexistent-flag')
           await waitForPromises()
 
           expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
             batch: [
               {
-                event: '$feature_flag_called',
+                event: 'ade_feature_flag_called',
                 properties: {
-                  $feature_flag: 'nonexistent-flag',
-                  $feature_flag_error: 'flag_missing',
+                  feature_flag: 'nonexistent-flag',
+                  feature_flag_error: 'flag_missing',
                 },
               },
             ],
@@ -1451,7 +1451,7 @@ describe('PostHog Feature Flags v4', () => {
             groups: {},
             person_properties: {},
             group_properties: {},
-            $anon_distinct_id: posthog.getAnonymousId(),
+            anon_distinct_id: posthog.getAnonymousId(),
           }),
           method: 'POST',
           headers: {
@@ -1487,10 +1487,10 @@ describe('PostHog Feature Flags v4', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_error: 'quota_limited',
+                feature_flag: 'feature-1',
+                feature_flag_error: 'quota_limited',
               },
             },
           ],
@@ -1502,7 +1502,7 @@ describe('PostHog Feature Flags v4', () => {
         await waitForPromises()
 
         const body = parseBody(mocks.fetch.mock.calls[1])
-        const error = body.batch[0].properties.$feature_flag_error
+        const error = body.batch[0].properties.feature_flag_error
         expect(error).toEqual('quota_limited')
         expect(error).not.toContain('flag_missing')
       })
@@ -1797,11 +1797,11 @@ describe('PostHog Feature Flags v4', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_response: true,
-                $feature_flag_error: 'errors_while_computing_flags',
+                feature_flag: 'feature-1',
+                feature_flag_response: true,
+                feature_flag_error: 'errors_while_computing_flags',
               },
             },
           ],
@@ -1836,10 +1836,10 @@ describe('PostHog Feature Flags v4', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_error: 'timeout',
+                feature_flag: 'feature-1',
+                feature_flag_error: 'timeout',
               },
             },
           ],
@@ -1872,10 +1872,10 @@ describe('PostHog Feature Flags v4', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_error: 'api_error_503',
+                feature_flag: 'feature-1',
+                feature_flag_error: 'api_error_503',
               },
             },
           ],
@@ -1908,10 +1908,10 @@ describe('PostHog Feature Flags v4', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_error: 'connection_error',
+                feature_flag: 'feature-1',
+                feature_flag_error: 'connection_error',
               },
             },
           ],
@@ -1986,7 +1986,7 @@ describe('PostHog Feature Flags v4', () => {
       expect(posthog.getFeatureFlag('not-in-featureFlags')).toEqual(true)
     })
 
-    it('getFeatureFlag should capture $feature_flag_called with bootstrapped values', async () => {
+    it('getFeatureFlag should capture ade_feature_flag_called with bootstrapped values', async () => {
       expect(posthog.getFeatureFlag('bootstrap-1')).toEqual('variant-1')
 
       await waitForPromises()
@@ -1995,15 +1995,15 @@ describe('PostHog Feature Flags v4', () => {
       expect(parseBody(mocks.fetch.mock.calls[0])).toMatchObject({
         batch: [
           {
-            event: '$feature_flag_called',
+            event: 'ade_feature_flag_called',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $feature_flag: 'bootstrap-1',
-              $feature_flag_response: 'variant-1',
-              '$feature/bootstrap-1': 'variant-1',
-              $feature_flag_bootstrapped_response: 'variant-1',
-              $feature_flag_bootstrapped_payload: { some: 'key' },
-              $used_bootstrap_value: true,
+              feature_flag: 'bootstrap-1',
+              feature_flag_response: 'variant-1',
+              'feature/bootstrap-1': 'variant-1',
+              feature_flag_bootstrapped_response: 'variant-1',
+              feature_flag_bootstrapped_payload: { some: 'key' },
+              used_bootstrap_value: true,
             },
           },
         ],
@@ -2090,7 +2090,7 @@ describe('PostHog Feature Flags v4', () => {
             groups: {},
             person_properties: {},
             group_properties: {},
-            $anon_distinct_id: 'tomato',
+            anon_distinct_id: 'tomato',
           }),
           method: 'POST',
           headers: {
@@ -2116,7 +2116,7 @@ describe('PostHog Feature Flags v4', () => {
             groups: {},
             person_properties: {},
             group_properties: {},
-            $anon_distinct_id: 'tomato',
+            anon_distinct_id: 'tomato',
           }),
           method: 'POST',
           headers: {
@@ -2140,15 +2140,15 @@ describe('PostHog Feature Flags v4', () => {
         expect(parseBody(mocks.fetch.mock.calls[1])).toMatchObject({
           batch: [
             {
-              event: '$feature_flag_called',
+              event: 'ade_feature_flag_called',
               distinct_id: posthog.getDistinctId(),
               properties: {
-                $feature_flag: 'feature-1',
-                $feature_flag_response: true,
-                '$feature/feature-1': true,
-                $feature_flag_bootstrapped_response: 'feature-1-bootstrap-value',
-                $feature_flag_bootstrapped_payload: { color: 'feature-1-bootstrap-color' },
-                $used_bootstrap_value: false,
+                feature_flag: 'feature-1',
+                feature_flag_response: true,
+                'feature/feature-1': true,
+                feature_flag_bootstrapped_response: 'feature-1-bootstrap-value',
+                feature_flag_bootstrapped_payload: { color: 'feature-1-bootstrap-color' },
+                used_bootstrap_value: false,
               },
             },
           ],
@@ -2322,7 +2322,7 @@ describe('PostHog Feature Flags v4', () => {
       { name: 'null', payload: null },
       { name: 'json-looking string', payload: '123' },
       { name: 'plain string', payload: 'hello' },
-    ])('should round-trip a $name payload through updateFlags', ({ payload }) => {
+    ])('should round-trip a name payload through updateFlags', ({ payload }) => {
       posthog.updateFlags({ 'p-flag': true }, { 'p-flag': payload as any })
 
       expect(posthog.getFeatureFlagPayload('p-flag')).toEqual(payload)
@@ -2380,7 +2380,7 @@ describe('PostHog Feature Flags v4', () => {
       expect(posthog.getFeatureFlag('other-flag')).toEqual(true)
     })
 
-    it('should capture $feature_flag_called after updateFlags changes to a new value', async () => {
+    it('should capture ade_feature_flag_called after updateFlags changes to a new value', async () => {
       await posthog.reloadFeatureFlagsAsync()
       expect(posthog.getFeatureFlag('feature-1')).toEqual(true)
       await waitForPromises()
@@ -2393,14 +2393,14 @@ describe('PostHog Feature Flags v4', () => {
       expect(mocks.fetch).toHaveBeenCalledTimes(3)
       const flagCalledProps = parseBody(mocks.fetch.mock.calls[2]).batch[0].properties
       expect(flagCalledProps).toMatchObject({
-        $feature_flag: 'feature-1',
-        $feature_flag_response: false,
+        feature_flag: 'feature-1',
+        feature_flag_response: false,
       })
-      // Locally supplied flags have no server id, so no $feature_flag_id is emitted
-      expect(flagCalledProps).not.toHaveProperty('$feature_flag_id')
+      // Locally supplied flags have no server id, so no feature_flag_id is emitted
+      expect(flagCalledProps).not.toHaveProperty('feature_flag_id')
     })
 
-    it('should not capture $feature_flag_called after updateFlags cycles back to a previously seen value', async () => {
+    it('should not capture ade_feature_flag_called after updateFlags cycles back to a previously seen value', async () => {
       await posthog.reloadFeatureFlagsAsync()
       expect(posthog.getFeatureFlag('feature-1')).toEqual(true)
       await waitForPromises()

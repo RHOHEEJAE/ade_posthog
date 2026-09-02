@@ -14,13 +14,13 @@ function createSuppressionRule(
     type: 'AND' | 'OR' = 'OR',
     values: ErrorTrackingSuppressionRuleValue[] = [
         {
-            key: '$exception_types',
+            key: 'exception_types',
             value: ['TypeError', 'ReactError'],
             operator: 'exact',
             type: 'error_tracking_issue_property',
         },
         {
-            key: '$exception_values',
+            key: 'exception_values',
             value: 'ReactMinified',
             operator: 'icontains',
             type: 'error_tracking_issue_property',
@@ -31,7 +31,7 @@ function createSuppressionRule(
 }
 
 describe('PostHogExceptions', () => {
-    const captureMock = jest.fn().mockReturnValue({ uuid: 'test-uuid', event: '$exception', properties: {} })
+    const captureMock = jest.fn().mockReturnValue({ uuid: 'test-uuid', event: 'ade_exception', properties: {} })
     let posthog: PostHog
     let exceptions: PostHogExceptions
     let config: PostHogConfig
@@ -114,7 +114,7 @@ describe('PostHogExceptions', () => {
     describe('sendExceptionEvent', () => {
         it('captures the event when no suppression rules are provided', () => {
             exceptions.sendExceptionEvent({ custom_property: true })
-            expect(captureMock).toBeCalledWith('$exception', { custom_property: true }, expect.anything())
+            expect(captureMock).toBeCalledWith('ade_exception', { custom_property: true }, expect.anything())
         })
 
         it('attaches the injected release id when present', () => {
@@ -122,8 +122,8 @@ describe('PostHogExceptions', () => {
             try {
                 exceptions.sendExceptionEvent({ custom_property: true })
                 expect(captureMock).toBeCalledWith(
-                    '$exception',
-                    { custom_property: true, $release_id: 'release-row-id' },
+                    'ade_exception',
+                    { custom_property: true, release_id: 'release-row-id' },
                     expect.anything()
                 )
             } finally {
@@ -148,11 +148,11 @@ describe('PostHogExceptions', () => {
                 ok: true,
                 config: { errorTracking: { suppressionRules: [suppressionRule] } } as RemoteConfig,
             })
-            exceptions.sendExceptionEvent({ $exception_list: [{ type, value }] })
+            exceptions.sendExceptionEvent({ exception_list: [{ type, value }] })
             expect(captureMock).not.toBeCalled()
         })
 
-        it('captures an exception if no $exception_list property exists', () => {
+        it('captures an exception if no exception_list property exists', () => {
             const suppressionRule = createSuppressionRule('AND')
             exceptions.onRemoteConfig({
                 ok: true,
@@ -168,7 +168,7 @@ describe('PostHogExceptions', () => {
                 ok: true,
                 config: { errorTracking: { suppressionRules: [suppressionRule] } } as RemoteConfig,
             })
-            exceptions.sendExceptionEvent({ $exception_list: [{ type: 'TypeError', value: 'This is a type error' }] })
+            exceptions.sendExceptionEvent({ exception_list: [{ type: 'TypeError', value: 'This is a type error' }] })
             expect(captureMock).toBeCalled()
         })
 
@@ -177,7 +177,7 @@ describe('PostHogExceptions', () => {
                 'an operator the SDK does not implement',
                 createSuppressionRule('AND', [
                     {
-                        key: '$lib',
+                        key: 'lib',
                         value: 'is_not_set',
                         operator: 'is_not_set',
                         type: 'event_property',
@@ -188,7 +188,7 @@ describe('PostHogExceptions', () => {
                 'a negative operator on a key the SDK cannot resolve',
                 createSuppressionRule('OR', [
                     {
-                        key: '$host',
+                        key: 'host',
                         value: '(\\.|^)posthog\\.com$',
                         operator: 'not_regex',
                         type: 'event_property',
@@ -201,14 +201,14 @@ describe('PostHogExceptions', () => {
                 ok: true,
                 config: { errorTracking: { suppressionRules: [suppressionRule] } } as RemoteConfig,
             })
-            exceptions.sendExceptionEvent({ $exception_list: [{ type: 'TypeError', value: 'This is a type error' }] })
+            exceptions.sendExceptionEvent({ exception_list: [{ type: 'TypeError', value: 'This is a type error' }] })
             expect(captureMock).toBeCalled()
         })
 
         it('captures an exception if there are no targets on the rule', () => {
             const suppressionRule = createSuppressionRule('OR', [
                 {
-                    key: '$exception_types',
+                    key: 'exception_types',
                     value: [],
                     operator: 'exact',
                     type: 'error_tracking_issue_property',
@@ -218,7 +218,7 @@ describe('PostHogExceptions', () => {
                 ok: true,
                 config: { errorTracking: { suppressionRules: [suppressionRule] } } as RemoteConfig,
             })
-            exceptions.sendExceptionEvent({ $exception_list: [{ type: 'TypeError', value: 'This is a type error' }] })
+            exceptions.sendExceptionEvent({ exception_list: [{ type: 'TypeError', value: 'This is a type error' }] })
             expect(captureMock).toBeCalled()
         })
 
@@ -231,10 +231,10 @@ describe('PostHogExceptions', () => {
             ])('does not capture exceptions with frames from %s extensions by default', (_browser, filename) => {
                 const frame = { filename, platform: 'javascript:web' }
                 const exception = { stacktrace: { frames: [frame], type: 'raw' } }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
                 expect(captureMock).not.toBeCalledWith(
-                    '$exception',
-                    { $exception_list: [exception] },
+                    'ade_exception',
+                    { exception_list: [exception] },
                     expect.anything()
                 )
             })
@@ -245,8 +245,8 @@ describe('PostHogExceptions', () => {
                     platform: 'javascript:web',
                 }
                 const exception = { stacktrace: { frames: [frame], type: 'raw' } }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
-                expect(captureMock).toBeCalledWith('$exception', { $exception_list: [exception] }, expect.anything())
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
+                expect(captureMock).toBeCalledWith('ade_exception', { exception_list: [exception] }, expect.anything())
             })
 
             it('captures extension exceptions when enabled', () => {
@@ -256,8 +256,8 @@ describe('PostHogExceptions', () => {
                 })
                 const frame = { filename: 'chrome-extension://', platform: 'javascript:web' }
                 const exception = { stacktrace: { frames: [frame], type: 'raw' } }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
-                expect(captureMock).toBeCalledWith('$exception', { $exception_list: [exception] }, expect.anything())
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
+                expect(captureMock).toBeCalledWith('ade_exception', { exception_list: [exception] }, expect.anything())
             })
         })
 
@@ -275,10 +275,10 @@ describe('PostHogExceptions', () => {
                 ],
             ])('does not capture exceptions thrown by %s injected scripts', (_browser, exceptionFields) => {
                 const exception = { ...exceptionFields, stacktrace: { frames: [pageFrame], type: 'raw' } }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
                 expect(captureMock).not.toBeCalledWith(
-                    '$exception',
-                    { $exception_list: [exception] },
+                    'ade_exception',
+                    { exception_list: [exception] },
                     expect.anything()
                 )
             })
@@ -289,8 +289,8 @@ describe('PostHogExceptions', () => {
                     value: 'something is not defined',
                     stacktrace: { frames: [pageFrame], type: 'raw' },
                 }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
-                expect(captureMock).toBeCalledWith('$exception', { $exception_list: [exception] }, expect.anything())
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
+                expect(captureMock).toBeCalledWith('ade_exception', { exception_list: [exception] }, expect.anything())
             })
 
             it('captures injected browser script exceptions when extension capture is enabled', () => {
@@ -303,8 +303,8 @@ describe('PostHogExceptions', () => {
                     value: "Can't find variable: __firefox__",
                     stacktrace: { frames: [pageFrame], type: 'raw' },
                 }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
-                expect(captureMock).toBeCalledWith('$exception', { $exception_list: [exception] }, expect.anything())
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
+                expect(captureMock).toBeCalledWith('ade_exception', { exception_list: [exception] }, expect.anything())
             })
         })
 
@@ -320,25 +320,25 @@ describe('PostHogExceptions', () => {
 
             it('does not capture exceptions thrown by the PostHog SDK', () => {
                 const exception = { stacktrace: { frames: [inAppFrame, posthogFrame], type: 'raw' } }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
                 expect(captureMock).not.toBeCalledWith(
-                    '$exception',
-                    { $exception_list: [exception] },
+                    'ade_exception',
+                    { exception_list: [exception] },
                     expect.anything()
                 )
             })
 
             it('captures the exception if a frame from the PostHog SDK is not the kaboom frame', () => {
                 const exception = { stacktrace: { frames: [posthogFrame, inAppFrame], type: 'raw' } }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
-                expect(captureMock).toBeCalledWith('$exception', { $exception_list: [exception] }, expect.anything())
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
+                expect(captureMock).toBeCalledWith('ade_exception', { exception_list: [exception] }, expect.anything())
             })
 
             it('captures exceptions thrown within the PostHog SDK when enabled', () => {
                 config.error_tracking.__capturePostHogExceptions = true
                 const exception = { stacktrace: { frames: [inAppFrame, posthogFrame], type: 'raw' } }
-                exceptions.sendExceptionEvent({ $exception_list: [exception] })
-                expect(captureMock).toBeCalledWith('$exception', { $exception_list: [exception] }, expect.anything())
+                exceptions.sendExceptionEvent({ exception_list: [exception] })
+                expect(captureMock).toBeCalledWith('ade_exception', { exception_list: [exception] }, expect.anything())
             })
         })
     })
@@ -352,11 +352,11 @@ describe('PostHogExceptions', () => {
 
             expect(captureMock.mock.calls[0][1]).toMatchObject({
                 custom_property: true,
-                $exception_steps: [
+                exception_steps: [
                     {
-                        $message: 'step one',
+                        message: 'step one',
                         context: 'A',
-                        $timestamp: expect.any(String),
+                        timestamp: expect.any(String),
                     },
                 ],
             })
@@ -382,18 +382,18 @@ describe('PostHogExceptions', () => {
             } as any
 
             expect(() => exceptions.sendExceptionEvent({ custom_property: true })).not.toThrow()
-            expect(captureMock).toHaveBeenCalledWith('$exception', { custom_property: true }, expect.anything())
+            expect(captureMock).toHaveBeenCalledWith('ade_exception', { custom_property: true }, expect.anything())
         })
 
-        it('lets manually provided $exception_steps override buffered steps', () => {
+        it('lets manually provided exception_steps override buffered steps', () => {
             exceptions.addExceptionStep('buffered step')
 
-            const manualSteps = [{ $message: 'manual', $timestamp: '2026-01-01T00:00:00.000Z' }]
-            exceptions.sendExceptionEvent({ custom_property: true, $exception_steps: manualSteps })
+            const manualSteps = [{ message: 'manual', timestamp: '2026-01-01T00:00:00.000Z' }]
+            exceptions.sendExceptionEvent({ custom_property: true, exception_steps: manualSteps })
 
             expect(captureMock).toHaveBeenCalledWith(
-                '$exception',
-                { custom_property: true, $exception_steps: manualSteps },
+                'ade_exception',
+                { custom_property: true, exception_steps: manualSteps },
                 expect.anything()
             )
         })
@@ -408,7 +408,7 @@ describe('PostHogExceptions', () => {
             })
 
             exceptions.sendExceptionEvent({
-                $exception_list: [{ type: 'TypeError', value: 'This is a type error' }],
+                exception_list: [{ type: 'TypeError', value: 'This is a type error' }],
             })
             expect(captureMock).not.toHaveBeenCalled()
 
@@ -416,17 +416,17 @@ describe('PostHogExceptions', () => {
             exceptions.sendExceptionEvent({ custom_property: true })
 
             expect(captureMock).toHaveBeenCalledWith(
-                '$exception',
+                'ade_exception',
                 {
                     custom_property: true,
-                    $exception_steps: [
+                    exception_steps: [
                         {
-                            $message: 'kept step',
-                            $timestamp: expect.any(String),
+                            message: 'kept step',
+                            timestamp: expect.any(String),
                         },
                         {
-                            $message: 'Exception dropped: matched a suppression rule',
-                            $timestamp: expect.any(String),
+                            message: 'Exception dropped: matched a suppression rule',
+                            timestamp: expect.any(String),
                         },
                     ],
                 },
@@ -449,7 +449,7 @@ describe('PostHogExceptions', () => {
 
             expect(captureMock.mock.calls[0][1]).toMatchObject({
                 custom_property: true,
-                $exception_steps: [{ $message: 'second', $timestamp: expect.any(String) }],
+                exception_steps: [{ message: 'second', timestamp: expect.any(String) }],
             })
         })
 
@@ -464,13 +464,13 @@ describe('PostHogExceptions', () => {
             exceptions.addExceptionStep('ignored')
             exceptions.sendExceptionEvent({ custom_property: true })
 
-            expect(captureMock).toHaveBeenCalledWith('$exception', { custom_property: true }, expect.anything())
+            expect(captureMock).toHaveBeenCalledWith('ade_exception', { custom_property: true }, expect.anything())
         })
 
         it('drops reserved keys from addExceptionStep properties', () => {
             exceptions.addExceptionStep('from-message-arg', {
-                $message: 'ignored',
-                $timestamp: 'ignored',
+                message: 'ignored',
+                timestamp: 'ignored',
                 custom_property: true,
             })
 
@@ -478,11 +478,11 @@ describe('PostHogExceptions', () => {
 
             expect(captureMock.mock.calls[0][1]).toMatchObject({
                 custom_property: true,
-                $exception_steps: [
+                exception_steps: [
                     {
-                        $message: 'from-message-arg',
+                        message: 'from-message-arg',
                         custom_property: true,
-                        $timestamp: expect.any(String),
+                        timestamp: expect.any(String),
                     },
                 ],
             })

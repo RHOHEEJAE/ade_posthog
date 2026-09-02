@@ -104,14 +104,14 @@ describe('FeedbackWidget', () => {
     const expectSurveyShowEvent = (surveyId: string) => {
         expect(mockPosthog.capture).toHaveBeenCalledWith(
             'survey shown',
-            expect.objectContaining({ $survey_id: surveyId })
+            expect.objectContaining({ survey_id: surveyId })
         )
     }
 
     const expectSurveySentEvent = (surveyId: string, response: Record<string, string>) => {
         expect(mockPosthog.capture).toHaveBeenLastCalledWith(
             'survey sent',
-            expect.objectContaining({ $survey_id: surveyId, ...response })
+            expect.objectContaining({ survey_id: surveyId, ...response })
         )
     }
 
@@ -158,7 +158,7 @@ describe('FeedbackWidget', () => {
             expect(screen.getByText('We got your feedback.')).toBeVisible()
         })
 
-        expectSurveySentEvent(baseWidgetSurvey.id, { '$survey_response_q-open-1': 'This is my feedback!' })
+        expectSurveySentEvent(baseWidgetSurvey.id, { 'survey_response_q-open-1': 'This is my feedback!' })
 
         // Form should be gone
         expect(screen.queryByRole('form')).not.toBeInTheDocument()
@@ -270,7 +270,7 @@ describe('FeedbackWidget', () => {
             expect(screen.getByText('Thanks!')).toBeVisible()
         })
 
-        expectSurveySentEvent(selectorWidgetSurvey.id, { '$survey_response_q-open-1': 'Selector feedback!' })
+        expectSurveySentEvent(selectorWidgetSurvey.id, { 'survey_response_q-open-1': 'Selector feedback!' })
     })
 
     test('closes survey popup when cancel button is clicked', async () => {
@@ -292,7 +292,7 @@ describe('FeedbackWidget', () => {
         expect(mockPosthog.capture).toHaveBeenCalledWith(
             'survey dismissed',
             expect.objectContaining({
-                $survey_id: baseWidgetSurvey.id,
+                survey_id: baseWidgetSurvey.id,
             })
         )
     })

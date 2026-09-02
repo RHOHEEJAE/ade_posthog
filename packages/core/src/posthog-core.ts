@@ -80,7 +80,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
   // person profiles
   protected _personProfiles: 'always' | 'identified_only' | 'never'
 
-  // cache for person properties to avoid duplicate $set events
+  // cache for person properties to avoid duplicate ade_set events
   protected _cachedPersonProperties: string | null = null
 
   constructor(apiKey: string, options?: PostHogCoreOptions) {
@@ -221,11 +221,11 @@ export abstract class PostHogCore extends PostHogCoreStateless {
     const featureVariantProperties: Record<string, FeatureFlagValue> = {}
     if (featureFlags) {
       for (const [feature, variant] of Object.entries(featureFlags)) {
-        featureVariantProperties[`$feature/${feature}`] = variant
+        featureVariantProperties[`feature/${feature}`] = variant
       }
     }
     return {
-      ...maybeAdd('$active_feature_flags', featureFlags ? Object.keys(featureFlags) : undefined),
+      ...maybeAdd('active_feature_flags', featureFlags ? Object.keys(featureFlags) : undefined),
       ...featureVariantProperties,
       ...super.getCommonEventProperties(),
     }
@@ -238,7 +238,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
       ...this.sessionProps, // Followed by session properties
       ...userProperties, // Followed by user specified properties
       ...this.getCommonEventProperties(), // Followed by FF props
-      $session_id: this.getSessionId(),
+      session_id: this.getSessionId(),
     }
     applyCallerFeatureFlagOverrides(enriched, userProperties)
     return enriched
@@ -359,21 +359,21 @@ export abstract class PostHogCore extends PostHogCoreStateless {
       const idWasSupplied = !!distinctId
       distinctId = distinctId || previousDistinctId
 
-      if (properties?.$groups) {
-        this.groups(properties.$groups as PostHogGroupProperties)
+      if (properties?.groups) {
+        this.groups(properties.groups as PostHogGroupProperties)
       }
 
-      // promote $set and $set_once to top level
-      const userPropsOnce = properties?.$set_once
-      delete properties?.$set_once
+      // promote ade_set and ade_set_once to top level
+      const userPropsOnce = properties?.ade_set_once
+      delete properties?.ade_set_once
 
-      // if no $set is provided we assume all properties are $set
-      const userProps = properties?.$set || properties
+      // if no ade_set is provided we assume all properties are ade_set
+      const userProps = properties?.ade_set || properties
 
       const allProperties = this.enrichProperties({
-        $anon_distinct_id: this.getAnonymousId(),
-        ...maybeAdd('$set', userProps),
-        ...maybeAdd('$set_once', userPropsOnce),
+        anon_distinct_id: this.getAnonymousId(),
+        ...maybeAdd('ade_set', userProps),
+        ...maybeAdd('ade_set_once', userPropsOnce),
       })
 
       // Safely cast userProps and userPropsOnce to object types for hash and setPersonProperties
@@ -397,14 +397,14 @@ export abstract class PostHogCore extends PostHogCoreStateless {
         this._cachedPersonProperties = getPersonPropertiesHash(distinctId, userPropsObj, userPropsOnceObj)
       } else if (shouldTransitionToIdentified) {
         // Matching id while still anonymous (e.g. a non-identified bootstrap seeded the same id):
-        // upgrade to identified and emit one person-processed $set. There is no anonymous id to
-        // merge, so no $identify. Mirrors posthog-js (browser).
+        // upgrade to identified and emit one person-processed ade_set. There is no anonymous id to
+        // merge, so no ade_identify. Mirrors posthog-js (browser).
         this.setPersistedProperty(PostHogPersistedProperty.PersonMode, 'identified')
 
         const setProps = userPropsObj || {}
         const setOnceProps = userPropsOnceObj || {}
-        this.setPersonPropertiesForFlags({ $set: setProps, $set_once: setOnceProps }, false)
-        this.capture('$set', { $set: setProps, $set_once: setOnceProps })
+        this.setPersonPropertiesForFlags({ ade_set: setProps, ade_set_once: setOnceProps }, false)
+        this.capture('ade_set', { ade_set: setProps, ade_set_once: setOnceProps })
 
         // The transition event must fire even when an identical property call was cached earlier;
         // cache only after capture so deduplication cannot suppress it.
@@ -417,32 +417,32 @@ export abstract class PostHogCore extends PostHogCoreStateless {
         }
       } else if (userPropsObj || userPropsOnceObj) {
         // If the distinct_id is not changing, but we have user properties to set, we can check if they have changed
-        // and if so, send a $set event
+        // and if so, send a ade_set event
         this.setPersonProperties(userPropsObj, userPropsOnceObj)
       }
     })
   }
 
   capture(event: string, properties?: PostHogEventProperties, options?: PostHogCaptureOptions): void {
-    if (event === '$exception' && !options?._originatedFromCaptureException) {
+    if (event === 'ade_exception' && !options?._originatedFromCaptureException) {
       this._logger.warn(
-        "Using `posthog.capture('$exception')` is unreliable because it does not attach required metadata. Use `posthog.captureException(error)` instead, which attaches required metadata automatically."
+        "Using `posthog.capture('ade_exception')` is unreliable because it does not attach required metadata. Use `posthog.captureException(error)` instead, which attaches required metadata automatically."
       )
     }
 
     this.wrap(() => {
       const distinctId = this.getDistinctId()
 
-      if (properties?.$groups) {
-        this.groups(properties.$groups as PostHogGroupProperties)
+      if (properties?.groups) {
+        this.groups(properties.groups as PostHogGroupProperties)
       }
 
       const allProperties = this.enrichProperties(properties)
 
-      // Add $process_person_profile flag to event properties
+      // Add process_person_profile flag to event properties
       const hasPersonProcessing = this._hasPersonProcessing()
-      allProperties['$process_person_profile'] = hasPersonProcessing
-      allProperties['$is_identified'] = this._isIdentified()
+      allProperties['process_person_profile'] = hasPersonProcessing
+      allProperties['is_identified'] = this._isIdentified()
 
       // If the event has person processing, ensure that all future events will too
       if (hasPersonProcessing) {
@@ -476,11 +476,11 @@ export abstract class PostHogCore extends PostHogCoreStateless {
       const distinctId = this.getDistinctId()
       const payload = {
         distinct_id: distinctId,
-        event: '$autocapture',
+        event: 'ade_autocapture',
         properties: {
           ...this.enrichProperties(properties),
-          $event_type: eventType,
-          $elements: elements,
+          event_type: eventType,
+          elements: elements,
         },
       }
 
@@ -499,10 +499,10 @@ export abstract class PostHogCore extends PostHogCoreStateless {
       }
 
       // Get persisted groups
-      const existingGroups = this.props.$groups || {}
+      const existingGroups = this.props.groups || {}
 
       this.register({
-        $groups: {
+        groups: {
           ...(existingGroups as PostHogGroupProperties),
           ...groups,
         },
@@ -521,14 +521,14 @@ export abstract class PostHogCore extends PostHogCoreStateless {
     options?: PostHogCaptureOptions
   ): void {
     this.wrap(() => {
-      const existingGroups = (this.props.$groups as PostHogGroupProperties) || {}
+      const existingGroups = (this.props.groups as PostHogGroupProperties) || {}
       const isNewGroup = existingGroups[groupType] !== groupKey
 
       this.groups({
         [groupType]: groupKey,
       })
 
-      // Send $groupidentify when the group is new/changed OR when properties
+      // Send ade_groupidentify when the group is new/changed OR when properties
       // are provided. Skip only when the group already exists with the same
       // key and no new properties are being set.
       if (isNewGroup || groupProperties) {
@@ -562,12 +562,12 @@ export abstract class PostHogCore extends PostHogCoreStateless {
       const existingProperties =
         this.getPersistedProperty<Record<string, JsonType>>(PostHogPersistedProperty.PersonProperties) || {}
 
-      // If the caller passes { $set, $set_once }, split them apart so we can apply $set_once
-      // semantics (skip keys that already exist). Otherwise treat all properties as $set for
+      // If the caller passes { ade_set, ade_set_once }, split them apart so we can apply ade_set_once
+      // semantics (skip keys that already exist). Otherwise treat all properties as ade_set for
       // backward compatibility with the public API.
       const propsToSet =
-        (properties?.['$set'] as Record<string, JsonType>) || (!properties?.['$set_once'] ? properties : {})
-      const propsToSetOnce = properties?.['$set_once'] as Record<string, JsonType> | undefined
+        (properties?.['ade_set'] as Record<string, JsonType>) || (!properties?.['ade_set_once'] ? properties : {})
+      const propsToSetOnce = properties?.['ade_set_once'] as Record<string, JsonType> | undefined
 
       const setOnceProps: Record<string, JsonType> = {}
       if (propsToSetOnce) {
@@ -658,7 +658,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
       // callers are carried over rather than settled against the in-flight request: that request
       // was issued before their context changed, so it cannot reflect it. Options are merged so
       // the single queued request satisfies every caller behind it — one caller asking for the
-      // remote config or for $anon_distinct_id is enough for the re-issued request to carry it.
+      // remote config or for anon_distinct_id is enough for the re-issued request to carry it.
       this._logger.info('Feature flags are being loaded already, queuing reload.')
       const pending = this._pendingFlagsRequest
       return new Promise((resolve, reject) => {
@@ -805,7 +805,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
     this._flagsResponsePromise = this._initPromise
       .then(async () => {
         const distinctId = this.getDistinctId()
-        const groups = this.props.$groups || {}
+        const groups = this.props.groups || {}
         const personProperties =
           this.getPersistedProperty<Record<string, string>>(PostHogPersistedProperty.PersonProperties) || {}
         const groupProperties =
@@ -815,9 +815,9 @@ export abstract class PostHogCore extends PostHogCoreStateless {
         const deviceId = this.getPersistedProperty<string>(PostHogPersistedProperty.DeviceId)
 
         const extraProperties = {
-          $anon_distinct_id: sendAnonDistinctId ? this.getAnonymousId() : undefined,
+          anon_distinct_id: sendAnonDistinctId ? this.getAnonymousId() : undefined,
           // Only set by the React Native SDK; omitted from JSON when DeviceId is not persisted
-          $device_id: deviceId ?? undefined,
+          device_id: deviceId ?? undefined,
           ...(this.disableRemoteFeatureFlags ? { disable_flags: true } : {}),
         }
 
@@ -897,7 +897,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
             // Absence of the field always flips the gate off — fail safe to full events.
             minimalFlagCalledEvents: res.minimalFlagCalledEvents === true,
           })
-          // Mark that we hit the /flags endpoint so we can capture this in the $feature_flag_called event
+          // Mark that we hit the /flags endpoint so we can capture this in the ade_feature_flag_called event
           this.setPersistedProperty(PostHogPersistedProperty.FlagsEndpointWasHit, true)
 
           this.maybeNotifyRemoteConfig(triggerOnRemoteConfig, res)
@@ -1010,7 +1010,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
 
   /**
    * Returns all currently cached feature flags as `FeatureFlagResult`s. This is a synchronous read of
-   * the flags from the last load (no network request) and does not send a `$feature_flag_called` event.
+   * the flags from the last load (no network request) and does not send a `ade_feature_flag_called` event.
    */
   getAllFeatureFlags(): FeatureFlagResult[] {
     return flagDetailsToResults(this.getFeatureFlagDetails()?.flags ?? {})
@@ -1074,22 +1074,22 @@ export abstract class PostHogCore extends PostHogCoreStateless {
       this.flagCallReported[key].add(flagValue)
 
       const properties: Record<string, any> = {
-        $feature_flag: key,
-        $feature_flag_response: flagValue,
-        ...maybeAdd('$feature_flag_id', featureFlag?.metadata?.id),
-        ...maybeAdd('$feature_flag_version', featureFlag?.metadata?.version),
-        ...maybeAdd('$feature_flag_reason', featureFlag?.reason?.description ?? featureFlag?.reason?.code),
-        ...maybeAdd('$feature_flag_bootstrapped_response', bootstrappedResponse),
-        ...maybeAdd('$feature_flag_bootstrapped_payload', bootstrappedPayload),
+        feature_flag: key,
+        feature_flag_response: flagValue,
+        ...maybeAdd('feature_flag_id', featureFlag?.metadata?.id),
+        ...maybeAdd('feature_flag_version', featureFlag?.metadata?.version),
+        ...maybeAdd('feature_flag_reason', featureFlag?.reason?.description ?? featureFlag?.reason?.code),
+        ...maybeAdd('feature_flag_bootstrapped_response', bootstrappedResponse),
+        ...maybeAdd('feature_flag_bootstrapped_payload', bootstrappedPayload),
         // If we haven't yet received a response from the /flags endpoint, we must have used the bootstrapped value
-        $used_bootstrap_value: !this.getPersistedProperty(PostHogPersistedProperty.FlagsEndpointWasHit),
-        ...maybeAdd('$feature_flag_request_id', details?.requestId),
-        ...maybeAdd('$feature_flag_evaluated_at', details?.evaluatedAt),
-        ...maybeAdd('$feature_flag_error', featureFlagError),
-        ...maybeAdd('$feature_flag_has_experiment', featureFlag?.metadata?.has_experiment),
+        used_bootstrap_value: !this.getPersistedProperty(PostHogPersistedProperty.FlagsEndpointWasHit),
+        ...maybeAdd('feature_flag_request_id', details?.requestId),
+        ...maybeAdd('feature_flag_evaluated_at', details?.evaluatedAt),
+        ...maybeAdd('feature_flag_error', featureFlagError),
+        ...maybeAdd('feature_flag_has_experiment', featureFlag?.metadata?.has_experiment),
       }
 
-      this.capture('$feature_flag_called', properties)
+      this.capture('ade_feature_flag_called', properties)
     }
 
     if (flagValue === undefined) {
@@ -1360,12 +1360,12 @@ export abstract class PostHogCore extends PostHogCoreStateless {
     try {
       const exceptionProperties = this.getErrorPropertiesBuilder().buildFromUnknown(error, hint)
       this.capture(
-        '$exception',
+        'ade_exception',
         { ...exceptionProperties, ...additionalProperties } as unknown as PostHogEventProperties,
         { _originatedFromCaptureException: true }
       )
     } catch (e) {
-      this._logger.error('Error while capturing $exception:', e)
+      this._logger.error('Error while capturing ade_exception:', e)
     }
   }
 
@@ -1380,9 +1380,9 @@ export abstract class PostHogCore extends PostHogCoreStateless {
    * @param userFeedback The feedback to capture.
    */
   captureTraceFeedback(traceId: string | number, userFeedback: string): void {
-    this.capture('$ai_feedback', {
-      $ai_feedback_text: userFeedback,
-      $ai_trace_id: String(traceId),
+    this.capture('ade_ai_feedback', {
+      ai_feedback_text: userFeedback,
+      ai_trace_id: String(traceId),
     })
   }
 
@@ -1398,10 +1398,10 @@ export abstract class PostHogCore extends PostHogCoreStateless {
    * @param metricValue The value of the metric to capture.
    */
   captureTraceMetric(traceId: string | number, metricName: string, metricValue: string | number | boolean): void {
-    this.capture('$ai_metric', {
-      $ai_metric_name: metricName,
-      $ai_metric_value: String(metricValue),
-      $ai_trace_id: String(traceId),
+    this.capture('ade_ai_metric', {
+      ai_metric_name: metricName,
+      ai_metric_value: String(metricValue),
+      ai_trace_id: String(traceId),
     })
   }
 
@@ -1447,7 +1447,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
    * @internal
    */
   protected _getGroups(): PostHogGroupProperties {
-    return (this.props.$groups || {}) as PostHogGroupProperties
+    return (this.props.groups || {}) as PostHogGroupProperties
   }
 
   /**
@@ -1520,9 +1520,9 @@ export abstract class PostHogCore extends PostHogCoreStateless {
     if (!this._requirePersonProcessing('posthog.createPersonProfile')) {
       return
     }
-    // Capture a $set event to create the person profile
+    // Capture a ade_set event to create the person profile
     // We don't set any properties here, but the server will create the profile
-    this.capture('$set', { $set: {}, $set_once: {} })
+    this.capture('ade_set', { ade_set: {}, ade_set_once: {} })
   }
 
   /**
@@ -1546,10 +1546,10 @@ export abstract class PostHogCore extends PostHogCoreStateless {
    *
    * @example
    * ```js
-   * // set properties with $set_once
+   * // set properties with ade_set_once
    * posthog.setPersonProperties(
-   *     { name: 'Max Hedgehog' },  // $set properties
-   *     { initial_url: '/blog' }   // $set_once properties
+   *     { name: 'Max Hedgehog' },  // ade_set properties
+   *     { initial_url: '/blog' }   // ade_set_once properties
    * )
    * ```
    *
@@ -1579,7 +1579,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
 
       const hash = getPersonPropertiesHash(this.getDistinctId(), userPropertiesToSet, userPropertiesToSetOnce)
 
-      // If exactly this $set call has been sent before, don't send it again - determine based on hash of properties
+      // If exactly this ade_set call has been sent before, don't send it again - determine based on hash of properties
       if (this._cachedPersonProperties === hash) {
         this._logger.info(
           'A duplicate setPersonProperties call was made with the same properties. It has been ignored.'
@@ -1589,11 +1589,11 @@ export abstract class PostHogCore extends PostHogCoreStateless {
 
       // Update person properties for feature flags evaluation
       this.setPersonPropertiesForFlags(
-        { $set: userPropertiesToSet || {}, $set_once: userPropertiesToSetOnce || {} },
+        { ade_set: userPropertiesToSet || {}, ade_set_once: userPropertiesToSetOnce || {} },
         reloadFeatureFlags
       )
 
-      this.capture('$set', { $set: userPropertiesToSet || {}, $set_once: userPropertiesToSetOnce || {} })
+      this.capture('ade_set', { ade_set: userPropertiesToSet || {}, ade_set_once: userPropertiesToSetOnce || {} })
 
       this._cachedPersonProperties = hash
     })
@@ -1607,7 +1607,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
    *
    * @remarks
    * Deletes the given person properties from the person profile in PostHog. This is the
-   * counterpart to {@link setPersonProperties} — instead of hand-passing `$unset` inside a
+   * counterpart to {@link setPersonProperties} — instead of hand-passing `unset` inside a
    * `capture()` call, you can remove properties with a dedicated method.
    * If `personProfiles` is set to `never`, this call is ignored.
    *
@@ -1655,7 +1655,7 @@ export abstract class PostHogCore extends PostHogCoreStateless {
         this.reloadFeatureFlags()
       }
 
-      this.capture('$set', { $unset: names })
+      this.capture('ade_set', { unset: names })
 
       // Invalidate the setPersonProperties dedupe cache so a subsequent set of an unset
       // property is not skipped as a duplicate.
@@ -1670,10 +1670,10 @@ export abstract class PostHogCore extends PostHogCoreStateless {
    * The internal message contains many fields (event, distinct_id, properties, timestamp, uuid).
    * Deprecated top-level type, library, and library_version values may still be present on legacy
    * queued messages; type is a no-op, while library and library_version are only used as fallbacks
-   * for the official properties.$lib and properties.$lib_version fields.
+   * for the official properties.lib and properties.lib_version fields.
    * CaptureEvent exposes a subset matching the web SDK's
-   * CaptureResult: uuid, event, properties, $set, $set_once, timestamp.
-   * Note: $set/$set_once are extracted from properties.$set and properties.$set_once.
+   * CaptureResult: uuid, event, properties, ade_set, ade_set_once, timestamp.
+   * Note: ade_set/ade_set_once are extracted from properties.ade_set and properties.ade_set_once.
    */
   protected processBeforeEnqueue(message: PostHogEventProperties): PostHogEventProperties | null {
     if (!this._beforeSend) {
@@ -1687,8 +1687,8 @@ export abstract class PostHogCore extends PostHogCoreStateless {
       uuid: message.uuid as string,
       event: message.event as string,
       properties: props,
-      $set: props.$set as PostHogEventProperties | undefined,
-      $set_once: props.$set_once as PostHogEventProperties | undefined,
+      ade_set: props.ade_set as PostHogEventProperties | undefined,
+      ade_set_once: props.ade_set_once as PostHogEventProperties | undefined,
       // Convert timestamp to Date if it's a string (from currentISOTime())
       timestamp: typeof timestamp === 'string' ? new Date(timestamp) : (timestamp as unknown as Date | undefined),
     }
@@ -1700,17 +1700,17 @@ export abstract class PostHogCore extends PostHogCoreStateless {
     }
 
     // Apply modifications from CaptureEvent back to internal message
-    // Put $set/$set_once back into properties where they belong
+    // Put ade_set/ade_set_once back into properties where they belong
     const resultProps: PostHogEventProperties = { ...(result.properties ?? props) }
-    if (result.$set !== undefined) {
-      resultProps.$set = result.$set as JsonType
+    if (result.ade_set !== undefined) {
+      resultProps.ade_set = result.ade_set as JsonType
     } else {
-      delete resultProps.$set
+      delete resultProps.ade_set
     }
-    if (result.$set_once !== undefined) {
-      resultProps.$set_once = result.$set_once as JsonType
+    if (result.ade_set_once !== undefined) {
+      resultProps.ade_set_once = result.ade_set_once as JsonType
     } else {
-      delete resultProps.$set_once
+      delete resultProps.ade_set_once
     }
 
     return {

@@ -171,11 +171,11 @@ describe('SiteApps', () => {
 
         it('constructs globals object correctly', () => {
             jest.spyOn(posthog, 'get_property').mockImplementation((key) => {
-                if (key === '$groups') {
+                if (key === 'groups') {
                     return { groupType: 'groupId' }
-                } else if (key === '$stored_group_properties') {
+                } else if (key === 'stored_group_properties') {
                     return { groupType: { prop1: 'value1' } }
-                } else if (key === '$stored_person_properties') {
+                } else if (key === 'stored_person_properties') {
                     return { personProp: 'personValue' }
                 }
             })
@@ -186,10 +186,10 @@ describe('SiteApps', () => {
                 properties: {
                     prop1: 'value1',
                     distinct_id: 'test_distinct_id',
-                    $elements_chain: 'elements_chain_value',
+                    elements_chain: 'elements_chain_value',
                 },
-                $set: { setProp: 'setValue' },
-                $set_once: { setOnceProp: 'setOnceValue' },
+                ade_set: { setProp: 'setValue' },
+                ade_set_once: { setOnceProp: 'setOnceValue' },
             } as CaptureResult
 
             const globals = siteAppsInstance.globalsForEvent(eventPayload)
@@ -199,11 +199,11 @@ describe('SiteApps', () => {
                     uuid: 'test_uuid',
                     event: 'test_event',
                     properties: {
-                        $elements_chain: 'elements_chain_value',
+                        elements_chain: 'elements_chain_value',
                         prop1: 'value1',
                         distinct_id: 'test_distinct_id',
-                        $set: { setProp: 'setValue' },
-                        $set_once: { setOnceProp: 'setOnceValue' },
+                        ade_set: { setProp: 'setValue' },
+                        ade_set_once: { setOnceProp: 'setOnceValue' },
                     },
                     elements_chain: 'elements_chain_value',
                     distinct_id: 'test_distinct_id',

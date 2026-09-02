@@ -444,7 +444,7 @@ type SessionEndingPayload = {
 }
 
 function isSessionEndingEvent(e: eventWithTime): e is eventWithTime & customEvent {
-    return isCustomEvent(e, '$session_ending')
+    return isCustomEvent(e, 'session_ending')
 }
 
 function getSessionEndingPayload(e: eventWithTime): SessionEndingPayload | null {
@@ -458,7 +458,7 @@ type SessionStartingPayload = {
 }
 
 function isSessionStartingEvent(e: eventWithTime): e is eventWithTime & customEvent {
-    return isCustomEvent(e, '$session_starting')
+    return isCustomEvent(e, 'session_starting')
 }
 
 function getSessionStartingPayload(e: eventWithTime): SessionStartingPayload | null {
@@ -946,7 +946,7 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
             const currentUrl = this._maskReplayUrl(url.origin + url.pathname + url.search)
             if (this._lastHref !== currentUrl) {
                 this._lastHref = currentUrl
-                this._tryAddCustomEvent('$url_changed', { href: currentUrl })
+                this._tryAddCustomEvent('url_changed', { href: currentUrl })
             }
         } catch {
             // If URL processing fails, don't capture anything
@@ -1322,24 +1322,24 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         }
 
         if (isNullish(this._removePageViewCaptureHook)) {
-            // :TRICKY: rrweb does not capture navigation within SPA-s, so hook into our $pageview events to get access to all events.
+            // :TRICKY: rrweb does not capture navigation within SPA-s, so hook into our ade_pageview events to get access to all events.
             //   Dropping the initial event is fine (it's always captured by rrweb).
             this._removePageViewCaptureHook = this._instance.on('eventCaptured', (event) => {
                 // If anything could go wrong here,
                 // it has the potential to block the main loop,
                 // so we catch all errors.
                 try {
-                    if (event.event === '$pageview') {
-                        const href = event?.properties.$current_url
-                            ? this._maskReplayUrl(event.properties.$current_url)
+                    if (event.event === 'ade_pageview') {
+                        const href = event?.properties.current_url
+                            ? this._maskReplayUrl(event.properties.current_url)
                             : ''
                         if (!href) {
                             return
                         }
-                        this._tryAddCustomEvent('$pageview', { href })
+                        this._tryAddCustomEvent('ade_pageview', { href })
                     }
                 } catch (e) {
-                    logger.error('Could not add $pageview to rrweb session', e)
+                    logger.error('Could not add ade_pageview to rrweb session', e)
                 }
             })
         }
@@ -1366,7 +1366,7 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         const oldWindowId = this._windowId
 
         if (shouldLinkSessions) {
-            this._tryAddCustomEvent('$session_ending', {
+            this._tryAddCustomEvent('session_ending', {
                 currentSessionId: oldSessionId,
                 currentWindowId: oldWindowId,
                 nextSessionId: sessionId,
@@ -1385,11 +1385,11 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         this._maxDepthExceeded = false
         getRRWeb()?.resetMaxDepthState?.()
 
-        this._tryAddCustomEvent('$session_id_change', { sessionId, windowId, changeReason })
+        this._tryAddCustomEvent('session_id_change', { sessionId, windowId, changeReason })
 
         this._clearConditionalRecordingPersistence()
 
-        // The $session_id_change emit above can synchronously re-enter
+        // The session_id_change emit above can synchronously re-enter
         // _updateWindowAndSessionIds (rrweb delivers addCustomEvent through emit), which
         // adopts the new ids and restarts the recorder itself. Restart here only when the
         // ids are still stale — confirmed idle, stopped, or states where that emit never
@@ -1409,7 +1409,7 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         }
 
         if (shouldLinkSessions) {
-            this._tryAddCustomEvent('$session_starting', {
+            this._tryAddCustomEvent('session_starting', {
                 previousSessionId: oldSessionId,
                 previousWindowId: oldWindowId,
                 nextSessionId: sessionId,
@@ -1587,10 +1587,10 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         targetWindowId: string
     ) {
         const properties = {
-            $snapshot_bytes: size,
-            $snapshot_data: eventToSend,
-            $session_id: targetSessionId,
-            $window_id: targetWindowId,
+            snapshot_bytes: size,
+            snapshot_data: eventToSend,
+            session_id: targetSessionId,
+            window_id: targetWindowId,
         }
 
         if (this.status === DISABLED) {
@@ -1851,18 +1851,18 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         // TODO: Re-add ensureMaxMessageSize once we are confident in it
         const event = truncateLargeConsoleLogs(throttledEvent)
 
-        // Session lifecycle events ($session_ending, $session_starting, sessionIdle) carry their
+        // Session lifecycle events (session_ending, session_starting, sessionIdle) carry their
         // target session ID in the payload. We must extract this BEFORE _updateWindowAndSessionIds
         // runs, because that method triggers checkAndGetSessionAndWindowId() which would update
-        // this._sessionId. This is critical for $session_ending which must go to the OLD session,
-        // not the new one, and for $session_starting which must go to the NEW session.
+        // this._sessionId. This is critical for session_ending which must go to the OLD session,
+        // not the new one, and for session_starting which must go to the NEW session.
         const sessionEndingPayload = getSessionEndingPayload(event)
         const sessionStartingPayload = getSessionStartingPayload(event)
         const sessionIdlePayload = getSessionIdlePayload(event)
 
         if (sessionEndingPayload || sessionStartingPayload) {
-            // Backdate $session_ending to the old session's real end so a late-detected idle
-            // period doesn't artificially extend it. $session_starting must NOT be backdated:
+            // Backdate session_ending to the old session's real end so a late-detected idle
+            // period doesn't artificially extend it. session_starting must NOT be backdated:
             // it ships to the NEW session, and stamping it with the old session's last activity
             // drags the new recording's start back by the whole idle gap
             if (sessionEndingPayload?.lastActivityTimestamp) {
@@ -1885,8 +1885,8 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         }
 
         // Route lifecycle events using their payload IDs:
-        // - $session_ending uses currentSessionId (the old session it's ending)
-        // - $session_starting uses nextSessionId (the new session it's starting)
+        // - session_ending uses currentSessionId (the old session it's ending)
+        // - session_starting uses nextSessionId (the new session it's starting)
         // - sessionIdle uses the session that went idle (backdated markers must not follow a rotation)
         // - All other events use the current session ID
         const targetSessionId =
@@ -2051,11 +2051,11 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         }
     }
 
-    // Custom events are lifecycle markers (sessionIdle, $session_id_change, ...). A buffer holding
+    // Custom events are lifecycle markers (sessionIdle, session_id_change, ...). A buffer holding
     // nothing else has no content to render, so shipping it as a session's first block opens a
     // recording that bills the customer and plays back as nothing. Once the session has a
     // FullSnapshot, later marker-only blocks append to real content and are fine.
-    // $session_starting and $session_ending are exempt: they only exist in this stream, and
+    // session_starting and session_ending are exempt: they only exist in this stream, and
     // dropping them would break the linking chain through a session that recorded nothing.
     private _wouldOpenRecordingWithMarkersOnly(): boolean {
         if (this._lastFullSnapshotSessionId === this._buffer.sessionId || this._buffer.data.length === 0) {
@@ -2154,13 +2154,13 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
             snapshotEvents.forEach((snapshotBuffer) => {
                 this._flushedSizeTracker?.trackSize(snapshotBuffer.sessionId, snapshotBuffer.size)
                 this._captureSnapshot({
-                    $snapshot_bytes: snapshotBuffer.size,
-                    $snapshot_data: snapshotBuffer.data,
-                    $session_id: snapshotBuffer.sessionId,
-                    $window_id: snapshotBuffer.windowId,
-                    $lib: Config.LIB_NAME,
-                    $lib_version: Config.LIB_VERSION,
-                    $snapshot_host: snapshotHostname,
+                    snapshot_bytes: snapshotBuffer.size,
+                    snapshot_data: snapshotBuffer.data,
+                    session_id: snapshotBuffer.sessionId,
+                    window_id: snapshotBuffer.windowId,
+                    lib: Config.LIB_NAME,
+                    lib_version: Config.LIB_VERSION,
+                    snapshot_host: snapshotHostname,
                 })
             })
 
@@ -2229,9 +2229,9 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         const additionalBytes = 2 + (this._buffer?.data.length || 0) // 2 bytes for the array brackets and 1 byte for each comma
 
         // Extract target session ID from properties to ensure we flush when session changes
-        // This is critical for lifecycle events ($session_ending, $session_starting) which may
+        // This is critical for lifecycle events (session_ending, session_starting) which may
         // have different target session IDs than this._sessionId
-        const targetSessionId = properties.$session_id as string
+        const targetSessionId = properties.session_id as string
 
         // A session-id mismatch must flush and rebind even while idle, or an idle rotation appends the new session's Meta and FullSnapshot to the old session's buffer and ships them under the old session id.
         const sessionChanged = this._buffer.sessionId !== targetSessionId
@@ -2242,7 +2242,7 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
             // 'unknown' still captures so its buffer must respect the size cap or it grows unbounded
             (this._isIdle !== true &&
                 !this._holdFlushUntilInteraction &&
-                this._buffer.size + properties.$snapshot_bytes + additionalBytes > RECORDING_MAX_EVENT_SIZE)
+                this._buffer.size + properties.snapshot_bytes + additionalBytes > RECORDING_MAX_EVENT_SIZE)
         ) {
             const sessionBeforeFlush = this._sessionId
             this._buffer = this._flushBuffer()
@@ -2258,7 +2258,7 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
             }
             // After flushing, update buffer to use the new target session/window IDs
             this._buffer.sessionId = targetSessionId
-            this._buffer.windowId = properties.$window_id as string
+            this._buffer.windowId = properties.window_id as string
         }
 
         // a held buffer can't ship at the cap, so bound memory instead: drop the epoch's data
@@ -2266,7 +2266,7 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         if (
             this._holdFlushUntilInteraction &&
             (this._heldBufferOverflowed ||
-                this._buffer.size + properties.$snapshot_bytes + additionalBytes > RECORDING_MAX_EVENT_SIZE)
+                this._buffer.size + properties.snapshot_bytes + additionalBytes > RECORDING_MAX_EVENT_SIZE)
         ) {
             if (!this._heldBufferOverflowed) {
                 this._heldBufferOverflowed = true
@@ -2275,9 +2275,9 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
             return
         }
 
-        this._buffer.size += properties.$snapshot_bytes
-        this._buffer.data.push(properties.$snapshot_data)
-        this._buffer.sizes.push(properties.$snapshot_bytes)
+        this._buffer.size += properties.snapshot_bytes
+        this._buffer.data.push(properties.snapshot_data)
+        this._buffer.sizes.push(properties.snapshot_bytes)
 
         // Schedule the flush unless confirmed idle or held — a held epoch can't ship anyway
         // (scheduling would just churn a no-op timer every cycle) and every release path
@@ -2289,7 +2289,7 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
 
     private _captureSnapshot(properties: Properties) {
         // :TRICKY: Make sure we batch these requests, use a custom endpoint and don't truncate the strings.
-        this._instance.capture('$snapshot', properties, {
+        this._instance.capture('ade_snapshot', properties, {
             _url: this._instance.requestRouter.endpointFor('api', this._endpoint),
             _noTruncate: true,
             _batchKey: SESSION_RECORDING_BATCH_KEY,
@@ -2394,7 +2394,7 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         })
         logger.info(startReason.replace('_', ' '), tagPayload)
         if (startReason !== 'session_id_changed') {
-            this._tryAddCustomEvent('$recording_started', {
+            this._tryAddCustomEvent('recording_started', {
                 reason: startReason,
                 ...tagPayload,
             })
@@ -2527,48 +2527,48 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         const deferredStylesheetStats = getRRWeb()?.getDeferredStylesheetStats?.()
 
         return {
-            $recording_status: this.status,
-            $sdk_debug_replay_internal_buffer_length: this._buffer.data.length,
-            $sdk_debug_replay_internal_buffer_size: this._buffer.size,
-            $sdk_debug_current_session_duration: this._sessionDuration,
-            $sdk_debug_session_start: sessionStartTimestamp,
-            $sdk_debug_replay_flushed_size: this._flushedSizeTracker?.currentTrackedSize(this.sessionId),
-            $sdk_debug_replay_full_snapshots: this._fullSnapshotTimestamps,
-            $snapshot_max_depth_exceeded: this._maxDepthExceeded,
+            recording_status: this.status,
+            sdk_debug_replay_internal_buffer_length: this._buffer.data.length,
+            sdk_debug_replay_internal_buffer_size: this._buffer.size,
+            sdk_debug_current_session_duration: this._sessionDuration,
+            sdk_debug_session_start: sessionStartTimestamp,
+            sdk_debug_replay_flushed_size: this._flushedSizeTracker?.currentTrackedSize(this.sessionId),
+            sdk_debug_replay_full_snapshots: this._fullSnapshotTimestamps,
+            snapshot_max_depth_exceeded: this._maxDepthExceeded,
             // slowest, not most recent: a full snapshot is one uninterruptible task, so
             // the worst one is the freeze a user would actually have noticed
-            $sdk_debug_replay_slowest_full_snapshot_ms: roundOrUndefined(this._slowestFullSnapshot?.durationMs),
-            $sdk_debug_replay_slowest_full_snapshot_stylesheet_ms: roundOrUndefined(
+            sdk_debug_replay_slowest_full_snapshot_ms: roundOrUndefined(this._slowestFullSnapshot?.durationMs),
+            sdk_debug_replay_slowest_full_snapshot_stylesheet_ms: roundOrUndefined(
                 this._slowestFullSnapshot?.stylesheetMs
             ),
-            $sdk_debug_replay_slowest_full_snapshot_nodes: this._slowestFullSnapshot?.nodeCount,
-            $sdk_debug_replay_slowest_full_snapshot_css_rules: this._slowestFullSnapshot?.cssRuleCount,
+            sdk_debug_replay_slowest_full_snapshot_nodes: this._slowestFullSnapshot?.nodeCount,
+            sdk_debug_replay_slowest_full_snapshot_css_rules: this._slowestFullSnapshot?.cssRuleCount,
             // never-deferrable sources (CSSOM-only <style>, adoptedStyleSheets) split out,
             // so a customer can tell which bucket dominates their page
-            $sdk_debug_replay_slowest_full_snapshot_css_rules_non_deferrable:
+            sdk_debug_replay_slowest_full_snapshot_css_rules_non_deferrable:
                 this._slowestFullSnapshot?.nonDeferrableCssRuleCount,
             // cumulative across the session, unlike the slowest-snapshot properties: a fast
             // first snapshot's deferrals must not vanish because a slower one deferred none
-            $sdk_debug_replay_deferred_stylesheets: deferredStylesheetStats?.deferredCount,
-            $sdk_debug_replay_deferred_stylesheets_failed: deferredStylesheetStats?.failedCount,
-            $sdk_debug_replay_deferred_stylesheets_abandoned: deferredStylesheetStats?.abandonedCount,
-            $sdk_debug_replay_deferred_stylesheet_ms: roundOrUndefined(deferredStylesheetStats?.totalMs),
-            $sdk_debug_replay_deferred_stylesheet_slowest_slice_ms: roundOrUndefined(
+            sdk_debug_replay_deferred_stylesheets: deferredStylesheetStats?.deferredCount,
+            sdk_debug_replay_deferred_stylesheets_failed: deferredStylesheetStats?.failedCount,
+            sdk_debug_replay_deferred_stylesheets_abandoned: deferredStylesheetStats?.abandonedCount,
+            sdk_debug_replay_deferred_stylesheet_ms: roundOrUndefined(deferredStylesheetStats?.totalMs),
+            sdk_debug_replay_deferred_stylesheet_slowest_slice_ms: roundOrUndefined(
                 deferredStylesheetStats?.slowestSliceMs
             ),
-            $sdk_debug_replay_slowest_mutation_batch_ms: roundOrUndefined(
+            sdk_debug_replay_slowest_mutation_batch_ms: roundOrUndefined(
                 getRRWeb()?.getMutationCost?.()?.slowestBatchMs
             ),
             // duration samples dropped because they straddled a tab suspension or blew
             // the plausibility cap (see rrweb-snapshot snapshot-cost.ts): the duration
             // gauges above stay alert-safe, and the discard itself stays observable
-            $sdk_debug_replay_discarded_duration_samples: getRRWeb()?.getDiscardedDurationSamples?.(),
+            sdk_debug_replay_discarded_duration_samples: getRRWeb()?.getDiscardedDurationSamples?.(),
             // cumulative across the session: attribute mutations the throttler dropped, each
             // of which risks the player showing DOM that already left the live page
-            $sdk_debug_replay_throttled_mutations_dropped: this._throttledMutationsDropped,
-            $sdk_debug_replay_oversized_mutations_dropped: this._oversizedMutationsDropped,
-            $sdk_debug_replay_oversized_mutation_bytes_dropped: this._oversizedMutationBytesDropped,
-            $sdk_debug_replay_rrweb_error: this._rrwebError,
+            sdk_debug_replay_throttled_mutations_dropped: this._throttledMutationsDropped,
+            sdk_debug_replay_oversized_mutations_dropped: this._oversizedMutationsDropped,
+            sdk_debug_replay_oversized_mutation_bytes_dropped: this._oversizedMutationBytesDropped,
+            sdk_debug_replay_rrweb_error: this._rrwebError,
             [SDK_DEBUG_REPLAY_RRWEB_ATTACHED]: !!this._stopRrweb,
             [SDK_DEBUG_REPLAY_RRWEB_START_ATTEMPTED]: this._rrwebStartAttempted,
         }
@@ -2811,13 +2811,13 @@ export class LazyLoadedSessionRecording implements LazyLoadedSessionRecordingInt
         // stay unknown if we're not sure if we're idle or not
         this._isIdle = isBoolean(this._isIdle) ? this._isIdle : 'unknown'
 
-        this.tryAddCustomEvent('$remote_config_received', this._remoteConfig)
-        this._tryAddCustomEvent('$session_options', {
+        this.tryAddCustomEvent('ade_remote_config_received', this._remoteConfig)
+        this._tryAddCustomEvent('session_options', {
             sessionRecordingOptions,
             activePlugins: activePlugins.map((p) => p?.name),
         })
 
-        this._tryAddCustomEvent('$posthog_config', {
+        this._tryAddCustomEvent('posthog_config', {
             config: this._instance.config,
         })
     }

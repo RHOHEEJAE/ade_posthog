@@ -33,8 +33,8 @@ function startOptionsFor(resolutionScale: number | undefined): Parameters<typeof
 
 function latestCanvasFrame(events: any[]): CanvasFrame | undefined {
     const frames: CanvasFrame[] = []
-    for (const e of events.filter((ev) => ev.event === '$snapshot')) {
-        for (const snap of e.properties?.$snapshot_data || []) {
+    for (const e of events.filter((ev) => ev.event === 'ade_snapshot')) {
+        for (const snap of e.properties?.snapshot_data || []) {
             // rrweb IncrementalSnapshot (3) with CanvasMutation source (9)
             if (snap.type !== 3 || snap.data?.source !== 9) {
                 continue

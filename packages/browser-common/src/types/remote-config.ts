@@ -90,7 +90,7 @@ export interface ErrorTrackingSuppressionRule {
 }
 
 export interface ErrorTrackingSuppressionRuleValue {
-    key: '$exception_types' | '$exception_values'
+    key: 'exception_types' | 'exception_values'
     operator: PropertyMatchType
     value: string | string[]
     type: string
@@ -152,7 +152,7 @@ export interface RemoteConfig {
         endpoint?: string
     }
 
-    /** Whether `$elements_chain` is sent as a string rather than an array. */
+    /** Whether `elements_chain` is sent as a string rather than an array. */
     elementsChainAsString?: boolean
 
     /** Error tracking configuration. */

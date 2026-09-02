@@ -95,7 +95,7 @@ export type FeatureFlagOverrideOptions = {
  */
 export type FeatureFlagOptions = {
     /**
-     * Whether to send a $feature_flag_called event. Defaults to true.
+     * Whether to send a ade_feature_flag_called event. Defaults to true.
      */
     send_event?: boolean
     /**

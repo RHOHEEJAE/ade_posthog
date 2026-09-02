@@ -50,7 +50,7 @@ test.describe('Session Recording - opting out', () => {
 
         await page.locator('[data-cy-input]').type('hello posthog!')
         await page.waitForTimeout(250) // short delay since there's no snapshot to wait for
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['ade_pageview'])
     })
 
     test('can start recording after starting opted out', async ({ page, context }) => {
@@ -67,12 +67,12 @@ test.describe('Session Recording - opting out', () => {
             },
         })
 
-        await page.expectCapturedEventsToBe(['$opt_in', '$pageview'])
+        await page.expectCapturedEventsToBe(['ade_opt_in', 'ade_pageview'])
 
         await page.resetCapturedEvents()
 
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'ade_snapshot')
         await assertThatRecordingStarted(page)
     })
 
@@ -91,7 +91,7 @@ test.describe('Session Recording - opting out', () => {
         })
 
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'ade_snapshot')
         await assertThatRecordingStarted(page)
     })
 
@@ -121,6 +121,6 @@ test.describe('Session Recording - opting out', () => {
 
         const capturedEvents = await page.capturedEvents()
         // no snapshot events sent
-        expect(capturedEvents.map((x) => x.event)).toEqual(['$pageview', 'custom-event'])
+        expect(capturedEvents.map((x) => x.event)).toEqual(['ade_pageview', 'custom-event'])
     })
 })

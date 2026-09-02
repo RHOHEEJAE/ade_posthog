@@ -30,7 +30,7 @@ describe('ErrorEventCoercer', () => {
   )
 
   function buildException(input: unknown, syntheticException?: Error): Exception {
-    return errorPropertiesBuilder.buildFromUnknown(input, { syntheticException }).$exception_list[0]
+    return errorPropertiesBuilder.buildFromUnknown(input, { syntheticException }).exception_list[0]
   }
 
   it.each([
@@ -47,7 +47,7 @@ describe('ErrorEventCoercer', () => {
     { name: 'an ErrorEvent without an error or message', input: new FakeErrorEvent(), expected: false },
     { name: 'an ErrorEvent with an empty message', input: new FakeErrorEvent({ message: '' }), expected: false },
     { name: 'a non-ErrorEvent', input: { message: 'not an ErrorEvent' }, expected: false },
-  ])('matches $name: $expected', ({ input, expected }) => {
+  ])('matches name: expected', ({ input, expected }) => {
     expect(coercer.match(input)).toBe(expected)
   })
 
@@ -92,7 +92,7 @@ describe('ErrorEventCoercer', () => {
     { name: 'a zeroed position', lineno: 0, colno: 0 },
     { name: 'no position at all', lineno: undefined, colno: undefined },
     { name: 'a column but no line', lineno: 0, colno: 13 },
-  ])('reports no stack trace for $name', ({ lineno, colno }) => {
+  ])('reports no stack trace for name', ({ lineno, colno }) => {
     const exception = buildException(
       new FakeErrorEvent({
         message: 'ResizeObserver loop completed with undelivered notifications.',

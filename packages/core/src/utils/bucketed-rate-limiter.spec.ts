@@ -74,7 +74,7 @@ describe('BucketedRateLimiter', () => {
       { bucketSize: 5, consumptions: 5 },
       { bucketSize: 10, consumptions: 10 },
       { bucketSize: 50, consumptions: 50 },
-    ])('exhausts bucket of size $bucketSize after $consumptions consumptions', ({ bucketSize, consumptions }) => {
+    ])('exhausts bucket of size bucketSize after consumptions consumptions', ({ bucketSize, consumptions }) => {
       const limiter = new BucketedRateLimiter({
         bucketSize,
         refillRate: 1,
@@ -143,7 +143,7 @@ describe('BucketedRateLimiter', () => {
       { refillRate: 3, intervals: 1, tokensLeft: 5, expected: 7 },
       { refillRate: 2, intervals: 2, tokensLeft: 5, expected: 8 },
     ])(
-      'with rate $refillRate, $intervals intervals, starting at $tokensLeft tokens, ends at $expected',
+      'with rate refillRate, intervals intervals, starting at tokensLeft tokens, ends at expected',
       ({ refillRate, intervals, tokensLeft = 9, expected }) => {
         const limiter = new BucketedRateLimiter({
           bucketSize: 10,

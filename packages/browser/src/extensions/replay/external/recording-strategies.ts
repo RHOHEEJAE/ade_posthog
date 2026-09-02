@@ -218,7 +218,7 @@ export class V1RecordingStrategy implements RecordingStrategy {
     getMinimumDuration(sessionId: string): number | null {
         // V1: Minimum duration is global from config, doesn't need sessionId
         void sessionId
-        const config = this._instance.get_property('$session_recording_remote_config') as
+        const config = this._instance.get_property('session_recording_remote_config') as
             | SessionRecordingPersistedConfig
             | undefined
         const duration = config?.minimumDurationMilliseconds

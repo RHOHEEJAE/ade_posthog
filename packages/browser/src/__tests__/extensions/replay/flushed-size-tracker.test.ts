@@ -106,7 +106,7 @@ describe('FlushedSizeTracker', () => {
             ['null', null],
         ])('treats an invalid persisted value (%s) as zero', (_label, stored) => {
             it('returns 0', () => {
-                persistence.set_property('$sess_rec_flush_size', stored)
+                persistence.set_property('sess_rec_flush_size', stored)
 
                 expect(tracker.currentTrackedSize(SESSION_ID)).toEqual(0)
             })

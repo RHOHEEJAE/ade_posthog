@@ -99,13 +99,13 @@ export class EventsPage {
     }
 
     expectRecordingStarted(count: number = 1) {
-        const snapshotCount = this.countByName('$snapshot')
+        const snapshotCount = this.countByName('ade_snapshot')
         expect(snapshotCount).toBe(count)
-        const snapshotEvent = this.findByName('$snapshot')
+        const snapshotEvent = this.findByName('ade_snapshot')
         expect(snapshotEvent).toBeDefined()
-        expect(snapshotEvent!['properties']['$snapshot_data'].length).toBeGreaterThan(2)
+        expect(snapshotEvent!['properties']['snapshot_data'].length).toBeGreaterThan(2)
         // a meta and then a full snapshot
-        expect(snapshotEvent!['properties']['$snapshot_data'][0].type).toEqual(4) // meta
-        expect(snapshotEvent!['properties']['$snapshot_data'][1].type).toEqual(2) // full_snapshot
+        expect(snapshotEvent!['properties']['snapshot_data'][0].type).toEqual(4) // meta
+        expect(snapshotEvent!['properties']['snapshot_data'][1].type).toEqual(2) // full_snapshot
     }
 }

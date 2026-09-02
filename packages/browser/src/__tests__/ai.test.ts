@@ -20,10 +20,10 @@ describe('ai', () => {
             posthog.captureTraceMetric('123', 'test', 'test')
 
             const { event, properties } = beforeSendMock.mock.calls[0][0]
-            expect(event).toBe('$ai_metric')
-            expect(properties['$ai_trace_id']).toBe('123')
-            expect(properties['$ai_metric_name']).toBe('test')
-            expect(properties['$ai_metric_value']).toBe('test')
+            expect(event).toBe('ade_ai_metric')
+            expect(properties['ai_trace_id']).toBe('123')
+            expect(properties['ai_metric_name']).toBe('test')
+            expect(properties['ai_metric_value']).toBe('test')
         })
 
         it('should convert numeric values', () => {
@@ -32,10 +32,10 @@ describe('ai', () => {
             posthog.captureTraceMetric(123, 'test', 1)
 
             const { event, properties } = beforeSendMock.mock.calls[0][0]
-            expect(event).toBe('$ai_metric')
-            expect(properties['$ai_trace_id']).toBe('123')
-            expect(properties['$ai_metric_name']).toBe('test')
-            expect(properties['$ai_metric_value']).toBe('1')
+            expect(event).toBe('ade_ai_metric')
+            expect(properties['ai_trace_id']).toBe('123')
+            expect(properties['ai_metric_name']).toBe('test')
+            expect(properties['ai_metric_value']).toBe('1')
         })
 
         it('should convert boolean metric_value', () => {
@@ -44,10 +44,10 @@ describe('ai', () => {
             posthog.captureTraceMetric('test', 'test', false)
 
             const { event, properties } = beforeSendMock.mock.calls[0][0]
-            expect(event).toBe('$ai_metric')
-            expect(properties['$ai_trace_id']).toBe('test')
-            expect(properties['$ai_metric_name']).toBe('test')
-            expect(properties['$ai_metric_value']).toBe('false')
+            expect(event).toBe('ade_ai_metric')
+            expect(properties['ai_trace_id']).toBe('test')
+            expect(properties['ai_metric_name']).toBe('test')
+            expect(properties['ai_metric_value']).toBe('false')
         })
     })
 
@@ -58,9 +58,9 @@ describe('ai', () => {
             posthog.captureTraceFeedback('123', 'feedback')
 
             const { event, properties } = beforeSendMock.mock.calls[0][0]
-            expect(event).toBe('$ai_feedback')
-            expect(properties['$ai_trace_id']).toBe('123')
-            expect(properties['$ai_feedback_text']).toBe('feedback')
+            expect(event).toBe('ade_ai_feedback')
+            expect(properties['ai_trace_id']).toBe('123')
+            expect(properties['ai_feedback_text']).toBe('feedback')
         })
 
         it('should convert numeric values', () => {
@@ -69,9 +69,9 @@ describe('ai', () => {
             posthog.captureTraceFeedback(123, 'feedback')
 
             const { event, properties } = beforeSendMock.mock.calls[0][0]
-            expect(event).toBe('$ai_feedback')
-            expect(properties['$ai_trace_id']).toBe('123')
-            expect(properties['$ai_feedback_text']).toBe('feedback')
+            expect(event).toBe('ade_ai_feedback')
+            expect(properties['ai_trace_id']).toBe('123')
+            expect(properties['ai_feedback_text']).toBe('feedback')
         })
     })
 })

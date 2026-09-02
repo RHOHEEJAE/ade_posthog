@@ -499,7 +499,7 @@ function prepareRequest({
                 // https://developer.mozilla.org/en-US/docs/Web/API/PerformanceEntry/entryType
                 // but, we need to know this was a server timing so that we know to
                 // match it to the appropriate navigation or resource timing
-                // that matching will have to be on timestamp and $current_url
+                // that matching will have to be on timestamp and current_url
                 entryType: 'serverTiming',
             })
         }

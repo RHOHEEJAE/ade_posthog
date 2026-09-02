@@ -81,7 +81,7 @@ test.describe('surveys - URL prefill with auto-submit', () => {
         expect(autoSubmitted[0]!.properties).toEqual(
             expect.objectContaining({
                 [getSurveyResponseKey('thumbs_1')]: 3,
-                $survey_completed: false,
+                survey_completed: false,
                 account_number: '12345',
             })
         )
@@ -95,10 +95,10 @@ test.describe('surveys - URL prefill with auto-submit', () => {
         const sentEvents = await page.capturedEvents().then((events) => events.filter((e) => e.event === 'survey sent'))
         expect(sentEvents[1]!.properties).toEqual(
             expect.objectContaining({
-                $survey_submission_id: autoSubmitted[0]!.properties['$survey_submission_id'],
+                survey_submission_id: autoSubmitted[0]!.properties['survey_submission_id'],
                 [getSurveyResponseKey('thumbs_1')]: 3,
                 [getSurveyResponseKey('follow_up_1')]: 'it was great',
-                $survey_completed: true,
+                survey_completed: true,
                 account_number: '12345',
             })
         )

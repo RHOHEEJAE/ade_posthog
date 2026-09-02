@@ -154,7 +154,7 @@ const extendPostHogWithExceptionAutocapture = (instance?: LegacyPostHogInstance,
 
     const sendExceptionEvent = (properties: ErrorTracking.ErrorProperties) => {
         try {
-            instance.capture?.('$exception', properties as Record<string, any>, {
+            instance.capture?.('ade_exception', properties as Record<string, any>, {
                 _noTruncate: true,
                 _batchKey: 'exceptionEvent',
                 _noHeatmaps: true,
@@ -167,7 +167,7 @@ const extendPostHogWithExceptionAutocapture = (instance?: LegacyPostHogInstance,
     const captureException = (properties: ErrorTracking.ErrorProperties) => {
         if (
             errorsToIgnore.some((regex) =>
-                properties.$exception_list.some((exception) => regex.test(exception.value || ''))
+                properties.exception_list.some((exception) => regex.test(exception.value || ''))
             )
         ) {
             return

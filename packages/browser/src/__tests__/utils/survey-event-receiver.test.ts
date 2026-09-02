@@ -147,13 +147,13 @@ describe('survey-event-receiver', () => {
             expect(activatedSurveys).toContain('first-survey')
 
             registeredHook('survey shown', {
-                $set: undefined,
-                $set_once: undefined,
+                ade_set: undefined,
+                ade_set_once: undefined,
                 event: 'survey shown',
                 timestamp: undefined,
                 uuid: '',
                 properties: {
-                    $survey_id: 'first-survey',
+                    survey_id: 'first-survey',
                 },
             })
 
@@ -218,7 +218,7 @@ describe('survey-event-receiver', () => {
         const surveyEventPayload = (surveyId: string, event: string): CaptureResult =>
             ({
                 event,
-                properties: { $survey_id: surveyId },
+                properties: { survey_id: surveyId },
             }) as unknown as CaptureResult
 
         const setup = (survey: Survey) => {
@@ -493,7 +493,7 @@ describe('survey-event-receiver', () => {
             }) as unknown as Survey
 
         const surveyEventPayload = (surveyId: string, event: string): CaptureResult =>
-            ({ event, properties: { $survey_id: surveyId } }) as unknown as CaptureResult
+            ({ event, properties: { survey_id: surveyId } }) as unknown as CaptureResult
 
         const setup = (survey: Survey, hasSession = true) => {
             config = createMockConfig({
@@ -665,8 +665,8 @@ describe('survey-event-receiver', () => {
         let mockAddCaptureHook: jest.Mock
 
         const createEventPayload = (eventName: string, properties: Record<string, any> = {}): CaptureResult => ({
-            $set: undefined,
-            $set_once: undefined,
+            ade_set: undefined,
+            ade_set_once: undefined,
             event: eventName,
             timestamp: undefined,
             uuid: '0C984DA5-761F-4F75-9582-D2F95B43B04A',
@@ -909,10 +909,10 @@ describe('survey-event-receiver', () => {
 
         const createCaptureResult = (eventName: string, currentUrl?: string): CaptureResult => {
             return {
-                $set: undefined,
-                $set_once: undefined,
+                ade_set: undefined,
+                ade_set_once: undefined,
                 properties: {
-                    $current_url: currentUrl,
+                    current_url: currentUrl,
                 },
                 timestamp: undefined,
                 uuid: '0C984DA5-761F-4F75-9582-D2F95B43B04A',
@@ -949,7 +949,7 @@ describe('survey-event-receiver', () => {
             type: SurveyType.Popover,
             questions: [{ type: SurveyQuestionType.Open, question: 'what is a bokoblin?' }],
             conditions: {
-                actions: [createAction(2, '$autocapture') as unknown as SurveyActionType],
+                actions: [createAction(2, 'ade_autocapture') as unknown as SurveyActionType],
             },
         } as unknown as Survey
 
@@ -960,7 +960,7 @@ describe('survey-event-receiver', () => {
             type: SurveyType.Popover,
             questions: [{ type: SurveyQuestionType.Open, question: 'what is a bokoblin?' }],
             conditions: {
-                actions: [createAction(3, '$pageview') as unknown as SurveyActionType],
+                actions: [createAction(3, 'ade_pageview') as unknown as SurveyActionType],
             },
         } as unknown as Survey
 
@@ -1030,47 +1030,47 @@ describe('survey-event-receiver', () => {
         })
 
         it('can match action on current_url exact', () => {
-            autoCaptureSurvey.conditions.actions.values = [createAction(2, '$autocapture', 'https://us.posthog.com')]
+            autoCaptureSurvey.conditions.actions.values = [createAction(2, 'ade_autocapture', 'https://us.posthog.com')]
             const surveyEventReceiver = new SurveyEventReceiver(instance)
             surveyEventReceiver.register([autoCaptureSurvey, pageViewSurvey])
             surveyEventReceiver
                 ._getActionMatcher()
-                .on('$autocapture', createCaptureResult('$autocapture', 'https://eu.posthog.com'))
+                .on('ade_autocapture', createCaptureResult('ade_autocapture', 'https://eu.posthog.com'))
             expect(surveyEventReceiver.getSurveys()).not.toEqual(['first-survey'])
             surveyEventReceiver
                 ._getActionMatcher()
-                .on('$autocapture', createCaptureResult('$autocapture', 'https://us.posthog.com'))
+                .on('ade_autocapture', createCaptureResult('ade_autocapture', 'https://us.posthog.com'))
             expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
         })
 
         it('can match action on current_url regexp', () => {
             autoCaptureSurvey.conditions.actions.values = [
-                createAction(2, '$current_url_regexp', '[a-z][a-z].posthog.*', 'regex'),
+                createAction(2, 'current_url_regexp', '[a-z][a-z].posthog.*', 'regex'),
             ]
             let surveyEventReceiver = new SurveyEventReceiver(instance)
             surveyEventReceiver.register([autoCaptureSurvey, pageViewSurvey])
             surveyEventReceiver
                 ._getActionMatcher()
-                .on('$autocapture', createCaptureResult('$current_url_regexp', 'https://eu.posthog.com'))
+                .on('ade_autocapture', createCaptureResult('current_url_regexp', 'https://eu.posthog.com'))
             expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
 
             surveyEventReceiver = new SurveyEventReceiver(instance)
             surveyEventReceiver.register([autoCaptureSurvey, pageViewSurvey])
             surveyEventReceiver
                 ._getActionMatcher()
-                .on('$autocapture', createCaptureResult('$current_url_regexp', 'https://us.posthog.com'))
+                .on('ade_autocapture', createCaptureResult('current_url_regexp', 'https://us.posthog.com'))
             expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
         })
 
         it('can match action on html element selector', () => {
-            const action = createAction(2, '$autocapture')
+            const action = createAction(2, 'ade_autocapture')
             action.steps[0].selector = '* > #__next .flex > button:nth-child(2)'
             autoCaptureSurvey.conditions.actions.values = [action]
-            const result = createCaptureResult('$autocapture', 'https://eu.posthog.com')
-            result.properties.$element_selectors = ['* > #__next .flex > button:nth-child(2)']
+            const result = createCaptureResult('ade_autocapture', 'https://eu.posthog.com')
+            result.properties.element_selectors = ['* > #__next .flex > button:nth-child(2)']
             const surveyEventReceiver = new SurveyEventReceiver(instance)
             surveyEventReceiver.register([autoCaptureSurvey, pageViewSurvey])
-            surveyEventReceiver._getActionMatcher().on('$autocapture', result)
+            surveyEventReceiver._getActionMatcher().on('ade_autocapture', result)
             expect(surveyEventReceiver.getSurveys()).toEqual(['first-survey'])
         })
     })

@@ -104,7 +104,7 @@ describe(`Segment integration`, () => {
         const posthog = await initPostHogInAPromise(segment, posthogName)
 
         expect(posthog.get_distinct_id()).toBe('test-id')
-        expect(posthog.get_property('$device_id')).toBe('test-anonymous-id')
+        expect(posthog.get_property('device_id')).toBe('test-anonymous-id')
     })
 
     it('enriches Segment track events with PostHog properties', async () => {
@@ -127,33 +127,33 @@ describe(`Segment integration`, () => {
         expect(event.properties).toEqual(
             expect.objectContaining({
                 distinct_id: 'test-id',
-                $device_id: 'test-anonymous-id',
-                $session_id: expect.any(String),
-                $window_id: expect.any(String),
-                $lib_version: expect.any(String),
-                $initialization_time: expect.any(String),
-                $insert_id: expect.any(String),
-                $raw_user_agent: expect.any(String),
-                $sdk_debug_extensions_init_time_ms: expect.any(Number),
-                $time: expect.any(Number),
-                $timezone: expect.any(String),
-                $timezone_offset: expect.any(Number),
+                device_id: 'test-anonymous-id',
+                session_id: expect.any(String),
+                window_id: expect.any(String),
+                lib_version: expect.any(String),
+                initialization_time: expect.any(String),
+                insert_id: expect.any(String),
+                raw_user_agent: expect.any(String),
+                sdk_debug_extensions_init_time_ms: expect.any(Number),
+                time: expect.any(Number),
+                timezone: expect.any(String),
+                timezone_offset: expect.any(Number),
             })
         )
         expect({
             ...event,
             properties: {
                 ...event.properties,
-                $session_id: '<generated-session-id>',
-                $window_id: '<generated-window-id>',
-                $lib_version: '<sdk-version>',
-                $initialization_time: '<initialization-time>',
-                $insert_id: '<insert-id>',
-                $raw_user_agent: '<user-agent>',
-                $sdk_debug_extensions_init_time_ms: '<extension-init-time>',
-                $time: '<event-time>',
-                $timezone: '<runtime-timezone>',
-                $timezone_offset: '<runtime-timezone-offset>',
+                session_id: '<generated-session-id>',
+                window_id: '<generated-window-id>',
+                lib_version: '<sdk-version>',
+                initialization_time: '<initialization-time>',
+                insert_id: '<insert-id>',
+                raw_user_agent: '<user-agent>',
+                sdk_debug_extensions_init_time_ms: '<extension-init-time>',
+                time: '<event-time>',
+                timezone: '<runtime-timezone>',
+                timezone_offset: '<runtime-timezone-offset>',
             },
         }).toMatchSnapshot()
     })
@@ -169,7 +169,7 @@ describe(`Segment integration`, () => {
         const posthog = await initPostHogInAPromise(segment, posthogName)
 
         expect(posthog.get_distinct_id()).toBe('test-id')
-        expect(posthog.get_property('$device_id')).toBe('test-anonymous-id')
+        expect(posthog.get_property('device_id')).toBe('test-anonymous-id')
     })
 
     // FIXME: Flaky test - fails on main branch, see issue tracking test isolation
@@ -187,7 +187,7 @@ describe(`Segment integration`, () => {
         if (segmentIntegration && segmentIntegration.identify) {
             segmentIntegration.identify({
                 event: {
-                    event: '$identify',
+                    event: 'ade_identify',
                     userId: 'distinguished user',
                     anonymousId: 'anonymous segment user',
                 },

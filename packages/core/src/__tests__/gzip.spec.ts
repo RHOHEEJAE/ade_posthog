@@ -21,9 +21,9 @@ const API_TEST_INPUT = JSON.stringify({
       event: 'custom-event',
       distinct_id: 'user-distinct-id',
       properties: {
-        $lib: 'posthog-core-tests',
-        $lib_version: '2.0.0-alpha',
-        $session_id: 'session.id',
+        lib: 'posthog-core-tests',
+        lib_version: '2.0.0-alpha',
+        session_id: 'session.id',
       },
       timestamp: new Date().toISOString(),
       uuid: randomUUID(),

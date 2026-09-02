@@ -49,7 +49,7 @@ test.describe('V2 Trigger Groups - session rotation', () => {
             },
         })
         await waitForRemoteConfig(page)
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['ade_pageview'])
         await page.resetCapturedEvents()
     })
 
@@ -80,7 +80,7 @@ test.describe('V2 Trigger Groups - session rotation', () => {
             const ph = (window as WindowWithPostHog).posthog
             ph?.sessionManager?.resetSessionId()
             // Trigger a capture to force the session manager to issue a new ID
-            ph?.capture('$pageview')
+            ph?.capture('ade_pageview')
         })
         await page.waitForTimeout(500)
 
@@ -141,7 +141,7 @@ test.describe('V2 Trigger Groups - URL blocklist interaction', () => {
             },
         })
         await waitForRemoteConfig(page)
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['ade_pageview'])
         await page.resetCapturedEvents()
     })
 

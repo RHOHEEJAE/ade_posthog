@@ -12,7 +12,7 @@ test.describe('Identify', () => {
             ph?.capture('an-anonymous-event')
         })
         const capturedEvents = await page.capturedEvents()
-        const deviceIds = new Set(capturedEvents.map((e) => e.properties['$device_id']))
+        const deviceIds = new Set(capturedEvents.map((e) => e.properties['device_id']))
         expect(deviceIds.size).toEqual(1)
         const [deviceId] = deviceIds
         expect(deviceId.length).toEqual(36)
@@ -49,24 +49,24 @@ test.describe('Identify', () => {
         })
         const capturedEvents = await page.capturedEvents()
         const eventsSeen = capturedEvents.map((e) => e.event)
-        expect(eventsSeen.filter((e) => e === '$identify').length).toEqual(2)
+        expect(eventsSeen.filter((e) => e === 'ade_identify').length).toEqual(2)
         expect(eventsSeen).toEqual([
-            '$pageview',
+            'ade_pageview',
             'an-anonymous-event',
-            '$identify',
+            'ade_identify',
             'an-identified-event',
             'another-identified-event',
             'an-anonymous-event',
-            '$identify',
+            'ade_identify',
             'an-identified-event',
         ])
-        expect(new Set(capturedEvents.map((e) => e.properties['$device_id'])).size).toEqual(1)
+        expect(new Set(capturedEvents.map((e) => e.properties['device_id'])).size).toEqual(1)
 
         // the first two events share a distinct id
         expect(capturedEvents[0].properties.distinct_id).toEqual(capturedEvents[1].properties.distinct_id)
         // then first identify is called and sends that distinct id as its anon to merge
         expect(capturedEvents[2].properties.distinct_id).toEqual('first-identify')
-        expect(capturedEvents[2].properties['$anon_distinct_id']).toEqual(capturedEvents[0].properties.distinct_id)
+        expect(capturedEvents[2].properties['anon_distinct_id']).toEqual(capturedEvents[0].properties.distinct_id)
         // and an event is sent with that distinct id
         expect(capturedEvents[3].properties.distinct_id).toEqual('first-identify')
         // then second identify is called and is ignored but does change the distinct id
@@ -78,7 +78,7 @@ test.describe('Identify', () => {
         expect(capturedEvents[5].properties.distinct_id).not.toEqual('second-identify-should-not-be-merged')
         // then an identify merges that distinct id with the new distinct id
         expect(capturedEvents[6].properties.distinct_id).toEqual('third-identify')
-        expect(capturedEvents[6].properties['$anon_distinct_id']).toEqual(capturedEvents[5].properties.distinct_id)
+        expect(capturedEvents[6].properties['anon_distinct_id']).toEqual(capturedEvents[5].properties.distinct_id)
         // then a final identified event includes that identified distinct id
         expect(capturedEvents[7].properties.distinct_id).toEqual('third-identify')
     })

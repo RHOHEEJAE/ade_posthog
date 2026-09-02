@@ -130,9 +130,9 @@ describe('PostHog Core', () => {
     })
 
     it.each([
-      [{ $device_id: 'device-123', email: 'test@example.com' }, 'device-123'],
+      [{ device_id: 'device-123', email: 'test@example.com' }, 'device-123'],
       [{ email: 'test@example.com' }, undefined],
-    ])('should handle $device_id top-level field correctly (props=%o)', async (personProperties, expectedDeviceId) => {
+    ])('should handle device_id top-level field correctly (props=%o)', async (personProperties, expectedDeviceId) => {
       mocks.fetch.mockImplementation((url) => {
         if (url.includes('/flags/?v=2')) {
           return Promise.resolve({
@@ -148,9 +148,9 @@ describe('PostHog Core', () => {
 
       expect(mocks.fetch).toHaveBeenCalledTimes(1)
       const requestBody = JSON.parse(mocks.fetch.mock.calls[0][1].body)
-      expect(requestBody.$device_id).toBe(expectedDeviceId)
+      expect(requestBody.device_id).toBe(expectedDeviceId)
       if (expectedDeviceId) {
-        expect(requestBody.person_properties.$device_id).toBe(expectedDeviceId)
+        expect(requestBody.person_properties.device_id).toBe(expectedDeviceId)
       }
     })
 

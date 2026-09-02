@@ -14,28 +14,28 @@ const fixedTimestamp = new Date('2023-11-14T22:13:20.000Z')
 const normalizeWireEvent = (event: CaptureResult, generatedProperties: string[]): CaptureResult => {
     const properties = { ...event.properties }
     const replacements: Record<string, string> = {
-        $session_id: '<generated-session-id>',
-        $window_id: '<generated-window-id>',
-        $lib_version: '<sdk-version>',
-        $initialization_time: '<initialization-time>',
-        $insert_id: '<insert-id>',
-        $raw_user_agent: '<user-agent>',
-        $sdk_debug_extensions_init_time_ms: '<extension-init-time>',
-        $time: '<event-time>',
-        $timezone: '<runtime-timezone>',
-        $timezone_offset: '<runtime-timezone-offset>',
+        session_id: '<generated-session-id>',
+        window_id: '<generated-window-id>',
+        lib_version: '<sdk-version>',
+        initialization_time: '<initialization-time>',
+        insert_id: '<insert-id>',
+        raw_user_agent: '<user-agent>',
+        sdk_debug_extensions_init_time_ms: '<extension-init-time>',
+        time: '<event-time>',
+        timezone: '<runtime-timezone>',
+        timezone_offset: '<runtime-timezone-offset>',
     }
     const expectedTypes: Record<string, string> = {
-        $session_id: 'string',
-        $window_id: 'string',
-        $lib_version: 'string',
-        $initialization_time: 'string',
-        $insert_id: 'string',
-        $raw_user_agent: 'string',
-        $sdk_debug_extensions_init_time_ms: 'number',
-        $time: 'number',
-        $timezone: 'string',
-        $timezone_offset: 'number',
+        session_id: 'string',
+        window_id: 'string',
+        lib_version: 'string',
+        initialization_time: 'string',
+        insert_id: 'string',
+        raw_user_agent: 'string',
+        sdk_debug_extensions_init_time_ms: 'number',
+        time: 'number',
+        timezone: 'string',
+        timezone_offset: 'number',
     }
 
     for (const property of generatedProperties) {
@@ -103,7 +103,7 @@ describe('PostHog final decoded request envelopes', () => {
         })
         posthog.persistence!.register({
             distinct_id: 'wire-distinct-id',
-            $device_id: 'wire-device-id',
+            device_id: 'wire-device-id',
         })
         mockedFetch.mockClear()
 
@@ -119,18 +119,18 @@ describe('PostHog final decoded request envelopes', () => {
 
         const recordingEndpoint = posthog.requestRouter.endpointFor('api', '/s/')
         posthog.capture(
-            '$snapshot',
+            'ade_snapshot',
             {
-                $snapshot_bytes: 60,
-                $snapshot_data: [
+                snapshot_bytes: 60,
+                snapshot_data: [
                     { type: 3, data: { source: 1, omitted_after_json: undefined } },
                     { type: 3, data: { source: 2 } },
                 ],
-                $session_id: 'recording-session-id',
-                $window_id: 'recording-window-id',
-                $lib: 'web',
-                $lib_version: 'recorder-version',
-                $snapshot_host: 'example.com',
+                session_id: 'recording-session-id',
+                window_id: 'recording-window-id',
+                lib: 'web',
+                lib_version: 'recorder-version',
+                snapshot_host: 'example.com',
             },
             {
                 _url: recordingEndpoint,
@@ -149,23 +149,23 @@ describe('PostHog final decoded request envelopes', () => {
             ...analyticsEnvelope,
             batch: [
                 normalizeWireEvent(analyticsEnvelope.batch[0], [
-                    '$session_id',
-                    '$window_id',
-                    '$lib_version',
-                    '$initialization_time',
-                    '$insert_id',
-                    '$raw_user_agent',
-                    '$sdk_debug_extensions_init_time_ms',
-                    '$time',
-                    '$timezone',
-                    '$timezone_offset',
+                    'session_id',
+                    'window_id',
+                    'lib_version',
+                    'initialization_time',
+                    'insert_id',
+                    'raw_user_agent',
+                    'sdk_debug_extensions_init_time_ms',
+                    'time',
+                    'timezone',
+                    'timezone_offset',
                 ]),
             ],
         }).toMatchSnapshot()
 
         const recordingBody = parsedFetchBodyForPath('/s/')
         expect(recordingBody.sent_at).toBe(fixedTimestamp.toISOString())
-        expect(recordingBody.properties.$snapshot_data[0].data).not.toHaveProperty('omitted_after_json')
+        expect(recordingBody.properties.snapshot_data[0].data).not.toHaveProperty('omitted_after_json')
         expect({ ...recordingBody, properties: { ...recordingBody.properties } }).toMatchSnapshot()
     })
 })

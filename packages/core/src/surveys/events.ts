@@ -2,14 +2,14 @@ import { SurveyWithIteration } from './keys'
 import { SurveyResponses, SurveyResponseValue } from '../types'
 import { isArray, isNullish, isUndefined } from '../utils'
 
-export const SURVEY_LANGUAGE_PROPERTY = '$survey_language'
+export const SURVEY_LANGUAGE_PROPERTY = 'survey_language'
 
 export function getSurveyResponseKey(questionId: string): string {
-  return `$survey_response_${questionId}`
+  return `survey_response_${questionId}`
 }
 
 export function getSurveyOldResponseKey(originalQuestionIndex: number): string {
-  return originalQuestionIndex === 0 ? '$survey_response' : `$survey_response_${originalQuestionIndex}`
+  return originalQuestionIndex === 0 ? 'survey_response' : `survey_response_${originalQuestionIndex}`
 }
 
 export function getSurveyResponseValue(
@@ -44,7 +44,7 @@ export function buildSurveyResponseProperties(
   })
 
   return {
-    $survey_questions: survey.questions.map((question: SurveyQuestionForResponses) => ({
+    survey_questions: survey.questions.map((question: SurveyQuestionForResponses) => ({
       id: question.id,
       question: questionSnapshots?.[question.id ?? ''] ?? question.question,
       response: getSurveyResponseValue(responses, question.id),

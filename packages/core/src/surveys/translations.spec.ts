@@ -70,7 +70,7 @@ describe('survey translations', () => {
         },
         expected: 'es',
       },
-    ])('$name', ({ input, expected }) => {
+    ])('name', ({ input, expected }) => {
       expect(detectSurveyLanguage(input)).toBe(expected)
     })
 

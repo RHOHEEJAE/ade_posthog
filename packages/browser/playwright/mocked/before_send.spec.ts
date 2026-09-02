@@ -44,7 +44,7 @@ test.describe('before_send', () => {
                             return null
                         }
                     }
-                    if (cr.event === '$autocapture') {
+                    if (cr.event === 'ade_autocapture') {
                         return {
                             ...cr,
                             event: 'redacted',
@@ -65,7 +65,7 @@ test.describe('before_send', () => {
 
         expect(captures).toEqual([
             // before adding the new before sendfn
-            '$pageview',
+            'ade_pageview',
             'redacted',
             'custom-event',
             // second button click only has the redacted autocapture event

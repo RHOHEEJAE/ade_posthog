@@ -447,7 +447,7 @@ export class SessionRecording implements Extension {
     get sdkDebugProperties(): Properties {
         return (
             this._lazyLoadedSessionRecording?.sdkDebugProperties || {
-                $recording_status: this.status,
+                recording_status: this.status,
             }
         )
     }
@@ -458,7 +458,7 @@ export class SessionRecording implements Extension {
      * It is not intended for arbitrary public use - playback only displays known custom events
      * And is exposed on the public interface only so that other parts of the SDK are able to use it
      *
-     * if you are calling this from client code, you're probably looking for `posthog.capture('$custom_event', {...})`
+     * if you are calling this from client code, you're probably looking for `posthog.capture('ade_custom_event', {...})`
      */
     tryAddCustomEvent(tag: string, payload: any): boolean {
         return !!this._lazyLoadedSessionRecording?.tryAddCustomEvent(tag, payload)

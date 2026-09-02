@@ -174,7 +174,7 @@ describe('Surveys: back button', () => {
         mockedGetInProgressSurveyState.mockReturnValue({
             surveySubmissionId: 'legacy-id',
             lastQuestionIndex: 1,
-            responses: { $survey_response_q1: 'previous answer' },
+            responses: { survey_response_q1: 'previous answer' },
         })
 
         render(
@@ -239,8 +239,8 @@ describe('Surveys: back button', () => {
 
         // The emitted responses should only contain Q1's answer — not the stale Q2 answer.
         const lastCall = mockedSendSurveyEvent.mock.calls.at(-1)![0]
-        expect(lastCall.responses).toEqual({ $survey_response_q1: 'b' })
-        expect(lastCall.responses).not.toHaveProperty('$survey_response_q2')
+        expect(lastCall.responses).toEqual({ survey_response_q1: 'b' })
+        expect(lastCall.responses).not.toHaveProperty('survey_response_q2')
     })
 
     test('uses custom backButtonText from appearance', async () => {

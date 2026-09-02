@@ -89,7 +89,7 @@ function deepSortKeys(value: JsonType): JsonType {
 
 /**
  * Creates a hash string from distinct_id and person properties.
- * Used to detect if person properties have changed to avoid duplicate $set events.
+ * Used to detect if person properties have changed to avoid duplicate ade_set events.
  * Uses sorted keys to ensure consistent ordering regardless of object construction order.
  */
 export function getPersonPropertiesHash(

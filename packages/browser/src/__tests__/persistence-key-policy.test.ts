@@ -1142,20 +1142,20 @@ describe('persistence key policy', () => {
             )
         })
 
-        it('tags $surveys and its freshness stamp as the surveys group', () => {
+        it('tags surveys and its freshness stamp as the surveys group', () => {
             expect(keysInGroup('surveys')).toEqual([constants.SURVEYS, constants.SURVEYS_LOADED_AT].sort())
         })
 
         it.each([
-            ['$flag_call_reported (written on the read path)', constants.FLAG_CALL_REPORTED],
-            ['$flag_call_reported_session_id', constants.FLAG_CALL_REPORTED_SESSION_ID],
-            ['$feature_flag_errors', constants.PERSISTENCE_FEATURE_FLAG_ERRORS],
-            ['$override_feature_flags', constants.PERSISTENCE_OVERRIDE_FEATURE_FLAGS],
-            ['$override_feature_flag_payloads', constants.PERSISTENCE_OVERRIDE_FEATURE_FLAG_PAYLOADS],
-            ['$stored_person_properties', constants.STORED_PERSON_PROPERTIES_KEY],
-            ['$stored_group_properties', constants.STORED_GROUP_PROPERTIES_KEY],
-            ['$early_access_features', constants.PERSISTENCE_EARLY_ACCESS_FEATURES],
-            ['$surveys_activated', constants.SURVEYS_ACTIVATED],
+            ['flag_call_reported (written on the read path)', constants.FLAG_CALL_REPORTED],
+            ['flag_call_reported_session_id', constants.FLAG_CALL_REPORTED_SESSION_ID],
+            ['feature_flag_errors', constants.PERSISTENCE_FEATURE_FLAG_ERRORS],
+            ['override_feature_flags', constants.PERSISTENCE_OVERRIDE_FEATURE_FLAGS],
+            ['override_feature_flag_payloads', constants.PERSISTENCE_OVERRIDE_FEATURE_FLAG_PAYLOADS],
+            ['stored_person_properties', constants.STORED_PERSON_PROPERTIES_KEY],
+            ['stored_group_properties', constants.STORED_GROUP_PROPERTIES_KEY],
+            ['early_access_features', constants.PERSISTENCE_EARLY_ACCESS_FEATURES],
+            ['surveys_activated', constants.SURVEYS_ACTIVATED],
         ])('keeps %s in the main blob (no storageGroup)', (_label, key) => {
             expect(getPersistenceKeyPolicy(key)?.storageGroup).toBeUndefined()
         })

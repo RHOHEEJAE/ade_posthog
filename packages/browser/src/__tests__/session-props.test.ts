@@ -52,7 +52,7 @@ describe('Session Props Manager', () => {
         expect(generateProps).toHaveBeenCalledTimes(1)
 
         expect(persistenceRegister).toBeCalledWith({
-            $client_session_props: {
+            client_session_props: {
                 props: {
                     utm_source: 'some-utm-source',
                 },
@@ -66,7 +66,7 @@ describe('Session Props Manager', () => {
         const sessionId1 = 'session-id-1'
         const { onSessionId, persistence, generateProps, persistenceRegister } = createSessionPropsManager()
         persistence.props = {
-            $client_session_props: {
+            client_session_props: {
                 props: {},
                 sessionId: sessionId1,
             },
@@ -88,7 +88,7 @@ describe('Session Props Manager', () => {
 
         const { onSessionId, persistence, generateProps, persistenceRegister } = createSessionPropsManager()
         persistence.props = {
-            $client_session_props: {
+            client_session_props: {
                 props: {},
                 sessionId: sessionId1,
             },
@@ -107,7 +107,7 @@ describe('Session Props Manager', () => {
         // arrange
         const { persistence, sessionPropsManager } = createSessionPropsManager()
         persistence.props = {
-            $client_session_props: {
+            client_session_props: {
                 props: {
                     utm_source: 'some-utm-source',
                 },
@@ -128,7 +128,7 @@ describe('Session Props Manager', () => {
         // arrange
         const { persistence, sessionPropsManager } = createSessionPropsManager()
         persistence.props = {
-            $client_session_props: {
+            client_session_props: {
                 props: {
                     r: 'http://referrer.example.com/referrer',
                     u: 'https://app.example.com/page?utm_source=example',
@@ -143,11 +143,11 @@ describe('Session Props Manager', () => {
 
         //assert
         expect(setOnceProps).toEqual({
-            $current_url: 'https://app.example.com/page?utm_source=example',
-            $host: 'app.example.com',
-            $pathname: '/page',
-            $referrer: 'http://referrer.example.com/referrer',
-            $referring_domain: 'referrer.example.com',
+            current_url: 'https://app.example.com/page?utm_source=example',
+            host: 'app.example.com',
+            pathname: '/page',
+            referrer: 'http://referrer.example.com/referrer',
+            referring_domain: 'referrer.example.com',
             _kx: null,
             dclid: null,
             epik: null,
@@ -176,7 +176,7 @@ describe('Session Props Manager', () => {
         expect(sessionProps).toEqual({
             $session_entry_referring_domain: 'referrer.example.com',
             $session_entry_referrer: 'http://referrer.example.com/referrer',
-            $session_entry_url: 'https://app.example.com/page?utm_source=example',
+            session_entry_url: 'https://app.example.com/page?utm_source=example',
             $session_entry_host: 'app.example.com',
             $session_entry_pathname: '/page',
             $session_entry_utm_source: 'example',

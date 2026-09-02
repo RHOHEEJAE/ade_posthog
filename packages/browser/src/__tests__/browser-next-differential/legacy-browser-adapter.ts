@@ -64,9 +64,9 @@ const createInstance = async (
                 event: payload.event,
                 properties: copyProperties({
                     ...payload.properties,
-                    ...(isUndefined(payload.$set) ? {} : { $set: payload.$set }),
-                    ...(isUndefined(payload.$set_once) ? {} : { $set_once: payload.$set_once }),
-                    ...(isUndefined(payload.$unset) ? {} : { $unset: payload.$unset }),
+                    ...(isUndefined(payload.ade_set) ? {} : { ade_set: payload.ade_set }),
+                    ...(isUndefined(payload.ade_set_once) ? {} : { ade_set_once: payload.ade_set_once }),
+                    ...(isUndefined(payload.unset) ? {} : { unset: payload.unset }),
                 }),
             })
         }

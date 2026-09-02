@@ -106,7 +106,7 @@ describe('PostHog Core', () => {
     })
 
     it('set_once properties skip keys that already exist in the cache', () => {
-      posthog.setPersonPropertiesForFlags({ $set_once: { first_date: '2025-01-01', plan: 'free' } })
+      posthog.setPersonPropertiesForFlags({ ade_set_once: { first_date: '2025-01-01', plan: 'free' } })
 
       expect(posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)).toEqual({
         first_date: '2025-01-01',
@@ -114,7 +114,7 @@ describe('PostHog Core', () => {
       })
 
       // Calling again with set_once should NOT overwrite existing keys
-      posthog.setPersonPropertiesForFlags({ $set_once: { first_date: '2026-03-30', new_key: 'hello' } })
+      posthog.setPersonPropertiesForFlags({ ade_set_once: { first_date: '2026-03-30', new_key: 'hello' } })
 
       expect(posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)).toEqual({
         first_date: '2025-01-01',
@@ -124,16 +124,16 @@ describe('PostHog Core', () => {
     })
 
     it('set properties overwrite existing keys even when set_once does not', () => {
-      posthog.setPersonPropertiesForFlags({ $set_once: { first_date: '2025-01-01' } })
+      posthog.setPersonPropertiesForFlags({ ade_set_once: { first_date: '2025-01-01' } })
 
       expect(posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)).toEqual({
         first_date: '2025-01-01',
       })
 
-      // $set should overwrite, $set_once should not
+      // ade_set should overwrite, ade_set_once should not
       posthog.setPersonPropertiesForFlags({
-        $set: { first_date: 'overwritten' },
-        $set_once: { first_date: 'ignored-by-set-once' },
+        ade_set: { first_date: 'overwritten' },
+        ade_set_once: { first_date: 'ignored-by-set-once' },
       })
 
       expect(posthog.getPersistedProperty(PostHogPersistedProperty.PersonProperties)).toEqual({
@@ -143,7 +143,7 @@ describe('PostHog Core', () => {
   })
 
   describe('setPersonProperties', () => {
-    it('should send a $set event with person properties', async () => {
+    it('should send a ade_set event with person properties', async () => {
       posthog.setPersonProperties({ email: 'test@example.com' })
       await waitForPromises()
 
@@ -153,17 +153,17 @@ describe('PostHog Core', () => {
       expect(parseBody(batchCall)).toMatchObject({
         batch: [
           {
-            event: '$set',
+            event: 'ade_set',
             properties: {
-              $set: { email: 'test@example.com' },
-              $set_once: {},
+              ade_set: { email: 'test@example.com' },
+              ade_set_once: {},
             },
           },
         ],
       })
     })
 
-    it('should not send duplicate $set events with the same properties', async () => {
+    it('should not send duplicate ade_set events with the same properties', async () => {
       // First call should send the event
       posthog.setPersonProperties({ email: 'test@example.com' })
       await waitForPromises()
@@ -178,7 +178,7 @@ describe('PostHog Core', () => {
       expect(newCallCount).toBe(callCount)
     })
 
-    it('should send $set event when properties change', async () => {
+    it('should send ade_set event when properties change', async () => {
       // First call
       posthog.setPersonProperties({ email: 'test@example.com' })
       await waitForPromises()
@@ -210,7 +210,7 @@ describe('PostHog Core', () => {
       expect(newCallCount).toBeGreaterThan(callCount)
     })
 
-    it('should send $set event when set_once properties are different', async () => {
+    it('should send ade_set event when set_once properties are different', async () => {
       // First call with set_once
       posthog.setPersonProperties(undefined, { signup_date: '2024-01-01' })
       await waitForPromises()
@@ -230,7 +230,7 @@ describe('PostHog Core', () => {
       ['single property', 'plan', ['plan']],
       ['multiple properties', ['plan', 'email'], ['plan', 'email']],
     ] as Array<[string, string | string[], string[]]>)(
-      'should send a $set event with a $unset array for %s',
+      'should send a ade_set event with a unset array for %s',
       async (_, propertyNames, expectedUnset) => {
         posthog.unsetPersonProperties(propertyNames)
         await waitForPromises()
@@ -240,9 +240,9 @@ describe('PostHog Core', () => {
         expect(parseBody(batchCall)).toMatchObject({
           batch: [
             {
-              event: '$set',
+              event: 'ade_set',
               properties: {
-                $unset: expectedUnset,
+                unset: expectedUnset,
               },
             },
           ],

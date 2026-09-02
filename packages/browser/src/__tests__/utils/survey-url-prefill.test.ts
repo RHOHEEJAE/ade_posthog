@@ -221,7 +221,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-1': 'Option B',
+                'survey_response_question-1': 'Option B',
             })
         })
 
@@ -231,7 +231,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-1': 'Option A',
+                'survey_response_question-1': 'Option A',
             })
         })
 
@@ -241,7 +241,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-1': 'Option C',
+                'survey_response_question-1': 'Option C',
             })
         })
 
@@ -293,7 +293,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-1': 'Option B',
+                'survey_response_question-1': 'Option B',
             })
         })
     })
@@ -312,7 +312,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-2': ['Option A', 'Option C', 'Option D'],
+                'survey_response_question-2': ['Option A', 'Option C', 'Option D'],
             })
         })
 
@@ -322,7 +322,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-2': ['Option B'],
+                'survey_response_question-2': ['Option B'],
             })
         })
 
@@ -332,7 +332,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-2': ['Option A', 'Option C'],
+                'survey_response_question-2': ['Option A', 'Option C'],
             })
         })
 
@@ -342,7 +342,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-2': ['Option A', 'Option B', 'Option C'],
+                'survey_response_question-2': ['Option A', 'Option B', 'Option C'],
             })
         })
 
@@ -369,7 +369,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-2': ['Option A', 'Option B', 'Option C', 'Option D'],
+                'survey_response_question-2': ['Option A', 'Option B', 'Option C', 'Option D'],
             })
         })
     })
@@ -391,7 +391,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-3': 7,
+                'survey_response_question-3': 7,
             })
         })
 
@@ -401,7 +401,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-3': 0,
+                'survey_response_question-3': 0,
             })
         })
 
@@ -411,7 +411,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-3': 10,
+                'survey_response_question-3': 10,
             })
         })
 
@@ -449,7 +449,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-3': 5,
+                'survey_response_question-3': 5,
             })
         })
 
@@ -472,7 +472,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                '$survey_response_question-3': 10,
+                'survey_response_question-3': 10,
             })
         })
     })
@@ -540,9 +540,9 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                $survey_response_q1: 'B',
-                $survey_response_q2: 8,
-                $survey_response_q3: ['X', 'Z'],
+                survey_response_q1: 'B',
+                survey_response_q2: 8,
+                survey_response_q3: ['X', 'Z'],
             })
         })
 
@@ -569,7 +569,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                $survey_response_q2: 5,
+                survey_response_q2: 5,
             })
         })
 
@@ -599,7 +599,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                $survey_response_q2: 3,
+                survey_response_q2: 3,
             })
         })
     })
@@ -659,7 +659,7 @@ describe('convertPrefillToResponses', () => {
 
             const result = convertPrefillToResponses(survey, prefillParams)
             expect(result).toEqual({
-                $survey_response_q1: 'A',
+                survey_response_q1: 'A',
             })
         })
     })
@@ -725,7 +725,7 @@ describe('calculatePrefillStartIndex', () => {
         it('should return 0 when only q1 is prefilled (q0 not prefilled)', () => {
             const questions = [ratingQuestionWithSkip, ratingQuestionWithSkip, openQuestion]
             const prefilledIndices = [1]
-            const responses = { '$survey_response_q-rating': 5 }
+            const responses = { 'survey_response_q-rating': 5 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(0)
@@ -747,26 +747,26 @@ describe('calculatePrefillStartIndex', () => {
         it('should return 1 when q0 is prefilled with skipSubmitButton', () => {
             const questions = [ratingQuestionWithSkip, openQuestion]
             const prefilledIndices = [0]
-            const responses = { '$survey_response_q-rating': 7 }
+            const responses = { 'survey_response_q-rating': 7 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(1)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-rating': 7 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-rating': 7 })
         })
 
         it('should return 2 when q0 and q1 are prefilled with skipSubmitButton', () => {
             const questions = [ratingQuestionWithSkip, singleChoiceWithSkip, openQuestion]
             const prefilledIndices = [0, 1]
             const responses = {
-                '$survey_response_q-rating': 8,
-                '$survey_response_q-single': 'B',
+                'survey_response_q-rating': 8,
+                'survey_response_q-single': 'B',
             }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(2)
             expect(result.skippedResponses).toEqual({
-                '$survey_response_q-rating': 8,
-                '$survey_response_q-single': 'B',
+                'survey_response_q-rating': 8,
+                'survey_response_q-single': 'B',
             })
         })
 
@@ -775,17 +775,17 @@ describe('calculatePrefillStartIndex', () => {
             const questions = [ratingQuestionWithSkip, singleChoiceWithSkip, ratingQ2]
             const prefilledIndices = [0, 1, 2]
             const responses = {
-                '$survey_response_q-rating': 5,
-                '$survey_response_q-single': 'A',
-                '$survey_response_q-rating-2': 10,
+                'survey_response_q-rating': 5,
+                'survey_response_q-single': 'A',
+                'survey_response_q-rating-2': 10,
             }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(3)
             expect(result.skippedResponses).toEqual({
-                '$survey_response_q-rating': 5,
-                '$survey_response_q-single': 'A',
-                '$survey_response_q-rating-2': 10,
+                'survey_response_q-rating': 5,
+                'survey_response_q-single': 'A',
+                'survey_response_q-rating-2': 10,
             })
         })
     })
@@ -794,7 +794,7 @@ describe('calculatePrefillStartIndex', () => {
         it('should return 0 when q0 is prefilled but has no skipSubmitButton', () => {
             const questions = [ratingQuestionWithoutSkip, openQuestion]
             const prefilledIndices = [0]
-            const responses = { '$survey_response_q-rating-no-skip': 3 }
+            const responses = { 'survey_response_q-rating-no-skip': 3 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(0)
@@ -805,13 +805,13 @@ describe('calculatePrefillStartIndex', () => {
             const questions = [ratingQuestionWithSkip, ratingQuestionWithoutSkip, openQuestion]
             const prefilledIndices = [0, 1]
             const responses = {
-                '$survey_response_q-rating': 9,
-                '$survey_response_q-rating-no-skip': 4,
+                'survey_response_q-rating': 9,
+                'survey_response_q-rating-no-skip': 4,
             }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(1)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-rating': 9 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-rating': 9 })
         })
     })
 
@@ -822,13 +822,13 @@ describe('calculatePrefillStartIndex', () => {
             const questions = [ratingQuestionWithSkip, ratingQ2, ratingQ3]
             const prefilledIndices = [0, 2]
             const responses = {
-                '$survey_response_q-rating': 6,
-                '$survey_response_q-rating-3': 8,
+                'survey_response_q-rating': 6,
+                'survey_response_q-rating-3': 8,
             }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(1)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-rating': 6 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-rating': 6 })
         })
 
         it('should return 2 when q0, q1, q3 are prefilled but q2 is not', () => {
@@ -837,16 +837,16 @@ describe('calculatePrefillStartIndex', () => {
             const questions = [ratingQuestionWithSkip, singleChoiceWithSkip, ratingQ2, ratingQ3]
             const prefilledIndices = [0, 1, 3]
             const responses = {
-                '$survey_response_q-rating': 5,
-                '$survey_response_q-single': 'C',
-                '$survey_response_q-rating-3': 7,
+                'survey_response_q-rating': 5,
+                'survey_response_q-single': 'C',
+                'survey_response_q-rating-3': 7,
             }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(2)
             expect(result.skippedResponses).toEqual({
-                '$survey_response_q-rating': 5,
-                '$survey_response_q-single': 'C',
+                'survey_response_q-rating': 5,
+                'survey_response_q-single': 'C',
             })
         })
     })
@@ -878,15 +878,15 @@ describe('calculatePrefillStartIndex', () => {
             const questions = [ratingQuestionWithSkip, singleChoiceWithSkip, openQuestion]
             const prefilledIndices = [1, 0]
             const responses = {
-                '$survey_response_q-rating': 4,
-                '$survey_response_q-single': 'A',
+                'survey_response_q-rating': 4,
+                'survey_response_q-single': 'A',
             }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(2)
             expect(result.skippedResponses).toEqual({
-                '$survey_response_q-rating': 4,
-                '$survey_response_q-single': 'A',
+                'survey_response_q-rating': 4,
+                'survey_response_q-single': 'A',
             })
         })
 
@@ -902,21 +902,21 @@ describe('calculatePrefillStartIndex', () => {
             }
             const questions = [questionWithoutId, ratingQuestionWithSkip]
             const prefilledIndices = [0, 1]
-            const responses = { '$survey_response_q-rating': 5 }
+            const responses = { 'survey_response_q-rating': 5 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(2)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-rating': 5 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-rating': 5 })
         })
 
         it('should handle missing responses for skipped questions', () => {
             const questions = [ratingQuestionWithSkip, singleChoiceWithSkip, openQuestion]
             const prefilledIndices = [0, 1]
-            const responses = { '$survey_response_q-rating': 6 }
+            const responses = { 'survey_response_q-rating': 6 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(2)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-rating': 6 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-rating': 6 })
         })
     })
 
@@ -966,31 +966,31 @@ describe('calculatePrefillStartIndex', () => {
         it('should skip to promoter question when NPS is 9 (promoter)', () => {
             const questions = [npsQuestionWithBranching, detractorFollowUp, passiveFollowUp, promoterFollowUp]
             const prefilledIndices = [0]
-            const responses = { '$survey_response_q-nps': 9 }
+            const responses = { 'survey_response_q-nps': 9 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(3)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-nps': 9 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-nps': 9 })
         })
 
         it('should skip to detractor question when NPS is 5 (detractor)', () => {
             const questions = [npsQuestionWithBranching, detractorFollowUp, passiveFollowUp, promoterFollowUp]
             const prefilledIndices = [0]
-            const responses = { '$survey_response_q-nps': 5 }
+            const responses = { 'survey_response_q-nps': 5 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(1)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-nps': 5 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-nps': 5 })
         })
 
         it('should skip to passive question when NPS is 8 (passive)', () => {
             const questions = [npsQuestionWithBranching, detractorFollowUp, passiveFollowUp, promoterFollowUp]
             const prefilledIndices = [0]
-            const responses = { '$survey_response_q-nps': 8 }
+            const responses = { 'survey_response_q-nps': 8 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(2)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-nps': 8 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-nps': 8 })
         })
 
         it('should handle end branching when answer triggers survey end', () => {
@@ -1017,11 +1017,11 @@ describe('calculatePrefillStartIndex', () => {
 
             const questions = [questionWithEndBranching, followUpQuestion]
             const prefilledIndices = [0]
-            const responses = { '$survey_response_q-end': 'No' } // Triggers end branching
+            const responses = { 'survey_response_q-end': 'No' } // Triggers end branching
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(2) // questions.length = survey complete
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-end': 'No' })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-end': 'No' })
         })
 
         it('should stop after max iterations when branching creates a cycle', () => {
@@ -1032,7 +1032,7 @@ describe('calculatePrefillStartIndex', () => {
                     index: 0,
                 },
             }
-            const responses = { '$survey_response_q-rating': 7 }
+            const responses = { 'survey_response_q-rating': 7 }
 
             const result = calculatePrefillStartIndex(createSurvey([cyclicQuestion]), [0], responses)
 
@@ -1064,11 +1064,11 @@ describe('calculatePrefillStartIndex', () => {
                 { ...openQuestion, id: 'q-target' }, // index 4 - target
             ]
             const prefilledIndices = [0]
-            const responses = { '$survey_response_q-specific': 7 }
+            const responses = { 'survey_response_q-specific': 7 }
 
             const result = calculatePrefillStartIndex(createSurvey(questions), prefilledIndices, responses)
             expect(result.startQuestionIndex).toBe(4)
-            expect(result.skippedResponses).toEqual({ '$survey_response_q-specific': 7 })
+            expect(result.skippedResponses).toEqual({ 'survey_response_q-specific': 7 })
         })
     })
 })

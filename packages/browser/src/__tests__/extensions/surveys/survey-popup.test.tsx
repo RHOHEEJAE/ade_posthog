@@ -149,7 +149,7 @@ describe('SurveyPopup', () => {
     test('initializes with existing submissionId and responses from localStorage', () => {
         const existingState = {
             surveySubmissionId: 'existing-uuid-123',
-            responses: { $survey_response_q1: 'Previous answer' },
+            responses: { survey_response_q1: 'Previous answer' },
         }
         mockedGetInProgressSurveyState.mockReturnValue(existingState)
         render(
@@ -183,7 +183,7 @@ describe('SurveyPopup', () => {
         mockedGetInProgressSurveyState.mockReturnValue({
             surveySubmissionId: 'existing-uuid-range',
             lastQuestionIndex,
-            responses: { $survey_response_q1: 'Previous answer' },
+            responses: { survey_response_q1: 'Previous answer' },
         } as any)
         render(
             <SurveyPopup
@@ -226,7 +226,7 @@ describe('SurveyPopup', () => {
 
         expect(mockedSendSurveyEvent).toHaveBeenCalledWith({
             responses: {
-                $survey_response_q1: 'Answer Q1',
+                survey_response_q1: 'Answer Q1',
             },
             survey: partialResponsesSurvey,
             surveySubmissionId: generatedId,
@@ -274,7 +274,7 @@ describe('SurveyPopup', () => {
     test('clears localStorage on final submission', async () => {
         const existingState = {
             surveySubmissionId: 'existing-uuid-final',
-            responses: { $survey_response_q1: 'Answer Q1' },
+            responses: { survey_response_q1: 'Answer Q1' },
         }
         mockedGetInProgressSurveyState.mockReturnValue(existingState)
 
@@ -303,8 +303,8 @@ describe('SurveyPopup', () => {
         // Verify final sendSurveyEvent call
         expect(mockedSendSurveyEvent).toHaveBeenCalledWith({
             responses: {
-                $survey_response_q1: 'Answer Q1',
-                $survey_response_q2: 'Answer Q2',
+                survey_response_q1: 'Answer Q1',
+                survey_response_q2: 'Answer Q2',
             },
             survey: mockSurvey,
             surveySubmissionId: existingState.surveySubmissionId,
@@ -353,7 +353,7 @@ describe('SurveyPopup', () => {
     test('clears localStorage on dismissal', async () => {
         const existingState = {
             surveySubmissionId: 'existing-uuid-dismiss',
-            responses: { $survey_response_q1: 'Partial answer' },
+            responses: { survey_response_q1: 'Partial answer' },
         }
         mockedGetInProgressSurveyState.mockReturnValue(existingState)
         mockedDismissedSurveyEvent.mockImplementation(() => {
@@ -412,8 +412,8 @@ describe('SurveyPopup', () => {
                 expect(mockPosthog.capture).toHaveBeenCalledWith(
                     'survey shown',
                     expect.objectContaining({
-                        $survey_id: mockSurvey.id,
-                        $survey_name: mockSurvey.name,
+                        survey_id: mockSurvey.id,
+                        survey_name: mockSurvey.name,
                     })
                 )
             })
@@ -497,7 +497,7 @@ describe('SurveyPopup', () => {
             mockedGetInProgressSurveyState.mockReturnValue({
                 surveySubmissionId: 'existing-uuid-intro',
                 lastQuestionIndex: 1,
-                responses: { $survey_response_q1: 'Previous answer' },
+                responses: { survey_response_q1: 'Previous answer' },
             })
             render(
                 <SurveyPopup

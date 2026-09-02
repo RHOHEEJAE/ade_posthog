@@ -20,7 +20,7 @@ describe('PostHog Core', () => {
 
   describe('identify', () => {
     // Identify also triggers a subsequent flags call so we should expect 2 calls
-    it('should send an $identify event', async () => {
+    it('should send an ade_identify event', async () => {
       posthog.identify('id-1', { foo: 'bar' })
       await waitForPromises()
       expect(mocks.fetch).toHaveBeenCalledTimes(2)
@@ -30,14 +30,14 @@ describe('PostHog Core', () => {
         api_key: 'TEST_API_KEY',
         batch: [
           {
-            event: '$identify',
+            event: 'ade_identify',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $lib: 'posthog-core-tests',
-              $lib_version: '2.0.0-alpha',
-              $anon_distinct_id: expect.any(String),
-              $session_id: expect.any(String),
-              $set: {
+              lib: 'posthog-core-tests',
+              lib_version: '2.0.0-alpha',
+              anon_distinct_id: expect.any(String),
+              session_id: expect.any(String),
+              ade_set: {
                 foo: 'bar',
               },
             },
@@ -49,12 +49,12 @@ describe('PostHog Core', () => {
       })
     })
 
-    it('should send an $identify with $set and $set_once event', async () => {
+    it('should send an ade_identify with ade_set and ade_set_once event', async () => {
       posthog.identify('id-1', {
-        $set: {
+        ade_set: {
           foo: 'bar',
         },
-        $set_once: {
+        ade_set_once: {
           vip: true,
         },
       })
@@ -66,17 +66,17 @@ describe('PostHog Core', () => {
         api_key: 'TEST_API_KEY',
         batch: [
           {
-            event: '$identify',
+            event: 'ade_identify',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $lib: 'posthog-core-tests',
-              $lib_version: '2.0.0-alpha',
-              $anon_distinct_id: expect.any(String),
-              $session_id: expect.any(String),
-              $set: {
+              lib: 'posthog-core-tests',
+              lib_version: '2.0.0-alpha',
+              anon_distinct_id: expect.any(String),
+              session_id: expect.any(String),
+              ade_set: {
                 foo: 'bar',
               },
-              $set_once: {
+              ade_set_once: {
                 vip: true,
               },
             },
@@ -88,10 +88,10 @@ describe('PostHog Core', () => {
       })
     })
 
-    it('should send an $identify with $set_once event', async () => {
+    it('should send an ade_identify with ade_set_once event', async () => {
       posthog.identify('id-1', {
         foo: 'bar',
-        $set_once: {
+        ade_set_once: {
           vip: true,
         },
       })
@@ -103,17 +103,17 @@ describe('PostHog Core', () => {
         api_key: 'TEST_API_KEY',
         batch: [
           {
-            event: '$identify',
+            event: 'ade_identify',
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $lib: 'posthog-core-tests',
-              $lib_version: '2.0.0-alpha',
-              $anon_distinct_id: expect.any(String),
-              $session_id: expect.any(String),
-              $set: {
+              lib: 'posthog-core-tests',
+              lib_version: '2.0.0-alpha',
+              anon_distinct_id: expect.any(String),
+              session_id: expect.any(String),
+              ade_set: {
                 foo: 'bar',
               },
-              $set_once: {
+              ade_set_once: {
                 vip: true,
               },
             },
@@ -137,7 +137,7 @@ describe('PostHog Core', () => {
           {
             distinct_id: posthog.getDistinctId(),
             properties: {
-              $anon_distinct_id: expect.any(String),
+              anon_distinct_id: expect.any(String),
             },
           },
         ],
@@ -168,7 +168,7 @@ describe('PostHog Core', () => {
           {
             distinct_id: 'id-1',
             properties: {
-              $anon_distinct_id: 'my-old-value',
+              anon_distinct_id: 'my-old-value',
             },
           },
         ],
@@ -195,16 +195,16 @@ describe('PostHog Core', () => {
         mocks.fetch.mock.calls.filter((c) => (c[0] as string).includes('/batch/')).flatMap((c) => parseBody(c).batch)
       const flagsCalls = (): any[] => mocks.fetch.mock.calls.filter((c) => (c[0] as string).includes('/flags/'))
 
-      it('marks the user identified and captures one person-processed $set, not $identify', async () => {
+      it('marks the user identified and captures one person-processed ade_set, not ade_identify', async () => {
         posthog.identify('user-123')
         await waitForPromises()
 
         const events = batchEvents()
         expect(events).toHaveLength(1)
-        expect(events[0].event).toEqual('$set')
-        expect(events[0].properties.$process_person_profile).toEqual(true)
-        expect(events[0].properties.$is_identified).toEqual(true)
-        expect(events.some((e) => e.event === '$identify')).toBe(false)
+        expect(events[0].event).toEqual('ade_set')
+        expect(events[0].properties.process_person_profile).toEqual(true)
+        expect(events[0].properties.is_identified).toEqual(true)
+        expect(events.some((e) => e.event === 'ade_identify')).toBe(false)
         expect(posthog.getPersistedProperty(PostHogPersistedProperty.PersonMode)).toEqual('identified')
       })
 
@@ -222,25 +222,25 @@ describe('PostHog Core', () => {
         expect(flagsCalls()).toHaveLength(1)
       })
 
-      it('does not emit a second $set on a repeated matching-id identify', async () => {
+      it('does not emit a second ade_set on a repeated matching-id identify', async () => {
         posthog.identify('user-123', { email: 'john@example.com' })
         posthog.identify('user-123', { email: 'john@example.com' })
         await waitForPromises()
 
-        expect(batchEvents().filter((e) => e.event === '$set')).toHaveLength(1)
+        expect(batchEvents().filter((e) => e.event === 'ade_set')).toHaveLength(1)
       })
 
-      it('fires the transition $set even when the same properties were already cached', async () => {
+      it('fires the transition ade_set even when the same properties were already cached', async () => {
         // Populate the person-properties cache first, then identify with identical props: the
-        // identity-state transition must still emit its $set (dedup cannot suppress it).
+        // identity-state transition must still emit its ade_set (dedup cannot suppress it).
         posthog.setPersonProperties({ email: 'john@example.com' })
         await waitForPromises()
-        expect(batchEvents().filter((e) => e.event === '$set')).toHaveLength(1)
+        expect(batchEvents().filter((e) => e.event === 'ade_set')).toHaveLength(1)
 
         posthog.identify('user-123', { email: 'john@example.com' })
         await waitForPromises()
 
-        expect(batchEvents().filter((e) => e.event === '$set')).toHaveLength(2)
+        expect(batchEvents().filter((e) => e.event === 'ade_set')).toHaveLength(2)
         expect(posthog.getPersistedProperty(PostHogPersistedProperty.PersonMode)).toEqual('identified')
       })
 
@@ -253,9 +253,9 @@ describe('PostHog Core', () => {
       })
     })
 
-    it('should send $anon_distinct_id when identify is called during in-flight preload flags', async () => {
+    it('should send anon_distinct_id when identify is called during in-flight preload flags', async () => {
       // This test verifies the fix for the race condition where identify() calls
-      // triggered during preloadFeatureFlags would drop the $anon_distinct_id.
+      // triggered during preloadFeatureFlags would drop the anon_distinct_id.
       // See: https://github.com/PostHog/posthog-ios/issues/456
 
       let resolvePreloadRequest: () => void
@@ -285,7 +285,7 @@ describe('PostHog Core', () => {
               })
             } else if (currentCall === 2) {
               // Second flags call (from identify's pending reload)
-              // This should include $anon_distinct_id
+              // This should include anon_distinct_id
               return Promise.resolve({
                 status: 200,
                 text: () => Promise.resolve('ok'),
@@ -333,25 +333,25 @@ describe('PostHog Core', () => {
       // The pending reload from identify should now execute
       expect(flagsCallCount).toBe(2)
 
-      // Find the second flags call and verify it contains $anon_distinct_id
+      // Find the second flags call and verify it contains anon_distinct_id
       const flagsCalls = mocks.fetch.mock.calls.filter((call: any) => call[0].includes('/flags/'))
       expect(flagsCalls.length).toBe(2)
 
       identifyFlagsBody = JSON.parse(flagsCalls[1][1].body)
 
-      // The second request (from identify) should include $anon_distinct_id
+      // The second request (from identify) should include anon_distinct_id
       // This is the key assertion - without the fix, this request would have been dropped
-      expect(identifyFlagsBody.$anon_distinct_id).toBe(anonId)
+      expect(identifyFlagsBody.anon_distinct_id).toBe(anonId)
       expect(identifyFlagsBody.distinct_id).toBe('user-123')
     })
 
-    it('should send $set event when distinct_id is the same but properties are different', async () => {
+    it('should send ade_set event when distinct_id is the same but properties are different', async () => {
       // First identify with a new user
       posthog.identify('id-1', { foo: 'bar' })
       await waitForPromises()
       mocks.fetch.mockClear()
 
-      // Second identify with the same user but different properties should send $set
+      // Second identify with the same user but different properties should send ade_set
       posthog.identify('id-1', { foo: 'baz' })
       await waitForPromises()
 
@@ -361,10 +361,10 @@ describe('PostHog Core', () => {
       expect(parseBody(batchCall)).toMatchObject({
         batch: [
           {
-            event: '$set',
+            event: 'ade_set',
             properties: {
-              $set: { foo: 'baz' },
-              $set_once: {},
+              ade_set: { foo: 'baz' },
+              ade_set_once: {},
             },
           },
         ],

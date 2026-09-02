@@ -49,26 +49,26 @@ export const CAMPAIGN_PARAMS = [
 
 export const EVENT_TO_PERSON_PROPERTIES = [
     // mobile params
-    '$app_build',
-    '$app_name',
-    '$app_namespace',
-    '$app_version',
+    'app_build',
+    'app_name',
+    'app_namespace',
+    'app_version',
     // web params
-    '$browser',
-    '$browser_version',
-    '$device_type',
-    '$current_url',
-    '$pathname',
-    '$os',
-    '$os_name', // $os_name is a special case, it's treated as an alias of $os!
-    '$os_version',
-    '$referring_domain',
-    '$referrer',
-    '$screen_height',
-    '$screen_width',
-    '$viewport_height',
-    '$viewport_width',
-    '$raw_user_agent',
+    'browser',
+    'browser_version',
+    'device_type',
+    'current_url',
+    'pathname',
+    'os',
+    'os_name', // os_name is a special case, it's treated as an alias of os!
+    'os_version',
+    'referring_domain',
+    'referrer',
+    'screen_height',
+    'screen_width',
+    'viewport_height',
+    'viewport_width',
+    'raw_user_agent',
 ]
 
 export const MASKED = '<masked>'
@@ -152,7 +152,7 @@ function _getSearchInfoFromReferrer(referrer: string): Record<string, any> {
     const ret: Record<string, any> = {}
 
     if (!isNull(search)) {
-        ret['$search_engine'] = search
+        ret['search_engine'] = search
 
         const keyword = document ? getQueryParam(document.referrer, param) : ''
         if (keyword.length) {
@@ -183,7 +183,7 @@ export function getBrowserLanguagePrefix(): string | undefined {
     return typeof lang === 'string' ? lang.split('-')[0] : undefined
 }
 
-const DIRECT = '$direct'
+const DIRECT = 'direct'
 
 export function getReferrer(): string {
     return document?.referrer || DIRECT
@@ -198,8 +198,8 @@ export function getReferringDomain(): string {
 
 export function getReferrerInfo(): Record<string, any> {
     return {
-        $referrer: getReferrer(),
-        $referring_domain: getReferringDomain(),
+        referrer: getReferrer(),
+        referring_domain: getReferringDomain(),
     }
 }
 
@@ -229,14 +229,14 @@ export function getPersonPropsFromInfo(
     const referring_domain = referrer == null ? undefined : referrer == DIRECT ? DIRECT : convertToURL(referrer)?.host
 
     const props: Record<string, string | undefined> = {
-        $referrer: referrer,
-        $referring_domain: referring_domain,
+        referrer: referrer,
+        referring_domain: referring_domain,
     }
     if (url) {
-        props['$current_url'] = url
+        props['current_url'] = url
         const location = convertToURL(url)
-        props['$host'] = location?.host
-        props['$pathname'] = location?.pathname
+        props['host'] = location?.host
+        props['pathname'] = location?.pathname
         const campaignParams = _getCampaignParamsFromUrl(url)
         extend(props, campaignParams)
     }
@@ -329,34 +329,34 @@ export function getEventProperties(
 
     const properties = extend(
         stripEmptyProperties({
-            $os: os_name,
-            $os_version: os_version,
-            $browser: detectBrowser(userAgent, navigator.vendor, browserHints, browserOptions),
-            $device: detectDevice(userAgent),
-            $device_type: detectDeviceType(userAgent, deviceOptions),
-            $timezone: getTimezone(),
-            $timezone_offset: getTimezoneOffset(),
+            os: os_name,
+            os_version: os_version,
+            browser: detectBrowser(userAgent, navigator.vendor, browserHints, browserOptions),
+            device: detectDevice(userAgent),
+            device_type: detectDeviceType(userAgent, deviceOptions),
+            timezone: getTimezone(),
+            timezone_offset: getTimezoneOffset(),
         }),
         {
-            $current_url: maskQueryParams(
+            current_url: maskQueryParams(
                 disableCaptureUrlHashes ? stripUrlHash(location?.href) : location?.href,
                 paramsToMask,
                 MASKED
             ),
-            $host: location?.host,
-            $pathname: location?.pathname,
-            $raw_user_agent: userAgent.length > 1000 ? userAgent.substring(0, 997) + '...' : userAgent,
-            $browser_version: detectBrowserVersion(userAgent, navigator.vendor, browserHints, browserOptions),
-            $browser_language: getBrowserLanguage(),
-            $browser_language_prefix: getBrowserLanguagePrefix(),
-            $screen_height: window?.screen.height,
-            $screen_width: window?.screen.width,
-            $viewport_height: window?.innerHeight,
-            $viewport_width: window?.innerWidth,
-            $lib: Config.LIB_NAME,
-            $lib_version: Config.LIB_VERSION,
-            $insert_id: Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10),
-            $time: Date.now() / 1000, // epoch time in seconds
+            host: location?.host,
+            pathname: location?.pathname,
+            raw_user_agent: userAgent.length > 1000 ? userAgent.substring(0, 997) + '...' : userAgent,
+            browser_version: detectBrowserVersion(userAgent, navigator.vendor, browserHints, browserOptions),
+            browser_language: getBrowserLanguage(),
+            browser_language_prefix: getBrowserLanguagePrefix(),
+            screen_height: window?.screen.height,
+            screen_width: window?.screen.width,
+            viewport_height: window?.innerHeight,
+            viewport_width: window?.innerWidth,
+            lib: Config.LIB_NAME,
+            lib_version: Config.LIB_VERSION,
+            insert_id: Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10),
+            time: Date.now() / 1000, // epoch time in seconds
         }
     )
 

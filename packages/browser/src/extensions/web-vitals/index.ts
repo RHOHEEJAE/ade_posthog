@@ -249,14 +249,14 @@ export class WebVitalsAutocapture {
             return
         }
 
-        this._instance.capture('$web_vitals', {
-            $current_url: this._buffer.url,
+        this._instance.capture('ade_web_vitals', {
+            current_url: this._buffer.url,
             ...this._buffer.metrics.reduce(
                 (acc, metric) => ({
                     ...acc,
                     // the entire event so we can use it in the future e.g. includes google's rating
-                    [`$web_vitals_${metric.name}_event`]: { ...metric },
-                    [`$web_vitals_${metric.name}_value`]: metric.value,
+                    [`ade_web_vitals_${metric.name}_event`]: { ...metric },
+                    [`ade_web_vitals_${metric.name}_value`]: metric.value,
                 }),
                 {}
             ),
@@ -278,12 +278,12 @@ export class WebVitalsAutocapture {
         }
 
         const navigationURL = typeof metric.navigationURL === 'string' ? metric.navigationURL : undefined
-        const $currentUrl = this._maskedURL(navigationURL)
-        if (isUndefined($currentUrl)) {
+        const currentUrl = this._maskedURL(navigationURL)
+        if (isUndefined(currentUrl)) {
             return
         }
         const hasNavigationId = isNumber(metric.navigationId) || typeof metric.navigationId === 'string'
-        const navigationKey = hasNavigationId ? `navigation:${metric.navigationId}` : `url:${$currentUrl}`
+        const navigationKey = hasNavigationId ? `navigation:${metric.navigationId}` : `url:${currentUrl}`
 
         // we observe some very large values sometimes, we'll ignore them
         // since the likelihood of LCP > 1 hour being correct is very low
@@ -306,7 +306,7 @@ export class WebVitalsAutocapture {
 
         if (isUndefined(this._buffer.navigationKey)) {
             this._buffer.navigationKey = navigationKey
-            this._buffer.url = $currentUrl
+            this._buffer.url = currentUrl
         }
 
         this._buffer.firstMetricTimestamp = isUndefined(this._buffer.firstMetricTimestamp)
@@ -316,8 +316,8 @@ export class WebVitalsAutocapture {
         const sessionIds = this._instance.sessionManager?.checkAndGetSessionAndWindowId(true)
         const bufferedMetric: Record<string, unknown> = {
             ...metric,
-            ...(navigationURL ? { navigationURL: $currentUrl } : {}),
-            $current_url: $currentUrl,
+            ...(navigationURL ? { navigationURL: currentUrl } : {}),
+            current_url: currentUrl,
             timestamp: Date.now(),
         }
 
@@ -342,8 +342,8 @@ export class WebVitalsAutocapture {
             delete bufferedMetric.attribution
         }
         if (!isUndefined(sessionIds)) {
-            bufferedMetric.$session_id = sessionIds.sessionId
-            bufferedMetric.$window_id = sessionIds.windowId
+            bufferedMetric.session_id = sessionIds.sessionId
+            bufferedMetric.window_id = sessionIds.windowId
         }
 
         this._buffer.metrics.push(bufferedMetric)

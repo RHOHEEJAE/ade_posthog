@@ -358,9 +358,9 @@ export class PostHogPersistence {
             }
         })
         this.props = extend(nextProps, cookieProperties)
-        // Older writers can omit $user_state entirely. Once that authoritative
+        // Older writers can omit user_state entirely. Once that authoritative
         // omission removes a prior identified state, represent it explicitly as
-        // anonymous so reset cleanup (including $groups) runs consistently.
+        // anonymous so reset cleanup (including groups) runs consistently.
         if (hasValidCookieIdentity && !(USER_STATE in cookieProperties) && !(USER_STATE in this.props)) {
             this._setProp(USER_STATE, USER_STATE_ANONYMOUS)
         }
@@ -390,13 +390,13 @@ export class PostHogPersistence {
                 clearStaleEventProperties(this.props, cookieProperties)
                 this._deleteProp(STORED_GROUP_PROPERTIES_KEY)
             }
-            // `$user_id` is localStorage-only, but it is bound to the current
+            // `user_id` is localStorage-only, but it is bound to the current
             // identity. Never carry the previous logged-in user across a sibling
             // identify/reset adopted from the shared cookie.
             if (nextUserState === USER_STATE_IDENTIFIED) {
-                this.props.$user_id = nextDistinctId
+                this.props.user_id = nextDistinctId
             } else {
-                delete this.props.$user_id
+                delete this.props.user_id
             }
             this._deleteProp(ALIAS_ID_KEY)
         }
@@ -683,7 +683,7 @@ export class PostHogPersistence {
                 }
                 // The group entry is normally the migrated-forward home and wins
                 // over the main blob. The exception: a group that stamps a
-                // freshness timestamp (flags: $feature_flag_evaluated_at) lets us
+                // freshness timestamp (flags: feature_flag_evaluated_at) lets us
                 // detect when a gate-off / older-SDK tab wrote a fresher payload
                 // back into the main blob — then we keep the main blob and let the
                 // next save heal the group entry. With no timestamp on either side

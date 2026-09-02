@@ -21,7 +21,7 @@ export async function getDeviceModel(): Promise<string | undefined> {
         const model = hints?.model
         return isString(model) && model.length > 0 ? model : undefined
     } catch (e) {
-        logger.info('Unable to resolve $device_model from userAgentData.getHighEntropyValues', e)
+        logger.info('Unable to resolve device_model from userAgentData.getHighEntropyValues', e)
         return undefined
     }
 }

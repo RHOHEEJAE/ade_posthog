@@ -5,7 +5,7 @@ import { detectBrowser, detectBrowserVersion, detectDeviceType, detectOS } from 
 
 describe('user-agent-utils', () => {
     describe('user agent', () => {
-        // can use https://user-agents.net/ or $raw_user_agent property on events to get new test cases
+        // can use https://user-agents.net/ or raw_user_agent property on events to get new test cases
         const browserTestcases: {
             name: string
             userAgent: string
@@ -472,7 +472,7 @@ describe('user-agent-utils', () => {
                 },
             ]
 
-            it.each(browserCases)('detectBrowser: $name', ({ userAgent, vendor, options, expectedBrowser }) => {
+            it.each(browserCases)('detectBrowser: name', ({ userAgent, vendor, options, expectedBrowser }) => {
                 expect(detectBrowser(userAgent, vendor, {}, options)).toBe(expectedBrowser)
             })
 

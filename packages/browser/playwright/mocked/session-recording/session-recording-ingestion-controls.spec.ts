@@ -44,7 +44,7 @@ test.describe('Session recording - multiple ingestion controls', () => {
             },
         })
 
-        await page.expectCapturedEventsToBe(['$opt_in', '$pageview'])
+        await page.expectCapturedEventsToBe(['ade_opt_in', 'ade_pageview'])
 
         await page.evaluate(() => {
             const ph = (window as WindowWithPostHog).posthog
@@ -54,7 +54,7 @@ test.describe('Session recording - multiple ingestion controls', () => {
         // there's nothing to wait for... so, just wait a bit
         await page.waitForTimeout(250)
         // no new events
-        await page.expectCapturedEventsToBe(['$opt_in', '$pageview'])
+        await page.expectCapturedEventsToBe(['ade_opt_in', 'ade_pageview'])
         await page.resetCapturedEvents()
 
         await page.evaluate(() => {
@@ -63,7 +63,7 @@ test.describe('Session recording - multiple ingestion controls', () => {
             ph?.startSessionRecording(true)
         })
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'ade_snapshot')
         await assertThatRecordingStarted(page)
     })
 })

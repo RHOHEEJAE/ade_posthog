@@ -53,7 +53,7 @@ describe('shared property matching contract', () => {
       { operator: 'gt', targets: ['10', '20'], values: ['8', '9'], expected: false },
       { operator: 'lt', targets: ['10', '20'], values: ['21', '9'], expected: true },
       { operator: 'lt', targets: ['10', '20'], values: ['20', '21'], expected: false },
-    ])('$operator preserves its array quantifier semantics', ({ operator, targets, values, expected }) => {
+    ])('operator preserves its array quantifier semantics', ({ operator, targets, values, expected }) => {
       expect(propertyComparisons[operator](targets, values)).toBe(expected)
     })
 
@@ -69,7 +69,7 @@ describe('shared property matching contract', () => {
       { operator: 'not_icontains', expected: true },
       { operator: 'gt', expected: false },
       { operator: 'lt', expected: false },
-    ])('$operator preserves empty-target behavior', ({ operator, expected }) => {
+    ])('operator preserves empty-target behavior', ({ operator, expected }) => {
       expect(propertyComparisons[operator]([], ['value'])).toBe(expected)
     })
 
@@ -139,7 +139,7 @@ describe('shared property matching contract', () => {
       { operator: 'not_icontains', value: 'other value', expected: true },
       { operator: 'gt', value: '11items', expected: true },
       { operator: 'lt', value: '9items', expected: true },
-    ])('uses the shared $operator comparison', ({ operator, value, expected }) => {
+    ])('uses the shared operator comparison', ({ operator, value, expected }) => {
       const target =
         operator === 'regex' || operator === 'not_regex'
           ? '^/docs/'

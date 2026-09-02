@@ -25,8 +25,8 @@ describe('parsePostHogCookie', () => {
   it('parses an identified user cookie', () => {
     const cookieValue = JSON.stringify({
       distinct_id: 'user_123',
-      $device_id: 'device_abc',
-      $user_state: 'identified',
+      device_id: 'device_abc',
+      user_state: 'identified',
     })
     const result = parsePostHogCookie(cookieValue)
     expect(result).toEqual({
@@ -40,8 +40,8 @@ describe('parsePostHogCookie', () => {
   it('detects anonymous users', () => {
     const cookieValue = JSON.stringify({
       distinct_id: 'device_abc',
-      $device_id: 'device_abc',
-      $user_state: 'anonymous',
+      device_id: 'device_abc',
+      user_state: 'anonymous',
     })
     const result = parsePostHogCookie(cookieValue)
     expect(result).toEqual({
@@ -52,10 +52,10 @@ describe('parsePostHogCookie', () => {
     })
   })
 
-  it('treats missing $user_state as anonymous', () => {
+  it('treats missing user_state as anonymous', () => {
     const cookieValue = JSON.stringify({
       distinct_id: 'user_123',
-      $device_id: 'device_abc',
+      device_id: 'device_abc',
     })
     const result = parsePostHogCookie(cookieValue)
     expect(result).toEqual({
@@ -66,11 +66,11 @@ describe('parsePostHogCookie', () => {
     })
   })
 
-  it('extracts sessionId from $sesid array', () => {
+  it('extracts sessionId from sesid array', () => {
     const cookieValue = JSON.stringify({
       distinct_id: 'user_123',
-      $device_id: 'device_abc',
-      $sesid: [1708700000000, 'session-uuid-v7', 1708700000000],
+      device_id: 'device_abc',
+      sesid: [1708700000000, 'session-uuid-v7', 1708700000000],
     })
     const result = parsePostHogCookie(cookieValue)
     expect(result).toEqual({
@@ -81,19 +81,19 @@ describe('parsePostHogCookie', () => {
     })
   })
 
-  it('returns undefined sessionId when $sesid is missing', () => {
+  it('returns undefined sessionId when sesid is missing', () => {
     const cookieValue = JSON.stringify({
       distinct_id: 'user_123',
-      $device_id: 'device_abc',
+      device_id: 'device_abc',
     })
     const result = parsePostHogCookie(cookieValue)
     expect(result?.sessionId).toBeUndefined()
   })
 
-  it('returns undefined sessionId when $sesid is not an array', () => {
+  it('returns undefined sessionId when sesid is not an array', () => {
     const cookieValue = JSON.stringify({
       distinct_id: 'user_123',
-      $sesid: 'not-an-array',
+      sesid: 'not-an-array',
     })
     const result = parsePostHogCookie(cookieValue)
     expect(result?.sessionId).toBeUndefined()
@@ -163,16 +163,16 @@ describe('isOptedOut', () => {
 })
 
 describe('serializePostHogCookie', () => {
-  it('produces JSON with distinct_id, $device_id, and $sesid', () => {
+  it('produces JSON with distinct_id, device_id, and sesid', () => {
     const result = serializePostHogCookie('abc-123')
     const parsed = JSON.parse(result)
     expect(parsed.distinct_id).toBe('abc-123')
-    expect(parsed.$device_id).toBe('abc-123')
-    expect(parsed.$user_state).toBe('anonymous')
-    expect(parsed.$sesid).toHaveLength(3)
-    expect(typeof parsed.$sesid[0]).toBe('number')
-    expect(typeof parsed.$sesid[1]).toBe('string')
-    expect(parsed.$sesid[2]).toBe(parsed.$sesid[0])
+    expect(parsed.device_id).toBe('abc-123')
+    expect(parsed.user_state).toBe('anonymous')
+    expect(parsed.sesid).toHaveLength(3)
+    expect(typeof parsed.sesid[0]).toBe('number')
+    expect(typeof parsed.sesid[1]).toBe('string')
+    expect(parsed.sesid[2]).toBe(parsed.sesid[0])
   })
 
   it('roundtrips with parsePostHogCookie as anonymous with sessionId', () => {
@@ -229,8 +229,8 @@ describe('readPostHogCookie', () => {
   it('reads and parses a PostHog cookie via the store', () => {
     const cookieValue = JSON.stringify({
       distinct_id: 'lambda-user',
-      $device_id: 'lambda-user',
-      $user_state: 'anonymous',
+      device_id: 'lambda-user',
+      user_state: 'anonymous',
     })
     const store = cookieStoreFromHeader(`ph_phc_test_posthog=${encodeURIComponent(cookieValue)}`)
     const state = readPostHogCookie(store, 'phc_test')
@@ -258,7 +258,7 @@ describe('cookieStateToProperties', () => {
     ).toBeUndefined()
   })
 
-  it('extracts $session_id and $device_id when present', () => {
+  it('extracts session_id and device_id when present', () => {
     expect(
       cookieStateToProperties({
         distinctId: 'abc',
@@ -266,6 +266,6 @@ describe('cookieStateToProperties', () => {
         sessionId: 'sess-1',
         deviceId: 'dev-1',
       })
-    ).toEqual({ $session_id: 'sess-1', $device_id: 'dev-1' })
+    ).toEqual({ session_id: 'sess-1', device_id: 'dev-1' })
   })
 })

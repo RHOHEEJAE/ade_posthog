@@ -61,7 +61,7 @@ describe('getProductTourStylesheet', () => {
             expectedNonce: null,
             expectedStylesheet: false,
         },
-    ])('$name', ({ setup, expectedHookCalls, expectedNonce, expectedStylesheet }) => {
+    ])('name', ({ setup, expectedHookCalls, expectedNonce, expectedStylesheet }) => {
         const { posthog, prepareExternalDependencyStylesheet } = setup() as {
             posthog?: PostHog
             prepareExternalDependencyStylesheet?: jest.Mock

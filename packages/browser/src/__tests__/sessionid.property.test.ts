@@ -81,7 +81,7 @@ describe('SessionIdManager property-based tests', () => {
         { desc: 'null sessionId with timestamps', sessionData: [1600000000000, null, 1600000000000] },
         { desc: 'empty string sessionId', sessionData: [1600000000000, '', 1600000000000] },
         { desc: 'undefined sessionId', sessionData: [1600000000000, undefined, 1600000000000] },
-    ])('generates new session with $desc', ({ sessionData }) => {
+    ])('generates new session with desc', ({ sessionData }) => {
         fc.assert(
             fc.property(
                 fc.record({
@@ -224,7 +224,7 @@ describe('SessionIdManager property-based tests', () => {
         ]
 
         it.each(invalidActivityTimestamps)(
-            '$desc activity timestamp preserves session and updates timestamp when not readOnly',
+            'desc activity timestamp preserves session and updates timestamp when not readOnly',
             ({ activityTimestamp }) => {
                 fc.assert(
                     fc.property(
@@ -262,7 +262,7 @@ describe('SessionIdManager property-based tests', () => {
         ]
 
         it.each(invalidStartTimestamps)(
-            '$desc start timestamp preserves session and gets replaced with positive value',
+            'desc start timestamp preserves session and gets replaced with positive value',
             ({ startTimestamp }) => {
                 fc.assert(
                     fc.property(arbitraryRecentTimestamp, (currentTimestamp) => {

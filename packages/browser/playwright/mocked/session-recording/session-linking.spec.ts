@@ -25,7 +25,7 @@ test.describe('Session Recording - Session Linking', () => {
             },
         })
         await waitForSessionRecordingToStart(page)
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['ade_pageview'])
         await page.resetCapturedEvents()
     })
 
@@ -43,9 +43,9 @@ test.describe('Session Recording - Session Linking', () => {
         })
 
         const capturedEvents = await page.capturedEvents()
-        const firstSnapshot = capturedEvents?.find((e: any) => e.event === '$snapshot')
+        const firstSnapshot = capturedEvents?.find((e: any) => e.event === 'ade_snapshot')
 
-        const firstSnapshotData = firstSnapshot?.properties?.$snapshot_data
+        const firstSnapshotData = firstSnapshot?.properties?.snapshot_data
         expect(firstSnapshotData).toBeDefined()
 
         await page.resetCapturedEvents()
@@ -70,13 +70,13 @@ test.describe('Session Recording - Session Linking', () => {
         expect(firstSessionId).not.toEqual(newSessionId)
 
         const capturedEventsAfterReset = await page.capturedEvents()
-        const secondSnapshot = capturedEventsAfterReset?.find((e: any) => e.event === '$snapshot')
+        const secondSnapshot = capturedEventsAfterReset?.find((e: any) => e.event === 'ade_snapshot')
 
-        const secondSnapshotData = secondSnapshot?.properties?.$snapshot_data
+        const secondSnapshotData = secondSnapshot?.properties?.snapshot_data
         expect(secondSnapshotData).toBeDefined()
 
-        const sessionEndingEvent = firstSnapshotData?.find((s: any) => s.data?.tag === '$session_ending')
-        const sessionStartingEvent = secondSnapshotData?.find((s: any) => s.data?.tag === '$session_starting')
+        const sessionEndingEvent = firstSnapshotData?.find((s: any) => s.data?.tag === 'session_ending')
+        const sessionStartingEvent = secondSnapshotData?.find((s: any) => s.data?.tag === 'session_starting')
 
         expect(sessionEndingEvent).toBeUndefined()
         expect(sessionStartingEvent).toBeUndefined()
@@ -118,21 +118,21 @@ test.describe('Session Recording - Session Linking', () => {
         expect(firstSessionId).not.toEqual(newSessionId)
 
         const capturedEventsAfterChange = await page.capturedEvents()
-        const snapshots = capturedEventsAfterChange?.filter((e: any) => e.event === '$snapshot')
+        const snapshots = capturedEventsAfterChange?.filter((e: any) => e.event === 'ade_snapshot')
 
         expect(snapshots.length).toBeGreaterThan(1)
-        const newSessionSnapshot = snapshots.find((s: any) => s.properties?.$session_id === newSessionId)
+        const newSessionSnapshot = snapshots.find((s: any) => s.properties?.session_id === newSessionId)
         expect(newSessionSnapshot).toBeDefined()
 
-        const snapshotData = newSessionSnapshot?.properties?.$snapshot_data
+        const snapshotData = newSessionSnapshot?.properties?.snapshot_data
 
-        const sessionEndingEvent = snapshotData?.find((s: any) => s.data?.tag === '$session_ending')
-        const sessionStartingEvent = snapshotData?.find((s: any) => s.data?.tag === '$session_starting')
+        const sessionEndingEvent = snapshotData?.find((s: any) => s.data?.tag === 'session_ending')
+        const sessionStartingEvent = snapshotData?.find((s: any) => s.data?.tag === 'session_starting')
 
         expect(sessionEndingEvent).toBeUndefined()
         expect(sessionStartingEvent).toBeUndefined()
 
-        const sessionIdChangeEvent = snapshotData?.find((s: any) => s.data?.tag === '$session_id_change')
+        const sessionIdChangeEvent = snapshotData?.find((s: any) => s.data?.tag === 'session_id_change')
         expect(sessionIdChangeEvent).toBeDefined()
         expect(sessionIdChangeEvent.data.payload.changeReason.noSessionId).toBe(true)
         expect(sessionIdChangeEvent.data.payload.changeReason.activityTimeout).toBe(false)

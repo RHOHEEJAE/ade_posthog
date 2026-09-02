@@ -2,16 +2,16 @@
 
 exports[`PostHogFeatureFlags extension lifecycle snapshots feature flag persistence after loading a v2 response 1`] = `
 {
-  "$active_feature_flags": [
+  "active_feature_flags": [
     "boolean-flag",
     "variant-flag",
   ],
-  "$enabled_feature_flags": {
+  "enabled_feature_flags": {
     "boolean-flag": true,
     "disabled-flag": false,
     "variant-flag": "control",
   },
-  "$feature_flag_details": {
+  "feature_flag_details": {
     "boolean-flag": {
       "enabled": true,
       "key": "boolean-flag",
@@ -63,11 +63,11 @@ exports[`PostHogFeatureFlags extension lifecycle snapshots feature flag persiste
       "variant": "control",
     },
   },
-  "$feature_flag_evaluated_at": 1700000000000,
-  "$feature_flag_payloads": {
+  "feature_flag_evaluated_at": 1700000000000,
+  "feature_flag_payloads": {
     "variant-flag": "{"layout":"compact"}",
   },
-  "$feature_flag_request_id": "flags-request-id",
-  "$minimal_flag_called_events": true,
+  "feature_flag_request_id": "flags-request-id",
+  "minimal_flag_called_events": true,
 }
 `;

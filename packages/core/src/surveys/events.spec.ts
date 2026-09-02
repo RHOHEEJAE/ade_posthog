@@ -24,14 +24,14 @@ describe('survey event helpers', () => {
     }
 
     expect(buildSurveyResponseProperties(responses, survey)).toEqual({
-      $survey_questions: [
+      survey_questions: [
         { id: 'q1', question: 'Rate us', response: 5 },
         { id: 'q2', question: 'Anything else?', response: ['fast', 'clear'] },
       ],
-      $survey_response_q1: 5,
-      $survey_response_q2: ['fast', 'clear'],
-      $survey_response: 5,
-      $survey_response_1: ['fast', 'clear'],
+      survey_response_q1: 5,
+      survey_response_q2: ['fast', 'clear'],
+      survey_response: 5,
+      survey_response_1: ['fast', 'clear'],
     })
   })
 
@@ -41,7 +41,7 @@ describe('survey event helpers', () => {
 
     expect(buildSurveyResponseProperties(responses, survey, questionSnapshots)).toEqual(
       expect.objectContaining({
-        $survey_questions: [
+        survey_questions: [
           { id: 'q1', question: 'Rate us (French)', response: 5 },
           { id: 'q2', question: 'Anything else?', response: undefined },
         ],
@@ -54,7 +54,7 @@ describe('survey event helpers', () => {
 
     expect(buildSurveyResponseProperties({}, survey, questionSnapshots)).toEqual(
       expect.objectContaining({
-        $survey_questions: expect.arrayContaining([{ id: 'q2', question: 'Anything else?', response: undefined }]),
+        survey_questions: expect.arrayContaining([{ id: 'q2', question: 'Anything else?', response: undefined }]),
       })
     )
   })
@@ -71,7 +71,7 @@ describe('survey event helpers', () => {
 
     expect(buildSurveyResponseProperties({}, surveyWithEmptyId, questionSnapshots)).toEqual(
       expect.objectContaining({
-        $survey_questions: [{ id: '', question: 'Untitled', response: null }],
+        survey_questions: [{ id: '', question: 'Untitled', response: null }],
       })
     )
   })
@@ -82,12 +82,12 @@ describe('survey event helpers', () => {
     const response = getSurveyResponseValue(responses, 'q1')
 
     expect(response).toEqual(['a'])
-    expect(response).not.toBe(responses.$survey_response_q1)
+    expect(response).not.toBe(responses.survey_response_q1)
   })
 
   it('detects non-nullish responses and builds interaction property names', () => {
-    expect(surveyHasResponses({ $survey_response_q1: null })).toBe(false)
-    expect(surveyHasResponses({ $survey_response_q1: 0 })).toBe(true)
-    expect(getSurveyInteractionProperty(survey, 'responded')).toBe('$survey_responded/survey-1/2')
+    expect(surveyHasResponses({ survey_response_q1: null })).toBe(false)
+    expect(surveyHasResponses({ survey_response_q1: 0 })).toBe(true)
+    expect(getSurveyInteractionProperty(survey, 'responded')).toBe('survey_responded/survey-1/2')
   })
 })

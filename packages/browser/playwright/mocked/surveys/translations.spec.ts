@@ -75,9 +75,9 @@ test.describe('surveys - translations', () => {
         await pollUntilEventCaptured(page, 'survey sent')
         const captures = await page.capturedEvents()
         const surveySent = captures.find((capture) => capture.event === 'survey sent')
-        expect(surveySent?.properties.$survey_language).toBe('es')
+        expect(surveySent?.properties.survey_language).toBe('es')
         expect(surveySent?.properties[getSurveyResponseKey('experience')]).toBe('Buena')
-        expect(surveySent?.properties.$survey_questions).toEqual([
+        expect(surveySent?.properties.survey_questions).toEqual([
             {
                 id: 'experience',
                 question: '¿Cómo fue tu experiencia?',

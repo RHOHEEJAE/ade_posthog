@@ -52,7 +52,7 @@ describe('Rate Limiter', () => {
     describe('client side', () => {
         it('starts with the max tokens', () => {
             rateLimiter.clientRateLimitContext(true)
-            expect(persistedBucket['$capture_rate_limit']).toEqual({
+            expect(persistedBucket['capture_rate_limit']).toEqual({
                 tokens: 100,
                 last: systemTime,
             })
@@ -63,7 +63,7 @@ describe('Rate Limiter', () => {
             range(5).forEach(() => {
                 expect(rateLimiter.clientRateLimitContext().isRateLimited).toBe(false)
             })
-            expect(persistedBucket['$capture_rate_limit']).toEqual({
+            expect(persistedBucket['capture_rate_limit']).toEqual({
                 tokens: 95,
                 last: systemTime,
             })
@@ -73,14 +73,14 @@ describe('Rate Limiter', () => {
             range(50).forEach(() => {
                 expect(rateLimiter.clientRateLimitContext().isRateLimited).toBe(false)
             })
-            expect(persistedBucket['$capture_rate_limit']).toEqual({
+            expect(persistedBucket['capture_rate_limit']).toEqual({
                 tokens: 50,
                 last: systemTime,
             })
 
             moveTimeForward(2000) // 2 seconds = 20 tokens
             expect(rateLimiter.clientRateLimitContext().isRateLimited).toBe(false)
-            expect(persistedBucket['$capture_rate_limit']).toEqual({
+            expect(persistedBucket['capture_rate_limit']).toEqual({
                 tokens: 69, // 50 + 20 - 1
                 last: systemTime,
             })
@@ -93,7 +93,7 @@ describe('Rate Limiter', () => {
             range(200).forEach(() => {
                 expect(rateLimiter.clientRateLimitContext().isRateLimited).toBe(true)
             })
-            expect(persistedBucket['$capture_rate_limit']).toEqual({
+            expect(persistedBucket['capture_rate_limit']).toEqual({
                 tokens: 0,
                 last: systemTime,
                 dropped: 199, // the first drop emitted the warning and reset the tally
@@ -101,7 +101,7 @@ describe('Rate Limiter', () => {
 
             moveTimeForward(2000) // 2 seconds = 20 tokens
             expect(rateLimiter.clientRateLimitContext().isRateLimited).toBe(false)
-            expect(persistedBucket['$capture_rate_limit']).toEqual({
+            expect(persistedBucket['capture_rate_limit']).toEqual({
                 tokens: 19, // 20 - 1
                 last: systemTime,
                 dropped: 199,
@@ -113,11 +113,11 @@ describe('Rate Limiter', () => {
                 expect(rateLimiter.clientRateLimitContext().isRateLimited).toBe(false)
             })
             expect(rateLimiter.clientRateLimitContext().isRateLimited).toBe(true)
-            expect(persistedBucket['$capture_rate_limit'].tokens).toEqual(0)
+            expect(persistedBucket['capture_rate_limit'].tokens).toEqual(0)
 
             moveTimeForward(1000000)
             expect(rateLimiter.clientRateLimitContext().isRateLimited).toBe(false)
-            expect(persistedBucket['$capture_rate_limit'].tokens).toEqual(99) // limit - 1
+            expect(persistedBucket['capture_rate_limit'].tokens).toEqual(99) // limit - 1
         })
 
         it('captures a rate limit event the first time it is rate limited', () => {
@@ -142,7 +142,7 @@ describe('Rate Limiter', () => {
             range(200).forEach(() => rateLimiter.clientRateLimitContext())
 
             // 100 tokens spent, then 100 drops - the first of which triggered the warning and reset the tally
-            expect(persistedBucket['$capture_rate_limit'].dropped).toEqual(99)
+            expect(persistedBucket['capture_rate_limit'].dropped).toEqual(99)
 
             mockPostHog.capture.mockClear()
 
@@ -154,14 +154,14 @@ describe('Rate Limiter', () => {
             expect(mockPostHog.capture.mock.calls[0][1].$$client_ingestion_warning_message).toContain(
                 '100 event(s) dropped since the last warning'
             )
-            expect(persistedBucket['$capture_rate_limit'].dropped).toEqual(99)
+            expect(persistedBucket['capture_rate_limit'].dropped).toEqual(99)
         })
 
         it('keeps dropped events tallied until a warning is accepted', () => {
             mockPostHog.capture.mockReturnValueOnce(undefined)
             range(200).forEach(() => rateLimiter.clientRateLimitContext())
 
-            expect(persistedBucket['$capture_rate_limit'].dropped).toEqual(100)
+            expect(persistedBucket['capture_rate_limit'].dropped).toEqual(100)
 
             mockPostHog.capture.mockClear()
             moveTimeForward(1000000)
@@ -170,11 +170,11 @@ describe('Rate Limiter', () => {
             expect(mockPostHog.capture.mock.calls[0][1].$$client_ingestion_warning_message).toContain(
                 '101 event(s) dropped since the last warning'
             )
-            expect(persistedBucket['$capture_rate_limit'].dropped).toEqual(99)
+            expect(persistedBucket['capture_rate_limit'].dropped).toEqual(99)
         })
 
         it('reports a persisted dropped tally after reload', () => {
-            persistedBucket['$capture_rate_limit'] = { tokens: 1, last: systemTime, dropped: 19 }
+            persistedBucket['capture_rate_limit'] = { tokens: 1, last: systemTime, dropped: 19 }
             rateLimiter = new RateLimiter(mockPostHog as any)
 
             rateLimiter.clientRateLimitContext()
@@ -195,14 +195,14 @@ describe('Rate Limiter', () => {
             )
         })
 
-        it.each(['$current_url', '$pathname', '$session_id'])('does not interpolate denylisted %s context', (key) => {
+        it.each(['current_url', 'pathname', 'session_id'])('does not interpolate denylisted %s context', (key) => {
             window!.history.replaceState({}, '', '/users/alice@example.com/private?token=secret#private')
             mockPostHog.config.property_denylist = [key]
 
             range(200).forEach(() => rateLimiter.clientRateLimitContext())
 
             const properties = mockPostHog.capture.mock.calls[0][1]
-            if (key === '$session_id') {
+            if (key === 'session_id') {
                 expect(properties.$$client_ingestion_warning_message).not.toContain('session-id')
             } else {
                 expect(properties.$$client_ingestion_warning_message).not.toContain('alice@example.com')

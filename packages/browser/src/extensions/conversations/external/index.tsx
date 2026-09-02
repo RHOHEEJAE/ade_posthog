@@ -272,7 +272,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
                     }
 
                     // Track message sent
-                    this._posthog.capture('$conversations_message_sent', {
+                    this._posthog.capture('ade_conversations_message_sent', {
                         ticketId: data.ticket_id,
                         isNewTicket: isNewTicket,
                         messageLength: message.length,
@@ -474,7 +474,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
         logger.info('Loaded ticket ID from storage', { ticketId: this._currentTicketId })
 
         // Track conversations API loaded (separate from widget loaded)
-        this._posthog.capture('$conversations_loaded', {
+        this._posthog.capture('ade_conversations_loaded', {
             hasExistingTicket: !!this._currentTicketId,
             widgetEnabled: this._isWidgetEnabled,
             domainAllowed: this._isDomainAllowed,
@@ -609,7 +609,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
         this._renderWidget(initialState, initialUserTraits, initialView, tickets)
         this._isWidgetRendered = true
 
-        this._posthog.capture('$conversations_widget_loaded', {
+        this._posthog.capture('ade_conversations_widget_loaded', {
             hasExistingTicket: !!this._currentTicketId,
             initialState: initialState,
             initialView: initialView,
@@ -628,7 +628,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
      * Extract name and email from PostHog's stored person properties.
      *
      * Person properties set via posthog.identify() are stored under the
-     * $stored_person_properties persistence key, not as top-level props.
+     * stored_person_properties persistence key, not as top-level props.
      * We check both locations plus the super-properties for completeness.
      */
     private _getPersonTraits(): { name: string | undefined; email: string | undefined } {
@@ -637,9 +637,9 @@ export class ConversationsManager implements ConversationsManagerInterface {
             (this._posthog.get_property(STORED_PERSON_PROPERTIES_KEY) as Record<string, any>) || {}
 
         const name =
-            storedPersonProps.$name || storedPersonProps.name || superProps.$name || superProps.name || undefined
+            storedPersonProps.name || storedPersonProps.name || superProps.name || superProps.name || undefined
         const email =
-            storedPersonProps.$email || storedPersonProps.email || superProps.$email || superProps.email || undefined
+            storedPersonProps.email || storedPersonProps.email || superProps.email || superProps.email || undefined
 
         return { name, email }
     }
@@ -674,7 +674,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
         this._persistence.saveUserTraits(traits)
 
         // Track identification
-        this._posthog.capture('$conversations_user_identified', {
+        this._posthog.capture('ade_conversations_user_identified', {
             hasName: !!traits.name,
             hasEmail: !!traits.email,
         })
@@ -682,7 +682,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
 
     private _handleRequestRestoreLink = async (email: string): Promise<RequestRestoreLinkResponse> => {
         const response = await this.requestRestoreLink(email)
-        this._posthog.capture('$conversations_restore_link_requested', {
+        this._posthog.capture('ade_conversations_restore_link_requested', {
             hasEmail: !!email,
         })
         return response
@@ -711,7 +711,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
         this._widgetState = state
         logger.info('Widget state changed', { state, view: this._currentView })
 
-        this._posthog.capture('$conversations_widget_state_changed', {
+        this._posthog.capture('ade_conversations_widget_state_changed', {
             state: state,
             view: this._currentView,
             ticketId: this._currentTicketId,
@@ -1014,7 +1014,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
         await this._loadTickets()
 
         // Track back to tickets
-        this._posthog.capture('$conversations_back_to_tickets')
+        this._posthog.capture('ade_conversations_back_to_tickets')
     }
 
     /**
@@ -1160,7 +1160,7 @@ export class ConversationsManager implements ConversationsManagerInterface {
      */
     private _setupIdentifyListener(): void {
         this._unsubscribeIdentifyListener = this._posthog.on('eventCaptured', (event: any) => {
-            if (event.event === '$identify') {
+            if (event.event === 'ade_identify') {
                 // User just identified - hide the identification form if it's showing
                 this._widgetRef?.setUserIdentified()
             }

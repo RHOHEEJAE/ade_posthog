@@ -74,9 +74,9 @@ describe('web vitals', () => {
     }
 
     const expectedEmittedWebVitals = (name: string) => ({
-        $current_url: 'http://localhost/',
-        $session_id: expect.any(String),
-        $window_id: expect.any(String),
+        current_url: 'http://localhost/',
+        session_id: expect.any(String),
+        window_id: expect.any(String),
         timestamp: expect.any(Number),
         name: name,
         value: 123.45,
@@ -88,52 +88,52 @@ describe('web vitals', () => {
             undefined,
             ['CLS', 'FCP', 'INP', 'LCP'] as SupportedWebVitalsMetrics[],
             {
-                $web_vitals_LCP_event: expectedEmittedWebVitals('LCP'),
-                $web_vitals_LCP_value: 123.45,
-                $web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
-                $web_vitals_CLS_value: 123.45,
-                $web_vitals_FCP_event: expectedEmittedWebVitals('FCP'),
-                $web_vitals_FCP_value: 123.45,
-                $web_vitals_INP_event: expectedEmittedWebVitals('INP'),
-                $web_vitals_INP_value: 123.45,
+                ade_web_vitals_LCP_event: expectedEmittedWebVitals('LCP'),
+                ade_web_vitals_LCP_value: 123.45,
+                ade_web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
+                ade_web_vitals_CLS_value: 123.45,
+                ade_web_vitals_FCP_event: expectedEmittedWebVitals('FCP'),
+                ade_web_vitals_FCP_value: 123.45,
+                ade_web_vitals_INP_event: expectedEmittedWebVitals('INP'),
+                ade_web_vitals_INP_value: 123.45,
             },
         ],
         [
             null,
             ['CLS', 'FCP', 'INP', 'LCP'] as SupportedWebVitalsMetrics[],
             {
-                $web_vitals_LCP_event: expectedEmittedWebVitals('LCP'),
-                $web_vitals_LCP_value: 123.45,
-                $web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
-                $web_vitals_CLS_value: 123.45,
-                $web_vitals_FCP_event: expectedEmittedWebVitals('FCP'),
-                $web_vitals_FCP_value: 123.45,
-                $web_vitals_INP_event: expectedEmittedWebVitals('INP'),
-                $web_vitals_INP_value: 123.45,
+                ade_web_vitals_LCP_event: expectedEmittedWebVitals('LCP'),
+                ade_web_vitals_LCP_value: 123.45,
+                ade_web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
+                ade_web_vitals_CLS_value: 123.45,
+                ade_web_vitals_FCP_event: expectedEmittedWebVitals('FCP'),
+                ade_web_vitals_FCP_value: 123.45,
+                ade_web_vitals_INP_event: expectedEmittedWebVitals('INP'),
+                ade_web_vitals_INP_value: 123.45,
             },
         ],
         [
             ['CLS', 'FCP', 'INP', 'LCP'] as SupportedWebVitalsMetrics[],
             ['CLS', 'FCP', 'INP', 'LCP'] as SupportedWebVitalsMetrics[],
             {
-                $web_vitals_LCP_event: expectedEmittedWebVitals('LCP'),
-                $web_vitals_LCP_value: 123.45,
-                $web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
-                $web_vitals_CLS_value: 123.45,
-                $web_vitals_FCP_event: expectedEmittedWebVitals('FCP'),
-                $web_vitals_FCP_value: 123.45,
-                $web_vitals_INP_event: expectedEmittedWebVitals('INP'),
-                $web_vitals_INP_value: 123.45,
+                ade_web_vitals_LCP_event: expectedEmittedWebVitals('LCP'),
+                ade_web_vitals_LCP_value: 123.45,
+                ade_web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
+                ade_web_vitals_CLS_value: 123.45,
+                ade_web_vitals_FCP_event: expectedEmittedWebVitals('FCP'),
+                ade_web_vitals_FCP_value: 123.45,
+                ade_web_vitals_INP_event: expectedEmittedWebVitals('INP'),
+                ade_web_vitals_INP_value: 123.45,
             },
         ],
         [
             ['CLS', 'FCP'] as SupportedWebVitalsMetrics[],
             ['CLS', 'FCP'] as SupportedWebVitalsMetrics[],
             {
-                $web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
-                $web_vitals_CLS_value: 123.45,
-                $web_vitals_FCP_event: expectedEmittedWebVitals('FCP'),
-                $web_vitals_FCP_value: 123.45,
+                ade_web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
+                ade_web_vitals_CLS_value: 123.45,
+                ade_web_vitals_FCP_event: expectedEmittedWebVitals('FCP'),
+                ade_web_vitals_FCP_value: 123.45,
             },
         ],
     ])(
@@ -195,7 +195,7 @@ describe('web vitals', () => {
 
                 expect(beforeSendMock.mock.lastCall).toMatchObject([
                     {
-                        event: '$web_vitals',
+                        event: 'ade_web_vitals',
                         properties: expectedProperties,
                     },
                 ])
@@ -208,13 +208,13 @@ describe('web vitals', () => {
 
                 jest.advanceTimersByTime(DEFAULT_FLUSH_TO_CAPTURE_TIMEOUT_MILLISECONDS + 1)
 
-                // for some reason advancing the timer emits a $pageview event as well 🤷
+                // for some reason advancing the timer emits a ade_pageview event as well 🤷
                 expect(beforeSendMock.mock.lastCall).toMatchObject([
                     {
-                        event: '$web_vitals',
+                        event: 'ade_web_vitals',
                         properties: {
-                            $web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
-                            $web_vitals_CLS_value: 123.45,
+                            ade_web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
+                            ade_web_vitals_CLS_value: 123.45,
                         },
                     },
                 ])
@@ -230,10 +230,10 @@ describe('web vitals', () => {
 
                 expect(beforeSendMock.mock.lastCall).toMatchObject([
                     {
-                        event: '$web_vitals',
+                        event: 'ade_web_vitals',
                         properties: {
-                            $web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
-                            $web_vitals_CLS_value: 123.45,
+                            ade_web_vitals_CLS_event: expectedEmittedWebVitals('CLS'),
+                            ade_web_vitals_CLS_value: 123.45,
                         },
                     },
                 ])
@@ -264,7 +264,7 @@ describe('web vitals', () => {
 
     describe('cookieless_mode (no SessionIdManager)', () => {
         const expectedEmittedWebVitalsCookieless = (name: string) => ({
-            $current_url: 'http://localhost/',
+            current_url: 'http://localhost/',
             timestamp: expect.any(Number),
             name: name,
             value: 123.45,
@@ -321,21 +321,21 @@ describe('web vitals', () => {
             expect(posthog.webVitalsAutocapture!.allowedMetrics).toEqual(['CLS', 'FCP'])
         })
 
-        it('emits web vitals without nested $session_id or $window_id; sets $cookieless_mode on payload', async () => {
+        it('emits web vitals without nested session_id or window_id; sets cookieless_mode on payload', async () => {
             onCLSCallback?.({ name: 'CLS', value: 123.45, extra: 'property' })
             onFCPCallback?.({ name: 'FCP', value: 123.45, extra: 'property' })
 
             expect(beforeSendMock).toBeCalledTimes(1)
 
             const payload = beforeSendMock.mock.calls[0][0]
-            expect(payload.event).toBe('$web_vitals')
+            expect(payload.event).toBe('ade_web_vitals')
             expect(payload.properties[COOKIELESS_MODE_FLAG_PROPERTY]).toBe(true)
-            expect(payload.properties.$web_vitals_CLS_event).toEqual(expectedEmittedWebVitalsCookieless('CLS'))
-            expect(payload.properties.$web_vitals_FCP_event).toEqual(expectedEmittedWebVitalsCookieless('FCP'))
-            expect(payload.properties.$web_vitals_CLS_event).not.toHaveProperty('$session_id')
-            expect(payload.properties.$web_vitals_CLS_event).not.toHaveProperty('$window_id')
-            expect(payload.properties.$web_vitals_FCP_event).not.toHaveProperty('$session_id')
-            expect(payload.properties.$web_vitals_FCP_event).not.toHaveProperty('$window_id')
+            expect(payload.properties.ade_web_vitals_CLS_event).toEqual(expectedEmittedWebVitalsCookieless('CLS'))
+            expect(payload.properties.ade_web_vitals_FCP_event).toEqual(expectedEmittedWebVitalsCookieless('FCP'))
+            expect(payload.properties.ade_web_vitals_CLS_event).not.toHaveProperty('session_id')
+            expect(payload.properties.ade_web_vitals_CLS_event).not.toHaveProperty('window_id')
+            expect(payload.properties.ade_web_vitals_FCP_event).not.toHaveProperty('session_id')
+            expect(payload.properties.ade_web_vitals_FCP_event).not.toHaveProperty('window_id')
         })
 
         it('emits on delayed flush without nested session ids when only one metric is captured', async () => {
@@ -345,16 +345,16 @@ describe('web vitals', () => {
 
             expect(beforeSendMock).toBeCalledTimes(1)
             const payload = beforeSendMock.mock.calls[0][0]
-            expect(payload.event).toBe('$web_vitals')
+            expect(payload.event).toBe('ade_web_vitals')
             expect(payload.properties[COOKIELESS_MODE_FLAG_PROPERTY]).toBe(true)
-            expect(payload.properties.$web_vitals_CLS_event).not.toHaveProperty('$session_id')
-            expect(payload.properties.$web_vitals_CLS_event).not.toHaveProperty('$window_id')
+            expect(payload.properties.ade_web_vitals_CLS_event).not.toHaveProperty('session_id')
+            expect(payload.properties.ade_web_vitals_CLS_event).not.toHaveProperty('window_id')
         })
     })
 
     describe('cookieless_mode on_reject after opt_out', () => {
         const expectedEmittedWebVitalsCookieless = (name: string) => ({
-            $current_url: 'http://localhost/',
+            current_url: 'http://localhost/',
             timestamp: expect.any(Number),
             name: name,
             value: 123.45,
@@ -421,15 +421,15 @@ describe('web vitals', () => {
             expect(beforeSendMock).toBeCalledTimes(1)
 
             const payload = beforeSendMock.mock.calls[0][0]
-            expect(payload.event).toBe('$web_vitals')
+            expect(payload.event).toBe('ade_web_vitals')
             expect(payload.properties[COOKIELESS_MODE_FLAG_PROPERTY]).toBe(true)
-            expect(payload.properties.distinct_id).toBe('$posthog_cookieless')
-            expect(payload.properties.$session_id).toBeUndefined()
-            expect(payload.properties.$window_id).toBeUndefined()
-            expect(payload.properties.$web_vitals_CLS_event).toEqual(expectedEmittedWebVitalsCookieless('CLS'))
-            expect(payload.properties.$web_vitals_FCP_event).toEqual(expectedEmittedWebVitalsCookieless('FCP'))
-            expect(payload.properties.$web_vitals_CLS_event).not.toHaveProperty('$session_id')
-            expect(payload.properties.$web_vitals_FCP_event).not.toHaveProperty('$session_id')
+            expect(payload.properties.distinct_id).toBe('posthog_cookieless')
+            expect(payload.properties.session_id).toBeUndefined()
+            expect(payload.properties.window_id).toBeUndefined()
+            expect(payload.properties.ade_web_vitals_CLS_event).toEqual(expectedEmittedWebVitalsCookieless('CLS'))
+            expect(payload.properties.ade_web_vitals_FCP_event).toEqual(expectedEmittedWebVitalsCookieless('FCP'))
+            expect(payload.properties.ade_web_vitals_CLS_event).not.toHaveProperty('session_id')
+            expect(payload.properties.ade_web_vitals_FCP_event).not.toHaveProperty('session_id')
         })
     })
 
@@ -624,7 +624,7 @@ describe('web vitals', () => {
 
             emit()
             jest.advanceTimersByTime(DEFAULT_FLUSH_TO_CAPTURE_TIMEOUT_MILLISECONDS + 1)
-            const call = beforeSendMock.mock.calls.find((c: any[]) => c[0].event === '$web_vitals')
+            const call = beforeSendMock.mock.calls.find((c: any[]) => c[0].event === 'ade_web_vitals')
             return call![0].properties
         }
 
@@ -633,7 +633,7 @@ describe('web vitals', () => {
                 onINPCallback?.({ name: 'INP', value: 100, entries: [{}] })
             })
 
-            expect(properties.$web_vitals_INP_event).not.toHaveProperty('entries')
+            expect(properties.ade_web_vitals_INP_event).not.toHaveProperty('entries')
         })
 
         it('keeps only whitelisted attribution fields for an attributed metric', async () => {
@@ -652,7 +652,7 @@ describe('web vitals', () => {
                 })
             })
 
-            expect(properties.$web_vitals_INP_event.attribution).toEqual({
+            expect(properties.ade_web_vitals_INP_event.attribution).toEqual({
                 interactionTarget: 'button#pay',
                 inputDelay: 10,
                 processingDuration: 20,
@@ -669,7 +669,7 @@ describe('web vitals', () => {
                 })
             })
 
-            expect(properties.$web_vitals_LCP_event.attribution).toEqual({
+            expect(properties.ade_web_vitals_LCP_event.attribution).toEqual({
                 target: 'img#hero',
                 elementRenderDelay: 20,
             })
@@ -694,7 +694,7 @@ describe('web vitals', () => {
                 }
             )
 
-            expect(properties.$web_vitals_LCP_event.attribution.url).toBe(
+            expect(properties.ade_web_vitals_LCP_event.attribution.url).toBe(
                 'https://cdn.example.com/hero.jpg?token=<masked>&size=large'
             )
         })
@@ -708,7 +708,7 @@ describe('web vitals', () => {
                 })
             })
 
-            expect(properties.$web_vitals_CLS_event).not.toHaveProperty('attribution')
+            expect(properties.ade_web_vitals_CLS_event).not.toHaveProperty('attribution')
         })
     })
 
@@ -1231,22 +1231,22 @@ describe('web vitals', () => {
 
             expect(beforeSendMock).toHaveBeenCalledTimes(2)
             expect(beforeSendMock.mock.calls[0][0]).toMatchObject({
-                event: '$web_vitals',
+                event: 'ade_web_vitals',
                 properties: {
-                    $current_url: 'http://localhost/old?gclid=<masked>',
-                    $web_vitals_LCP_event: {
-                        $current_url: 'http://localhost/old?gclid=<masked>',
+                    current_url: 'http://localhost/old?gclid=<masked>',
+                    ade_web_vitals_LCP_event: {
+                        current_url: 'http://localhost/old?gclid=<masked>',
                         navigationURL: 'http://localhost/old?gclid=<masked>',
                         navigationId: 1,
                     },
                 },
             })
             expect(beforeSendMock.mock.calls[1][0]).toMatchObject({
-                event: '$web_vitals',
+                event: 'ade_web_vitals',
                 properties: {
-                    $current_url: 'http://localhost/new?gclid=<masked>',
-                    $web_vitals_CLS_event: {
-                        $current_url: 'http://localhost/new?gclid=<masked>',
+                    current_url: 'http://localhost/new?gclid=<masked>',
+                    ade_web_vitals_CLS_event: {
+                        current_url: 'http://localhost/new?gclid=<masked>',
                         navigationURL: 'http://localhost/new?gclid=<masked>',
                         navigationId: 2,
                     },
@@ -1272,10 +1272,10 @@ describe('web vitals', () => {
             jest.advanceTimersByTime(DEFAULT_FLUSH_TO_CAPTURE_TIMEOUT_MILLISECONDS + 1)
 
             expect(beforeSendMock).toHaveBeenCalledTimes(2)
-            expect(beforeSendMock.mock.calls[0][0].properties.$web_vitals_LCP_event.navigationId).toBe(
+            expect(beforeSendMock.mock.calls[0][0].properties.ade_web_vitals_LCP_event.navigationId).toBe(
                 'soft-navigation-10'
             )
-            expect(beforeSendMock.mock.calls[1][0].properties.$web_vitals_CLS_event.navigationId).toBe(
+            expect(beforeSendMock.mock.calls[1][0].properties.ade_web_vitals_CLS_event.navigationId).toBe(
                 'soft-navigation-11'
             )
         })
@@ -1353,14 +1353,14 @@ describe('web vitals', () => {
 
                 expect(beforeSendMock.mock.lastCall).toMatchObject([
                     {
-                        event: '$web_vitals',
+                        event: 'ade_web_vitals',
                         properties: {
-                            $current_url: maskedUrl,
-                            $session_entry_url: maskedUrl,
-                            $web_vitals_LCP_event: { $current_url: maskedUrl },
-                            $web_vitals_CLS_event: { $current_url: maskedUrl },
-                            $web_vitals_FCP_event: { $current_url: maskedUrl },
-                            $web_vitals_INP_event: { $current_url: maskedUrl },
+                            current_url: maskedUrl,
+                            session_entry_url: maskedUrl,
+                            ade_web_vitals_LCP_event: { current_url: maskedUrl },
+                            ade_web_vitals_CLS_event: { current_url: maskedUrl },
+                            ade_web_vitals_FCP_event: { current_url: maskedUrl },
+                            ade_web_vitals_INP_event: { current_url: maskedUrl },
                         },
                     },
                 ])

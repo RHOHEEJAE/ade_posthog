@@ -39,7 +39,7 @@ describe('PostHog Core', () => {
           message: expect.objectContaining({
             event: 'custom-event',
             properties: expect.objectContaining({
-              $lib: 'posthog-core-tests',
+              lib: 'posthog-core-tests',
             }),
           }),
         },

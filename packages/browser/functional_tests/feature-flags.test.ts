@@ -43,22 +43,22 @@ describe('FunctionalTests / Feature Flags', () => {
             contentType: 'text/plain',
             path: '/flags/?v=2',
         })
-        expect(wireRequest.decodedBody.$device_id).toEqual(expect.any(String))
+        expect(wireRequest.decodedBody.device_id).toEqual(expect.any(String))
         expect(wireRequest.decodedBody.distinct_id).toEqual(expect.any(String))
         expect(wireRequest.decodedBody.sent_at).toEqual(expect.any(String))
         expect(Number.isNaN(Date.parse(wireRequest.decodedBody.sent_at))).toBe(false)
         expect(wireRequest.decodedBody.timezone).toEqual(expect.any(String))
-        expect(wireRequest.decodedBody.person_properties.$lib_version).toEqual(expect.any(String))
+        expect(wireRequest.decodedBody.person_properties.lib_version).toEqual(expect.any(String))
 
         expect({
             ...wireRequest,
             decodedBody: {
                 ...wireRequest.decodedBody,
-                $device_id: '<generated-device-id>',
+                device_id: '<generated-device-id>',
                 distinct_id: '<generated-distinct-id>',
                 person_properties: {
                     ...wireRequest.decodedBody.person_properties,
-                    $lib_version: '<sdk-version>',
+                    lib_version: '<sdk-version>',
                 },
                 sent_at: '<sent-at>',
                 timezone: '<runtime-timezone>',
@@ -75,7 +75,7 @@ describe('FunctionalTests / Feature Flags', () => {
             expect(getRequests(token)['/flags/']).toEqual([
                 // This is the initial call to the flags endpoint on PostHog init.
                 {
-                    $device_id: anonymousId,
+                    device_id: anonymousId,
                     distinct_id: anonymousId,
                     person_properties: expect.any(Object),
                     groups: {},
@@ -103,12 +103,12 @@ describe('FunctionalTests / Feature Flags', () => {
                 // Then we have another flags call triggered by the call to
                 // `identify()`.
                 {
-                    $anon_distinct_id: anonymousId,
-                    $device_id: anonymousId,
+                    anon_distinct_id: anonymousId,
+                    device_id: anonymousId,
                     distinct_id: 'test-id',
                     person_properties: {
                         $initial__kx: null,
-                        $initial_current_url: 'http://localhost/',
+                        initial_current_url: 'http://localhost/',
                         $initial_dclid: null,
                         $initial_epik: null,
                         $initial_fbclid: null,
@@ -125,8 +125,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_pathname: '/',
                         $initial_qclid: null,
                         $initial_rdt_cid: null,
-                        $initial_referrer: '$direct',
-                        $initial_referring_domain: '$direct',
+                        $initial_referrer: 'direct',
+                        $initial_referring_domain: 'direct',
                         $initial_sccid: null,
                         $initial_ttclid: null,
                         $initial_twclid: null,
@@ -137,8 +137,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_utm_term: null,
                         $initial_wbraid: null,
                         email: 'test@email.com',
-                        $lib: 'web',
-                        $lib_version: expect.any(String),
+                        lib: 'web',
+                        lib_version: expect.any(String),
                     },
                     groups: {},
                     sent_at: expect.any(String),
@@ -158,7 +158,7 @@ describe('FunctionalTests / Feature Flags', () => {
             expect(getRequests(token)['/flags/']).toEqual([
                 // This is the initial call to the flags endpoint on PostHog init.
                 {
-                    $device_id: anonymousId,
+                    device_id: anonymousId,
                     distinct_id: anonymousId,
                     person_properties: expect.any(Object),
                     groups: {},
@@ -183,13 +183,13 @@ describe('FunctionalTests / Feature Flags', () => {
                 // Then we have another flags call triggered by the first call to
                 // `identify()`.
                 {
-                    $anon_distinct_id: anonymousId,
-                    $device_id: anonymousId,
+                    anon_distinct_id: anonymousId,
+                    device_id: anonymousId,
                     distinct_id: 'test-id',
                     groups: {},
                     person_properties: {
                         $initial__kx: null,
-                        $initial_current_url: 'http://localhost/',
+                        initial_current_url: 'http://localhost/',
                         $initial_dclid: null,
                         $initial_epik: null,
                         $initial_fbclid: null,
@@ -206,8 +206,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_pathname: '/',
                         $initial_qclid: null,
                         $initial_rdt_cid: null,
-                        $initial_referrer: '$direct',
-                        $initial_referring_domain: '$direct',
+                        $initial_referrer: 'direct',
+                        $initial_referring_domain: 'direct',
                         $initial_sccid: null,
                         $initial_ttclid: null,
                         $initial_twclid: null,
@@ -217,8 +217,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_utm_source: null,
                         $initial_utm_term: null,
                         $initial_wbraid: null,
-                        $lib: 'web',
-                        $lib_version: expect.any(String),
+                        lib: 'web',
+                        lib_version: expect.any(String),
                     },
                     sent_at: expect.any(String),
                     timezone: expect.any(String),
@@ -236,12 +236,12 @@ describe('FunctionalTests / Feature Flags', () => {
         await waitFor(() => {
             expect(getRequests(token)['/flags/']).toEqual([
                 {
-                    $device_id: anonymousId,
+                    device_id: anonymousId,
                     distinct_id: 'test-id',
                     groups: {},
                     person_properties: {
                         $initial__kx: null,
-                        $initial_current_url: 'http://localhost/',
+                        initial_current_url: 'http://localhost/',
                         $initial_dclid: null,
                         $initial_epik: null,
                         $initial_fbclid: null,
@@ -258,8 +258,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_pathname: '/',
                         $initial_qclid: null,
                         $initial_rdt_cid: null,
-                        $initial_referrer: '$direct',
-                        $initial_referring_domain: '$direct',
+                        $initial_referrer: 'direct',
+                        $initial_referring_domain: 'direct',
                         $initial_sccid: null,
                         $initial_ttclid: null,
                         $initial_twclid: null,
@@ -270,8 +270,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_utm_term: null,
                         $initial_wbraid: null,
                         email: 'test@email.com',
-                        $lib: 'web',
-                        $lib_version: expect.any(String),
+                        lib: 'web',
+                        lib_version: expect.any(String),
                     },
                     sent_at: expect.any(String),
                     timezone: expect.any(String),
@@ -290,7 +290,7 @@ describe('FunctionalTests / Feature Flags', () => {
             expect(getRequests(token)['/flags/']).toEqual([
                 // This is the initial call to the flags endpoint on PostHog init.
                 {
-                    $device_id: anonymousId,
+                    device_id: anonymousId,
                     distinct_id: anonymousId,
                     person_properties: expect.any(Object),
                     groups: {},
@@ -319,13 +319,13 @@ describe('FunctionalTests / Feature Flags', () => {
         await waitFor(() => {
             expect(getRequests(token)['/flags/']).toEqual([
                 {
-                    $anon_distinct_id: anonymousId,
-                    $device_id: anonymousId,
+                    anon_distinct_id: anonymousId,
+                    device_id: anonymousId,
                     distinct_id: 'test-id',
                     groups: {},
                     person_properties: {
                         $initial__kx: null,
-                        $initial_current_url: 'http://localhost/',
+                        initial_current_url: 'http://localhost/',
                         $initial_dclid: null,
                         $initial_epik: null,
                         $initial_fbclid: null,
@@ -342,8 +342,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_pathname: '/',
                         $initial_qclid: null,
                         $initial_rdt_cid: null,
-                        $initial_referrer: '$direct',
-                        $initial_referring_domain: '$direct',
+                        $initial_referrer: 'direct',
+                        $initial_referring_domain: 'direct',
                         $initial_sccid: null,
                         $initial_ttclid: null,
                         $initial_twclid: null,
@@ -354,8 +354,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_utm_term: null,
                         $initial_wbraid: null,
                         email: 'test2@email.com',
-                        $lib: 'web',
-                        $lib_version: expect.any(String),
+                        lib: 'web',
+                        lib_version: expect.any(String),
                     },
                     sent_at: expect.any(String),
                     timezone: expect.any(String),
@@ -380,13 +380,13 @@ describe('FunctionalTests / Feature Flags', () => {
             expect(getRequests(token)['/flags/']).toEqual([
                 // This is the initial call to the flags endpoint on PostHog init, with all info added from `loaded`.
                 {
-                    $anon_distinct_id: 'anon-id',
-                    $device_id: 'anon-id',
+                    anon_distinct_id: 'anon-id',
+                    device_id: 'anon-id',
                     distinct_id: 'test-id',
                     groups: { playlist: 'id:77' },
                     person_properties: {
                         $initial__kx: null,
-                        $initial_current_url: 'http://localhost/',
+                        initial_current_url: 'http://localhost/',
                         $initial_dclid: null,
                         $initial_epik: null,
                         $initial_fbclid: null,
@@ -403,8 +403,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_pathname: '/',
                         $initial_qclid: null,
                         $initial_rdt_cid: null,
-                        $initial_referrer: '$direct',
-                        $initial_referring_domain: '$direct',
+                        $initial_referrer: 'direct',
+                        $initial_referring_domain: 'direct',
                         $initial_sccid: null,
                         $initial_ttclid: null,
                         $initial_twclid: null,
@@ -415,8 +415,8 @@ describe('FunctionalTests / Feature Flags', () => {
                         $initial_utm_term: null,
                         $initial_wbraid: null,
                         email: 'test3@email.com',
-                        $lib: 'web',
-                        $lib_version: expect.any(String),
+                        lib: 'web',
+                        lib_version: expect.any(String),
                     },
                     group_properties: {
                         playlist: {

@@ -54,7 +54,7 @@
 
 - [#4418](https://github.com/PostHog/posthog-js/pull/4418) [`be2161d`](https://github.com/PostHog/posthog-js/commit/be2161d68946b30d27d7a0a5c2cb5671b04d5ac0) Thanks [@posthog](https://github.com/apps/posthog)! - feat: add granular automatic pageview options for SPA navigation
 
-    `capture_pageview` now accepts an object with `path`, `search`, and `hash` options. Each selected URL component triggers a `$pageview` when it changes, including direct hash changes used by hash-based routers. The existing `'history_change'` option continues to capture pathname changes. (2026-08-24)
+    `capture_pageview` now accepts an object with `path`, `search`, and `hash` options. Each selected URL component triggers a `ade_pageview` when it changes, including direct hash changes used by hash-based routers. The existing `'history_change'` option continues to capture pathname changes. (2026-08-24)
 
 ## 1.405.1
 
@@ -82,7 +82,7 @@
     A visibility or focus change near a click is the opposite — a sign the click did something (it woke/focused the tab, opened a new tab, or opened a new window/popup) — so these signals now only ever _suppress_ a dead click, never cause one:
     - Visibility changes are recorded in both directions (a click that opens a new tab sends the current tab to `hidden`), and a window `focus`/`blur` observer is added, since a click that opens a new window/popup may leave the tab visible and only surface as the current window losing focus.
     - A click within a wake-up/interaction window (1s, wide enough for a real "tab back, then click" gesture) of any such change is suppressed.
-    - The visibility signal no longer feeds the dead-marking path at all. `$dead_click_visibility_changed_timeout` stays in the payload (always false) for shape compatibility, and a new `$dead_click_focus_changed_delay_ms` is emitted for observability.
+    - The visibility signal no longer feeds the dead-marking path at all. `ade_dead_click_visibility_changed_timeout` stays in the payload (always false) for shape compatibility, and a new `ade_dead_click_focus_changed_delay_ms` is emitted for observability.
     - Visibility/focus changes are now recorded onto each queued candidate the instant they fire (like scroll), instead of being read from a single shared timestamp when the click is checked ~1s later. A click that hides or blurs the tab (opening a new tab/window) suspends that check while the tab is backgrounded; by the time it resumes the tab has usually returned, and the shared timestamp would have been overwritten by that later transition — losing the click-correlated one and wrongly flagging the click dead. Stamping the candidate as the event fires makes delayed hide→show and blur→focus sequences suppress correctly. (2026-08-14)
 
 ## 1.404.0
@@ -99,9 +99,9 @@
 - [#4443](https://github.com/PostHog/posthog-js/pull/4443) [`b2c6830`](https://github.com/PostHog/posthog-js/commit/b2c683051fae7da40be872666a3e8cadf958f804) Thanks [@arnohillen](https://github.com/arnohillen)! - Harden the session replay stylesheet inlining budget (`inlineStylesheetBudgetRules`):
     - The default budget (10,000 rules) moves from the recorder chunk into posthog-js session recording options, so npm-pinned or cached bundles keep their configured override (including `0` to disable) and direct `rrweb.record()` consumers keep unbounded inlining unless they opt in.
     - Deferred inlining is bounded inside a sheet: a resumable cursor stringifies 200 rules per idle slice and emits a sheet's `_cssText` atomically, so monolithic sheets no longer produce one long task and partial CSS never reaches the wire.
-    - Deferred sheets are flushed synchronously when recording stops and on `pagehide`; residual failure modes are counted via `$sdk_debug_replay_deferred_stylesheets_failed` / `_abandoned`.
+    - Deferred sheets are flushed synchronously when recording stops and on `pagehide`; residual failure modes are counted via `sdk_debug_replay_deferred_stylesheets_failed` / `_abandoned`.
     - CSSOM-only styles (`insertRule` output, `adoptedStyleSheets`) no longer charge the budget, since deferring `<link>` sheets buys those pages nothing.
-    - Telemetry fixes: full-snapshot duration wraps the whole synchronous task, deferred counts are cumulative per session, new gauges cover non-deferrable rules and idle stringification cost, and duration samples straddling tab suspension are discarded (`$sdk_debug_replay_discarded_duration_samples`). (2026-08-13)
+    - Telemetry fixes: full-snapshot duration wraps the whole synchronous task, deferred counts are cumulative per session, new gauges cover non-deferrable rules and idle stringification cost, and duration samples straddling tab suspension are discarded (`sdk_debug_replay_discarded_duration_samples`). (2026-08-13)
 
 ## 1.403.0
 
@@ -213,16 +213,16 @@
 
 ### Minor Changes
 
-- [#4149](https://github.com/PostHog/posthog-js/pull/4149) [`607bf54`](https://github.com/PostHog/posthog-js/commit/607bf543b63dd8f9c9a2ad891048194601a942e8) Thanks [@pauldambra](https://github.com/pauldambra)! - Add dead swipe detection to dead clicks autocapture. When dead clicks autocapture is enabled, touch swipe gestures that produce no observable screen change (no scroll, mutation, selection or visibility change) are now captured as `$dead_swipe` events, surfacing failed navigations on touch devices. Configurable via `capture_dead_swipes` (default `true`) and `swipe_threshold_px` (default `30`) on the `capture_dead_clicks` config. Swipes over surfaces whose response cannot be observed (canvas, video and other media elements under the finger) are skipped, and captures are limited per page load via `max_dead_swipes_per_page_load` (default `10`).
+- [#4149](https://github.com/PostHog/posthog-js/pull/4149) [`607bf54`](https://github.com/PostHog/posthog-js/commit/607bf543b63dd8f9c9a2ad891048194601a942e8) Thanks [@pauldambra](https://github.com/pauldambra)! - Add dead swipe detection to dead clicks autocapture. When dead clicks autocapture is enabled, touch swipe gestures that produce no observable screen change (no scroll, mutation, selection or visibility change) are now captured as `ade_dead_swipe` events, surfacing failed navigations on touch devices. Configurable via `capture_dead_swipes` (default `true`) and `swipe_threshold_px` (default `30`) on the `capture_dead_clicks` config. Swipes over surfaces whose response cannot be observed (canvas, video and other media elements under the finger) are skipped, and captures are limited per page load via `max_dead_swipes_per_page_load` (default `10`).
   (2026-07-16)
 
 ## 1.396.0
 
 ### Minor Changes
 
-- [#4159](https://github.com/PostHog/posthog-js/pull/4159) [`fad6d9a`](https://github.com/PostHog/posthog-js/commit/fad6d9adae4163cd63859766916cdcbae629a110) Thanks [@haacked](https://github.com/haacked)! - add `$feature_flag_has_experiment` to `$feature_flag_called` events
+- [#4159](https://github.com/PostHog/posthog-js/pull/4159) [`fad6d9a`](https://github.com/PostHog/posthog-js/commit/fad6d9adae4163cd63859766916cdcbae629a110) Thanks [@haacked](https://github.com/haacked)! - add `feature_flag_has_experiment` to `ade_feature_flag_called` events
 
-    `$feature_flag_called` events now carry a `$feature_flag_has_experiment` boolean sourced from the server's `has_experiment` flag metadata (the `/flags?v=2` response for remote evaluation, the `/api/feature_flag/local_evaluation` definitions for posthog-node local evaluation). The property is only sent when the server explicitly reports `has_experiment`; it is omitted entirely when the value is unknown (older servers, missing metadata, bootstrapped or locally injected flags). (2026-07-16)
+    `ade_feature_flag_called` events now carry a `feature_flag_has_experiment` boolean sourced from the server's `has_experiment` flag metadata (the `/flags?v=2` response for remote evaluation, the `/api/feature_flag/local_evaluation` definitions for posthog-node local evaluation). The property is only sent when the server explicitly reports `has_experiment`; it is omitted entirely when the value is unknown (older servers, missing metadata, bootstrapped or locally injected flags). (2026-07-16)
 
 ## 1.395.0
 
@@ -265,7 +265,7 @@
 
 ### Minor Changes
 
-- [#3987](https://github.com/PostHog/posthog-js/pull/3987) [`74cc6bb`](https://github.com/PostHog/posthog-js/commit/74cc6bb6f255b944846567406dfac449be17095c) Thanks [@TueHaulund](https://github.com/TueHaulund)! - Add a `get_current_url` config option that overrides the URL used for client-side URL targeting — session replay URL triggers, the session replay URL blocklist, survey URL display conditions, product tour URL conditions, web experiment URL conditions, and autocapture URL allow/ignore lists. These match against `window.location.href` directly, which does not reflect a `$current_url` rewritten in `before_send`. Apps where the browser URL is not meaningful for targeting (e.g. Electron/desktop builds served from a generated host) can now return the logical URL to match against. Defaults to `window.location.href` when not set.
+- [#3987](https://github.com/PostHog/posthog-js/pull/3987) [`74cc6bb`](https://github.com/PostHog/posthog-js/commit/74cc6bb6f255b944846567406dfac449be17095c) Thanks [@TueHaulund](https://github.com/TueHaulund)! - Add a `get_current_url` config option that overrides the URL used for client-side URL targeting — session replay URL triggers, the session replay URL blocklist, survey URL display conditions, product tour URL conditions, web experiment URL conditions, and autocapture URL allow/ignore lists. These match against `window.location.href` directly, which does not reflect a `current_url` rewritten in `before_send`. Apps where the browser URL is not meaningful for targeting (e.g. Electron/desktop builds served from a generated host) can now return the logical URL to match against. Defaults to `window.location.href` when not set.
   (2026-06-29)
 
 ## 1.391.1
@@ -279,7 +279,7 @@
 
 ### Minor Changes
 
-- [#3921](https://github.com/PostHog/posthog-js/pull/3921) [`c28b161`](https://github.com/PostHog/posthog-js/commit/c28b16143d04caade1d024819017b89cef3162ad) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `disable_capture_url_hashes` to strip URL fragments from automatically captured URLs. It is disabled by default for backwards compatibility, and enabled automatically when `config.defaults` is `'2026-06-25'` or later. Enabling it (either explicitly or via the `'2026-06-25'` defaults) is a breaking behavior change for SPAs that rely on URL hashes for routing or analytics, because hash-based routes will be collapsed to the same URL without the fragment in fields such as `$current_url`, `$initial_current_url`, `$session_entry_url`, autocapture `$elements[*].attr__href`, `$external_click_url`, replay `href` URLs, heatmaps, web vitals `$current_url`, logs `url.full`, conversations `current_url`/`request_url`, or Next.js Pages Router `$pageview` `$current_url`.
+- [#3921](https://github.com/PostHog/posthog-js/pull/3921) [`c28b161`](https://github.com/PostHog/posthog-js/commit/c28b16143d04caade1d024819017b89cef3162ad) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `disable_capture_url_hashes` to strip URL fragments from automatically captured URLs. It is disabled by default for backwards compatibility, and enabled automatically when `config.defaults` is `'2026-06-25'` or later. Enabling it (either explicitly or via the `'2026-06-25'` defaults) is a breaking behavior change for SPAs that rely on URL hashes for routing or analytics, because hash-based routes will be collapsed to the same URL without the fragment in fields such as `current_url`, `initial_current_url`, `session_entry_url`, autocapture `elements[*].attr__href`, `external_click_url`, replay `href` URLs, heatmaps, web vitals `current_url`, logs `url.full`, conversations `current_url`/`request_url`, or Next.js Pages Router `ade_pageview` `current_url`.
 
     If you only want to capture some hashes, leave hash capture enabled and use `before_send` to remove or redact sensitive hash values before events are sent. (2026-06-23)
 
@@ -342,12 +342,12 @@
 
 ### Minor Changes
 
-- [#3709](https://github.com/PostHog/posthog-js/pull/3709) [`c6c163a`](https://github.com/PostHog/posthog-js/commit/c6c163aefb093d5609977ae243b056f96a2d3b4e) Thanks [@posthog](https://github.com/apps/posthog)! - Add `unsetPersonProperties()` to remove person properties, the counterpart to `setPersonProperties()`. Previously the only way to unset a person property was to hand-pass a `$unset` array inside a `capture()` call.
+- [#3709](https://github.com/PostHog/posthog-js/pull/3709) [`c6c163a`](https://github.com/PostHog/posthog-js/commit/c6c163aefb093d5609977ae243b056f96a2d3b4e) Thanks [@posthog](https://github.com/apps/posthog)! - Add `unsetPersonProperties()` to remove person properties, the counterpart to `setPersonProperties()`. Previously the only way to unset a person property was to hand-pass a `unset` array inside a `capture()` call.
   (2026-06-16)
 
 ### Patch Changes
 
-- [#3860](https://github.com/PostHog/posthog-js/pull/3860) [`c9c7df1`](https://github.com/PostHog/posthog-js/commit/c9c7df1e7f3ae6152aa80f98b49be206fdff1b23) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `$unset` to capture options and pass it through in browser capture payloads.
+- [#3860](https://github.com/PostHog/posthog-js/pull/3860) [`c9c7df1`](https://github.com/PostHog/posthog-js/commit/c9c7df1e7f3ae6152aa80f98b49be206fdff1b23) Thanks [@marandaneto](https://github.com/marandaneto)! - Add `unset` to capture options and pass it through in browser capture payloads.
   (2026-06-16)
 
 ## 1.386.4
@@ -405,9 +405,9 @@
 
 ### Minor Changes
 
-- [#3782](https://github.com/PostHog/posthog-js/pull/3782) [`0c2acb9`](https://github.com/PostHog/posthog-js/commit/0c2acb9f30d545bb89d1f950ba8f840c76e47dc2) Thanks [@pauldambra](https://github.com/pauldambra)! - Detect the Google Search App (GSA) as its own `$browser` value (`Google Search App`) via the cross-platform `GSA/` UA marker, instead of reporting the embedded webview as Mobile Safari (iOS) or Chrome (Android). Gated behind the new `detect_google_search_app` config option, which the `2026-05-30` config defaults opt into automatically — left off otherwise to keep existing browser attribution backwards-compatible.
+- [#3782](https://github.com/PostHog/posthog-js/pull/3782) [`0c2acb9`](https://github.com/PostHog/posthog-js/commit/0c2acb9f30d545bb89d1f950ba8f840c76e47dc2) Thanks [@pauldambra](https://github.com/pauldambra)! - Detect the Google Search App (GSA) as its own `browser` value (`Google Search App`) via the cross-platform `GSA/` UA marker, instead of reporting the embedded webview as Mobile Safari (iOS) or Chrome (Android). Gated behind the new `detect_google_search_app` config option, which the `2026-05-30` config defaults opt into automatically — left off otherwise to keep existing browser attribution backwards-compatible.
 
-    Note: `$browser_version` for `Google Search App` is not comparable across platforms — iOS yields a version like `284.0` (from `GSA/284.0.564099828`) while Android yields a version like `14.21` (from `GSA/14.21.20.28.arm64`), since Google maintains separate versioning schemes for the two apps. Avoid building cross-platform version dashboards on `$browser_version` for this browser. (2026-06-10)
+    Note: `browser_version` for `Google Search App` is not comparable across platforms — iOS yields a version like `284.0` (from `GSA/284.0.564099828`) while Android yields a version like `14.21` (from `GSA/14.21.20.28.arm64`), since Google maintains separate versioning schemes for the two apps. Avoid building cross-platform version dashboards on `browser_version` for this browser. (2026-06-10)
 
 ## 1.383.3
 
@@ -427,7 +427,7 @@
 - [#3771](https://github.com/PostHog/posthog-js/pull/3771) [`227c9b0`](https://github.com/PostHog/posthog-js/commit/227c9b03c19dcb93d9a15abb1ee6b9523d366767) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - feat(persistence): add `split_storage` config option to store the feature-flag config cluster in its own localStorage entry (`<name>__flags`) instead of the single main persistence blob. This payload is large and changes rarely, so keeping it out of the main blob stops it riding on every high-frequency main-blob write and broadcasting on cross-tab `storage` events. Reads are unchanged: on load the entry is merged back into the in-memory props, and the old main-blob location is read once and migrated forward so upgrades never miss a cached flag. The split only applies when persistence resolves to `localStorage` / `localStorage+cookie` (it is pointless for `memory` / `sessionStorage` and impossible for `cookie`), and `reset()` / opt-out wipe every entry. Defaults to `false` for backwards compatibility; the new `2026-05-30` config default opts in automatically.
   (2026-06-08)
 
-- [#3727](https://github.com/PostHog/posthog-js/pull/3727) [`393f9e2`](https://github.com/PostHog/posthog-js/commit/393f9e2a4697c6ffe52402cad6fb8550b48b5e00) Thanks [@pauldambra](https://github.com/pauldambra)! - feat(surveys): extend `split_storage` to also move the survey config (`$surveys`) out of the main persistence blob into its own `<name>__surveys` localStorage entry, on top of the feature-flag split. Surveys now stamp a `$surveys_loaded_at` freshness timestamp on every `/surveys` load — the survey analogue of `$feature_flag_evaluated_at` — so a stale `__surveys` entry can no longer win over a fresher survey payload written back into the main blob by a gate-off / older-SDK tab. With no timestamp on either side (migration leftover) the group entry still wins, so the migration path is unchanged. Same backend and `reset()` / opt-out semantics as the flag split.
+- [#3727](https://github.com/PostHog/posthog-js/pull/3727) [`393f9e2`](https://github.com/PostHog/posthog-js/commit/393f9e2a4697c6ffe52402cad6fb8550b48b5e00) Thanks [@pauldambra](https://github.com/pauldambra)! - feat(surveys): extend `split_storage` to also move the survey config (`surveys`) out of the main persistence blob into its own `<name>__surveys` localStorage entry, on top of the feature-flag split. Surveys now stamp a `surveys_loaded_at` freshness timestamp on every `/surveys` load — the survey analogue of `feature_flag_evaluated_at` — so a stale `__surveys` entry can no longer win over a fresher survey payload written back into the main blob by a gate-off / older-SDK tab. With no timestamp on either side (migration leftover) the group entry still wins, so the migration path is unchanged. Same backend and `reset()` / opt-out semantics as the flag split.
   (2026-06-08)
 
 ## 1.382.0
@@ -494,7 +494,7 @@
 
 ### Patch Changes
 
-- [#3607](https://github.com/PostHog/posthog-js/pull/3607) [`557b893`](https://github.com/PostHog/posthog-js/commit/557b8934aa0b990184e0376fb1fc28433ad336c6) Thanks [@eli-r-ph](https://github.com/eli-r-ph)! - Enable $web_vitals reporting when cookieless mode is enabled
+- [#3607](https://github.com/PostHog/posthog-js/pull/3607) [`557b893`](https://github.com/PostHog/posthog-js/commit/557b8934aa0b990184e0376fb1fc28433ad336c6) Thanks [@eli-r-ph](https://github.com/eli-r-ph)! - Enable ade_web_vitals reporting when cookieless mode is enabled
   (2026-05-20)
 
 ## 1.374.2
@@ -687,7 +687,7 @@
 
 ### Minor Changes
 
-- [#3241](https://github.com/PostHog/posthog-js/pull/3241) [`fe1fd7b`](https://github.com/PostHog/posthog-js/commit/fe1fd7b222b2ca51164e01fceca892628efac89c) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - feat: add `advanced_feature_flags_dedup_per_session` config option to scope `$feature_flag_called` deduplication to the current session
+- [#3241](https://github.com/PostHog/posthog-js/pull/3241) [`fe1fd7b`](https://github.com/PostHog/posthog-js/commit/fe1fd7b222b2ca51164e01fceca892628efac89c) Thanks [@dustinbyrne](https://github.com/dustinbyrne)! - feat: add `advanced_feature_flags_dedup_per_session` config option to scope `ade_feature_flag_called` deduplication to the current session
   (2026-03-18)
 
 ### Patch Changes
@@ -778,7 +778,7 @@
 
 ### Patch Changes
 
-- [#3107](https://github.com/PostHog/posthog-js/pull/3107) [`9dbc05e`](https://github.com/PostHog/posthog-js/commit/9dbc05ed65ddc8c37c9262b9aebfc51d0c748971) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - warning on manual capture('$exception')
+- [#3107](https://github.com/PostHog/posthog-js/pull/3107) [`9dbc05e`](https://github.com/PostHog/posthog-js/commit/9dbc05ed65ddc8c37c9262b9aebfc51d0c748971) Thanks [@ablaszkiewicz](https://github.com/ablaszkiewicz)! - warning on manual capture('ade_exception')
   (2026-02-18)
 
 ## 1.350.0

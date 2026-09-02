@@ -4,10 +4,10 @@ import { BasePage } from 'fixtures/page'
 
 test.describe('ErrorTracking autocapture', () => {
     async function checkException(events: EventsPage, browserName: string) {
-        const exception = await events.waitForEvent('$exception')
-        expect(exception.properties.$exception_list[0].stacktrace.type).toEqual('raw')
-        expect(exception.properties.$exception_list[0].stacktrace.frames.length).toEqual(1)
-        expect(exception.properties.$exception_list[0].stacktrace.frames[0].function).toEqual(
+        const exception = await events.waitForEvent('ade_exception')
+        expect(exception.properties.exception_list[0].stacktrace.type).toEqual('raw')
+        expect(exception.properties.exception_list[0].stacktrace.frames.length).toEqual(1)
+        expect(exception.properties.exception_list[0].stacktrace.frames[0].function).toEqual(
             // turns out firefox and chromium capture different info :/
             browserName === 'chromium' ? 'HTMLButtonElement.onclick' : 'onclick'
         )
@@ -15,7 +15,7 @@ test.describe('ErrorTracking autocapture', () => {
 
     async function checkNoException(page: BasePage, events: EventsPage) {
         await page.close()
-        const exceptionCount = events.countByName('$exception')
+        const exceptionCount = events.countByName('ade_exception')
         expect(exceptionCount).toEqual(0)
     }
 
@@ -104,8 +104,8 @@ test.describe('ErrorTracking autocapture', () => {
                 }
                 Promise.reject(new CustomError('An unknown error occured'))
             })
-            const event = await events.waitForEvent('$exception')
-            const first_exception = event.properties.$exception_list[0]
+            const event = await events.waitForEvent('ade_exception')
+            const first_exception = event.properties.exception_list[0]
             expect(first_exception.type).toBe('CustomError')
             expect(first_exception.value).toBe('An unknown error occured')
             expect(first_exception.mechanism.handled).toBe(false)
@@ -125,13 +125,13 @@ test.describe('ErrorTracking autocapture', () => {
             await page.evaluate(() => {
                 Promise.reject('An unknown error occured')
             })
-            const exception = await events.waitForEvent('$exception')
+            const exception = await events.waitForEvent('ade_exception')
             expect(exception).toBeDefined()
-            expect(exception.properties.$exception_list[0].type).toBe('UnhandledRejection')
-            expect(exception.properties.$exception_list[0].value).toBe(
+            expect(exception.properties.exception_list[0].type).toBe('UnhandledRejection')
+            expect(exception.properties.exception_list[0].value).toBe(
                 'Non-Error promise rejection captured with value: An unknown error occured'
             )
-            const stacktrace = exception.properties.$exception_list[0].stacktrace
+            const stacktrace = exception.properties.exception_list[0].stacktrace
             expect(stacktrace).toBeUndefined()
         })
 
@@ -150,8 +150,8 @@ test.describe('ErrorTracking autocapture', () => {
                 iframe.remove()
             })
 
-            const exception = await events.waitForEvent('$exception')
-            expect(exception.properties.$exception_list[0].stacktrace.frames).toEqual([
+            const exception = await events.waitForEvent('ade_exception')
+            expect(exception.properties.exception_list[0].stacktrace.frames).toEqual([
                 expect.objectContaining({
                     filename: 'https://example.com/rejection-origin.js',
                     function: 'rejectionOrigin',
@@ -184,8 +184,8 @@ test.describe('ErrorTracking autocapture', () => {
                 iframe.remove()
             })
 
-            const exception = await events.waitForEvent('$exception')
-            expect(exception.properties.$exception_list[0].stacktrace.frames).toEqual([
+            const exception = await events.waitForEvent('ade_exception')
+            expect(exception.properties.exception_list[0].stacktrace.frames).toEqual([
                 expect.objectContaining({
                     filename: 'https://example.com/cross-realm-origin.js',
                     function: 'crossRealmOrigin',
@@ -210,9 +210,9 @@ test.describe('ErrorTracking autocapture', () => {
                 window.onerror?.(message, 'https://example.com/positional-fallback.js', 73, 9)
             }, message)
 
-            const exception = await events.waitForEvent('$exception')
-            expect(exception.properties.$exception_list[0].value).toBe(message)
-            expect(exception.properties.$exception_list[0].stacktrace.frames).toEqual([
+            const exception = await events.waitForEvent('ade_exception')
+            expect(exception.properties.exception_list[0].value).toBe(message)
+            expect(exception.properties.exception_list[0].stacktrace.frames).toEqual([
                 expect.objectContaining({
                     filename: 'https://example.com/positional-fallback.js',
                     lineno: 73,
@@ -230,8 +230,8 @@ test.describe('ErrorTracking autocapture', () => {
                 content: 'gibberish',
                 type: 'module',
             })
-            const event = await events.waitForEvent('$exception')
-            const first_exception = event.properties.$exception_list[0]
+            const event = await events.waitForEvent('ade_exception')
+            const first_exception = event.properties.exception_list[0]
             expect(first_exception.type).toBe('ReferenceError')
             switch (browserName) {
                 case 'webkit':
@@ -257,8 +257,8 @@ test.describe('ErrorTracking autocapture', () => {
                 content: "let toto = 'asdsds; ",
                 type: 'module',
             })
-            const event = await events.waitForEvent('$exception')
-            const first_exception = event.properties.$exception_list[0]
+            const event = await events.waitForEvent('ade_exception')
+            const first_exception = event.properties.exception_list[0]
             expect(first_exception.type).toBe('SyntaxError')
             expect(first_exception.mechanism.handled).toBe(false)
             const frames = first_exception.stacktrace?.frames || []
@@ -294,8 +294,8 @@ test.describe('ErrorTracking autocapture', () => {
                 console.error('This error should be captured with a stack')
             })
 
-            const event = await events.waitForEvent('$exception')
-            const first_exception = event.properties.$exception_list[0]
+            const event = await events.waitForEvent('ade_exception')
+            const first_exception = event.properties.exception_list[0]
             expect(first_exception.type).toBe('Error')
             expect(first_exception.value).toBe('This error should be captured with a stack')
             expect(first_exception.stacktrace).toBeDefined()

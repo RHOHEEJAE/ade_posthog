@@ -70,7 +70,7 @@ describe('V2 Trigger Groups', () => {
                 sampleRate: 1.0,
                 conditions: {
                     matchType: 'any',
-                    events: [{ name: '$exception' }, { name: 'error' }],
+                    events: [{ name: 'ade_exception' }, { name: 'error' }],
                 },
             }
 
@@ -184,25 +184,25 @@ describe('V2 Trigger Groups', () => {
         it('ORs multiple values within a single icontains filter', () => {
             const filters = [
                 {
-                    key: '$current_url',
+                    key: 'current_url',
                     type: 'event' as const,
                     operator: 'icontains' as const,
                     value: ['checkout.acme.com', 'payments.acme.com'],
                 },
             ]
-            expect(matchTriggerPropertyFilters(filters, { $current_url: 'https://checkout.acme.com/step-1' }, {})).toBe(
+            expect(matchTriggerPropertyFilters(filters, { current_url: 'https://checkout.acme.com/step-1' }, {})).toBe(
                 true
             )
             expect(
-                matchTriggerPropertyFilters(filters, { $current_url: 'https://payments.acme.com/confirm' }, {})
+                matchTriggerPropertyFilters(filters, { current_url: 'https://payments.acme.com/confirm' }, {})
             ).toBe(true)
-            expect(matchTriggerPropertyFilters(filters, { $current_url: 'https://settings.acme.com' }, {})).toBe(false)
+            expect(matchTriggerPropertyFilters(filters, { current_url: 'https://settings.acme.com' }, {})).toBe(false)
         })
 
         it('ANDs multiple filters with array values (authorized URLs + country)', () => {
             const filters = [
                 {
-                    key: '$current_url',
+                    key: 'current_url',
                     type: 'event' as const,
                     operator: 'icontains' as const,
                     value: ['checkout.acme.com', 'payments.acme.com'],
@@ -213,7 +213,7 @@ describe('V2 Trigger Groups', () => {
             expect(
                 matchTriggerPropertyFilters(
                     filters,
-                    { $current_url: 'https://checkout.acme.com/cart' },
+                    { current_url: 'https://checkout.acme.com/cart' },
                     { country: 'US' }
                 )
             ).toBe(true)
@@ -221,13 +221,13 @@ describe('V2 Trigger Groups', () => {
             expect(
                 matchTriggerPropertyFilters(
                     filters,
-                    { $current_url: 'https://checkout.acme.com/cart' },
+                    { current_url: 'https://checkout.acme.com/cart' },
                     { country: 'DE' }
                 )
             ).toBe(false)
             // Country matches but URL doesn't
             expect(
-                matchTriggerPropertyFilters(filters, { $current_url: 'https://settings.acme.com' }, { country: 'US' })
+                matchTriggerPropertyFilters(filters, { current_url: 'https://settings.acme.com' }, { country: 'US' })
             ).toBe(false)
         })
 
@@ -410,7 +410,7 @@ describe('V2 Trigger Groups', () => {
                 statusOverrides: { triggerGroupMatchers: [] },
                 expectedStatus: DISABLED,
             },
-        ])('should return $expectedStatus when $name', ({ statusOverrides, expectedStatus }) => {
+        ])('should return expectedStatus when name', ({ statusOverrides, expectedStatus }) => {
             const status = triggerGroupsMatchSessionRecordingStatus({
                 ...createBaseStatus(),
                 ...statusOverrides,
@@ -498,7 +498,7 @@ describe('V2 Trigger Groups', () => {
                 ]),
                 expectedStatus: SAMPLED, // group-1 activated and sampled wins
             },
-        ])('should return $expectedStatus when $name', ({ matchers, samplingResults, expectedStatus }) => {
+        ])('should return expectedStatus when name', ({ matchers, samplingResults, expectedStatus }) => {
             const status = triggerGroupsMatchSessionRecordingStatus({
                 ...createBaseStatus(),
                 triggerGroupMatchers: matchers,
@@ -526,7 +526,7 @@ describe('V2 Trigger Groups', () => {
                 samplingResults: new Map([['group-1', false]]), // group-2 missing
                 expectedStatus: DISABLED, // Neither group sampled in = don't record
             },
-        ])('should return $expectedStatus when $name', ({ matchers, samplingResults, expectedStatus }) => {
+        ])('should return expectedStatus when name', ({ matchers, samplingResults, expectedStatus }) => {
             const status = triggerGroupsMatchSessionRecordingStatus({
                 ...createBaseStatus(),
                 triggerGroupMatchers: matchers,

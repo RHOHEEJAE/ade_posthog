@@ -35,10 +35,10 @@ describe('action-matcher', () => {
         additionalProperties?: Properties
     ): CaptureResult => {
         return {
-            $set: undefined,
-            $set_once: undefined,
+            ade_set: undefined,
+            ade_set_once: undefined,
             properties: {
-                $current_url: currentUrl,
+                current_url: currentUrl,
                 ...additionalProperties,
             },
             timestamp: undefined,
@@ -109,7 +109,7 @@ describe('action-matcher', () => {
     })
 
     it('can match action on current_url exact', () => {
-        const pageViewAction = createAction(2, '$autocapture', 'https://us.posthog.com')
+        const pageViewAction = createAction(2, 'ade_autocapture', 'https://us.posthog.com')
         const actionMatcher = new ActionMatcher(instance)
         actionMatcher.register([pageViewAction])
 
@@ -122,15 +122,15 @@ describe('action-matcher', () => {
         }
 
         actionMatcher._addActionHook(onAction)
-        actionMatcher.on('$autocapture', createCaptureResult('$autocapture', 'https://eu.posthog.com'))
+        actionMatcher.on('ade_autocapture', createCaptureResult('ade_autocapture', 'https://eu.posthog.com'))
         expect(pageViewActionMatched).toBeFalsy()
 
-        actionMatcher.on('$autocapture', createCaptureResult('$autocapture', 'https://us.posthog.com'))
+        actionMatcher.on('ade_autocapture', createCaptureResult('ade_autocapture', 'https://us.posthog.com'))
         expect(pageViewActionMatched).toBeTruthy()
     })
 
     it('can match action on current_url regexp', () => {
-        const pageViewAction = createAction(2, '$current_url_regexp', '[a-z][a-z].posthog.*', 'regex')
+        const pageViewAction = createAction(2, 'current_url_regexp', '[a-z][a-z].posthog.*', 'regex')
         const actionMatcher = new ActionMatcher(instance)
         actionMatcher.register([pageViewAction])
 
@@ -143,16 +143,16 @@ describe('action-matcher', () => {
         }
 
         actionMatcher._addActionHook(onAction)
-        actionMatcher.on('$autocapture', createCaptureResult('$current_url_regexp', 'https://eu.posthog.com'))
+        actionMatcher.on('ade_autocapture', createCaptureResult('current_url_regexp', 'https://eu.posthog.com'))
         expect(pageViewActionMatched).toBeTruthy()
         pageViewActionMatched = false
 
-        actionMatcher.on('$autocapture', createCaptureResult('$current_url_regexp', 'https://us.posthog.com'))
+        actionMatcher.on('ade_autocapture', createCaptureResult('current_url_regexp', 'https://us.posthog.com'))
         expect(pageViewActionMatched).toBeTruthy()
     })
 
     it('can match action on html element selector', () => {
-        const buttonClickedAction = createAction(2, '$autocapture')
+        const buttonClickedAction = createAction(2, 'ade_autocapture')
         if (buttonClickedAction.steps) {
             buttonClickedAction.steps[0].selector = '* > #__next .flex > button:nth-child(2)'
         }
@@ -168,19 +168,19 @@ describe('action-matcher', () => {
         }
         actionMatcher._addActionHook(onAction)
 
-        const result = createCaptureResult('$autocapture', 'https://eu.posthog.com')
-        result.properties.$element_selectors = []
-        actionMatcher.on('$autocapture', result)
+        const result = createCaptureResult('ade_autocapture', 'https://eu.posthog.com')
+        result.properties.element_selectors = []
+        actionMatcher.on('ade_autocapture', result)
         expect(buttonClickedActionMatched).toBeFalsy()
 
-        result.properties.$element_selectors = ['* > #__next .flex > button:nth-child(2)']
+        result.properties.element_selectors = ['* > #__next .flex > button:nth-child(2)']
 
-        actionMatcher.on('$autocapture', result)
+        actionMatcher.on('ade_autocapture', result)
         expect(buttonClickedActionMatched).toBeTruthy()
     })
 
     it('can match action with property filters', () => {
-        const action = createAction(1, '$pageview', undefined, undefined, [
+        const action = createAction(1, 'ade_pageview', undefined, undefined, [
             { key: 'plan', value: 'pro', operator: 'exact' },
         ])
         const actionMatcher = new ActionMatcher(instance)
@@ -191,15 +191,15 @@ describe('action-matcher', () => {
             matched = true
         })
 
-        actionMatcher.on('$pageview', createCaptureResult('$pageview', undefined, { plan: 'free' }))
+        actionMatcher.on('ade_pageview', createCaptureResult('ade_pageview', undefined, { plan: 'free' }))
         expect(matched).toBeFalsy()
 
-        actionMatcher.on('$pageview', createCaptureResult('$pageview', undefined, { plan: 'pro' }))
+        actionMatcher.on('ade_pageview', createCaptureResult('ade_pageview', undefined, { plan: 'pro' }))
         expect(matched).toBeTruthy()
     })
 
     it('can match action using server-provided selector_regex', () => {
-        const buttonClickedAction = createAction(2, '$autocapture')
+        const buttonClickedAction = createAction(2, 'ade_autocapture')
         if (buttonClickedAction.steps) {
             buttonClickedAction.steps[0].selector = 'button.primary'
             buttonClickedAction.steps[0].selector_regex =
@@ -214,19 +214,19 @@ describe('action-matcher', () => {
             matched = true
         })
 
-        const noMatchResult = createCaptureResult('$autocapture', 'https://example.com')
-        noMatchResult.properties.$elements_chain = 'button.secondary:text="Click"'
-        actionMatcher.on('$autocapture', noMatchResult)
+        const noMatchResult = createCaptureResult('ade_autocapture', 'https://example.com')
+        noMatchResult.properties.elements_chain = 'button.secondary:text="Click"'
+        actionMatcher.on('ade_autocapture', noMatchResult)
         expect(matched).toBeFalsy()
 
-        const matchResult = createCaptureResult('$autocapture', 'https://example.com')
-        matchResult.properties.$elements_chain = 'button.primary:text="Click"'
-        actionMatcher.on('$autocapture', matchResult)
+        const matchResult = createCaptureResult('ade_autocapture', 'https://example.com')
+        matchResult.properties.elements_chain = 'button.primary:text="Click"'
+        actionMatcher.on('ade_autocapture', matchResult)
         expect(matched).toBeTruthy()
     })
 
     it('does not match selector when selector_regex not provided', () => {
-        const buttonClickedAction = createAction(2, '$autocapture')
+        const buttonClickedAction = createAction(2, 'ade_autocapture')
         if (buttonClickedAction.steps) {
             buttonClickedAction.steps[0].selector = 'button.primary'
             // No selector_regex - matching should fail (requires server-provided regex)
@@ -241,9 +241,9 @@ describe('action-matcher', () => {
         })
 
         // Should NOT match - no selector_regex provided by server
-        const matchResult = createCaptureResult('$autocapture', 'https://example.com')
-        matchResult.properties.$elements_chain = 'button.primary:text="Click"'
-        actionMatcher.on('$autocapture', matchResult)
+        const matchResult = createCaptureResult('ade_autocapture', 'https://example.com')
+        matchResult.properties.elements_chain = 'button.primary:text="Click"'
+        actionMatcher.on('ade_autocapture', matchResult)
         expect(matched).toBeFalsy()
     })
 })

@@ -184,7 +184,7 @@ const DENYLIST_INVALID = 'Invalid value for property_denylist config: '
 
 // Transport-level keys the browser SDK carries inside event properties (unlike other SDKs,
 // where they live outside `properties`). They are out of scope of the minimal
-// $feature_flag_called allowlist and must survive minimization for ingestion to work.
+// ade_feature_flag_called allowlist and must survive minimization for ingestion to work.
 const FLAG_CALLED_TRANSPORT_PROPERTY_KEYS = ['token', 'distinct_id', COOKIELESS_MODE_FLAG_PROPERTY]
 
 const PRIMARY_INSTANCE_NAME = 'posthog'
@@ -510,12 +510,12 @@ export class PostHog implements PostHogInterface {
      * Replace a stale cookieless sentinel distinct_id with an anonymous device id.
      *
      * Consent lives in shared cookie/localStorage, but the in-memory distinct_id does not. A tab
-     * that started in cookieless mode holds the `$posthog_cookieless` sentinel as its distinct_id;
+     * that started in cookieless mode holds the `posthog_cookieless` sentinel as its distinct_id;
      * when consent is flipped to opted-in in another tab, this tab stops being cookieless
      * (`_inCookielessMode()` becomes false) while the sentinel remains in memory. If that sentinel
-     * then escapes into a real event — or into `identify()` as `$anon_distinct_id` — the plugin
+     * then escapes into a real event — or into `identify()` as `anon_distinct_id` — the plugin
      * server never hashes it and every affected browser collapses onto a single
-     * `$posthog_cookieless` person.
+     * `posthog_cookieless` person.
      */
     private _healCookielessSentinelDistinctId(): void {
         if (this._inCookielessMode() || this.get_distinct_id() !== COOKIELESS_SENTINEL_VALUE) {
@@ -539,9 +539,9 @@ export class PostHog implements PostHogInterface {
             const uuid = this.config.get_device_id(uuidv7())
             this.register({
                 distinct_id: uuid,
-                $device_id: uuid,
+                device_id: uuid,
             })
-            // distinct id == $device_id is a proxy for an anonymous user
+            // distinct id == device_id is a proxy for an anonymous user
             persistence.set_property(USER_STATE, USER_STATE_ANONYMOUS)
         }
 
@@ -796,7 +796,7 @@ export class PostHog implements PostHogInterface {
         const initialPersistenceProps = { ...this.persistence.props }
         const initialSessionProps = { ...this.sessionPersistence.props }
 
-        this.register({ $initialization_time: new Date().toISOString() })
+        this.register({ initialization_time: new Date().toISOString() })
 
         this._requestQueue = new RequestQueue(
             (req) => this._send_retriable_request(req),
@@ -879,10 +879,10 @@ export class PostHog implements PostHogInterface {
                 // The server bootstrapped identity for an identified user, but local persistence
                 // still has an anonymous ID from a previous session. Calling identify() merges
                 // the anonymous user into the identified user, ensuring consistent identity
-                // for feature flag evaluation and preventing duplicate $feature_flag_called events.
+                // for feature flag evaluation and preventing duplicate ade_feature_flag_called events.
                 //
                 // Note: this runs during _init(), before _loaded() enables the request queue.
-                // The $identify event is enqueued and flushed once the queue starts. The
+                // The ade_identify event is enqueued and flushed once the queue starts. The
                 // reloadFeatureFlags() call inside identify() sets _reloadDebouncer, so the
                 // subsequent ensureFlagsLoaded() from _onRemoteConfig is a no-op (no double request).
                 this.identify(bootstrapDistinctId)
@@ -893,7 +893,7 @@ export class PostHog implements PostHogInterface {
                 existingUserState === USER_STATE_IDENTIFIED
             ) {
                 // The existing user is already identified with a different ID. Silently
-                // switching identities without an $identify event would corrupt analytics.
+                // switching identities without an ade_identify event would corrupt analytics.
                 // Preserve the existing identity and log a warning.
                 logger.warn(
                     'Bootstrap distinctID differs from an already-identified user. ' +
@@ -909,7 +909,7 @@ export class PostHog implements PostHogInterface {
                 )
                 this.register({
                     distinct_id: bootstrapDistinctId,
-                    $device_id: deviceID,
+                    device_id: deviceID,
                 })
             }
         }
@@ -918,7 +918,7 @@ export class PostHog implements PostHogInterface {
             this.register_once(
                 {
                     distinct_id: COOKIELESS_SENTINEL_VALUE,
-                    $device_id: null,
+                    device_id: null,
                 },
                 ''
             )
@@ -931,11 +931,11 @@ export class PostHog implements PostHogInterface {
             this.register_once(
                 {
                     distinct_id: uuid,
-                    $device_id: uuid,
+                    device_id: uuid,
                 },
                 ''
             )
-            // distinct id == $device_id is a proxy for anonymous user
+            // distinct id == device_id is a proxy for anonymous user
             this.persistence.set_property(USER_STATE, USER_STATE_ANONYMOUS)
         }
         // Set up event handler for pageleave
@@ -964,7 +964,7 @@ export class PostHog implements PostHogInterface {
             )
         }
 
-        // Not awaited — the first event may miss $device_model, which is fine for a stable per-device dimension.
+        // Not awaited — the first event may miss device_model, which is fine for a stable per-device dimension.
         if (!this.config.disableDeviceModel) {
             getDeviceModel()
                 .then((model) => {
@@ -1513,16 +1513,16 @@ export class PostHog implements PostHogInterface {
             return
         }
 
-        if (properties?.$current_url && !isString(properties?.$current_url)) {
+        if (properties?.current_url && !isString(properties?.current_url)) {
             logger.error(
-                'Invalid `$current_url` property provided to `posthog.capture`. Input must be a string. Ignoring provided value.'
+                'Invalid `current_url` property provided to `posthog.capture`. Input must be a string. Ignoring provided value.'
             )
-            delete properties?.$current_url
+            delete properties?.current_url
         }
 
-        if (event_name === '$exception' && !options?._originatedFromCaptureException) {
+        if (event_name === 'ade_exception' && !options?._originatedFromCaptureException) {
             logger.warn(
-                "Using `posthog.capture('$exception')` is unreliable because it does not attach required metadata. Use `posthog.captureException(error)` instead, which attaches required metadata automatically."
+                "Using `posthog.capture('ade_exception')` is unreliable because it does not attach required metadata. Use `posthog.captureException(error)` instead, which attaches required metadata automatically."
             )
         }
 
@@ -1554,51 +1554,51 @@ export class PostHog implements PostHogInterface {
             properties: this.calculateEventProperties(event_name, properties || {}, timestamp, uuid),
         }
 
-        // Route pageviews to $bot_pageview when bot detected and preview flag enabled
+        // Route pageviews to ade_bot_pageview when bot detected and preview flag enabled
         if (event_name === EVENT_PAGEVIEW && this.config.__preview_capture_bot_pageviews && isBot) {
-            data.event = '$bot_pageview'
-            // While it's obvious that a $bot_pageview is (likely) from a bot, we explicitly set $browser_type
+            data.event = 'ade_bot_pageview'
+            // While it's obvious that a ade_bot_pageview is (likely) from a bot, we explicitly set browser_type
             // to make it easy to filter and test bot pageviews in the product
-            data.properties.$browser_type = 'bot'
+            data.properties.browser_type = 'bot'
         }
 
         if (clientRateLimitContext) {
-            data.properties['$lib_rate_limit_remaining_tokens'] = clientRateLimitContext.remainingTokens
+            data.properties['lib_rate_limit_remaining_tokens'] = clientRateLimitContext.remainingTokens
         }
 
-        // When the server gates this project into minimal $feature_flag_called events and the
+        // When the server gates this project into minimal ade_feature_flag_called events and the
         // evaluated flag is not linked to an experiment, the fully merged properties are rebuilt
         // from the strict allowlist below (after the last SDK-added property) so super properties
         // and the context envelope are structurally excluded. Any missing signal falls back to
         // the full event.
         const shouldSendMinimalFlagCalledEvent =
-            event_name === '$feature_flag_called' &&
-            data.properties['$feature_flag_has_experiment'] === false &&
+            event_name === 'ade_feature_flag_called' &&
+            data.properties['feature_flag_has_experiment'] === false &&
             this.get_property(PERSISTENCE_MINIMAL_FLAG_CALLED_EVENTS) === true
 
-        const setProperties = options?.$set
+        const setProperties = options?.ade_set
         if (setProperties && !shouldSendMinimalFlagCalledEvent) {
-            data.$set = options?.$set
+            data.ade_set = options?.ade_set
         }
-        const unsetProperties = options?.$unset
+        const unsetProperties = options?.unset
         if (unsetProperties) {
-            data.$unset = unsetProperties
+            data.unset = unsetProperties
         }
-        // $groupidentify doesn't process person $set_once on the server, so don't mark
+        // ade_groupidentify doesn't process person ade_set_once on the server, so don't mark
         // initial person props as sent. This ensures they're included with subsequent
-        // $identify calls.
+        // ade_identify calls.
         const markSetOnceAsSent = event_name !== EVENT_GROUPIDENTIFY
-        // $identify should always include initial props because it creates/merges persons
+        // ade_identify should always include initial props because it creates/merges persons
         // and may be processed before earlier anonymous events on the server
         const forceIncludeInitialProps = event_name === EVENT_IDENTIFY
-        // Minimal flag-called events must not carry $set_once. Skipping the calculation (rather
+        // Minimal flag-called events must not carry ade_set_once. Skipping the calculation (rather
         // than dropping its result) avoids marking the initial person props as sent, so they
         // still go out with the next full event.
         const setOnceProperties = shouldSendMinimalFlagCalledEvent
             ? undefined
-            : this._calculate_set_once_properties(options?.$set_once, markSetOnceAsSent, forceIncludeInitialProps)
+            : this._calculate_set_once_properties(options?.ade_set_once, markSetOnceAsSent, forceIncludeInitialProps)
         if (setOnceProperties) {
-            data.$set_once = setOnceProperties
+            data.ade_set_once = setOnceProperties
         }
 
         if (!options?._noTruncate) {
@@ -1606,8 +1606,8 @@ export class PostHog implements PostHogInterface {
         }
         data.timestamp = timestamp
         if (!isUndefined(options?.timestamp)) {
-            data.properties['$event_time_override_provided'] = true
-            data.properties['$event_time_override_system_time'] = systemTime
+            data.properties['event_time_override_provided'] = true
+            data.properties['event_time_override_system_time'] = systemTime
         }
 
         // before_send runs after this filter and may deliberately re-add stripped properties;
@@ -1620,16 +1620,16 @@ export class PostHog implements PostHogInterface {
             const surveyId = properties?.[SurveyEventProperties.SURVEY_ID]
             const surveyIteration = properties?.[SurveyEventProperties.SURVEY_ITERATION]
             setSurveySeenOnLocalStorage({ id: surveyId, current_iteration: surveyIteration })
-            data.$set = {
-                ...data.$set,
+            data.ade_set = {
+                ...data.ade_set,
                 [getSurveyInteractionProperty(
                     { id: surveyId, current_iteration: surveyIteration },
                     event_name === SurveyEventName.SENT ? 'responded' : 'dismissed'
                 )]: true,
             }
         } else if (event_name === SurveyEventName.SHOWN) {
-            data.$set = {
-                ...data.$set,
+            data.ade_set = {
+                ...data.ade_set,
                 [SurveyEventProperties.SURVEY_LAST_SEEN_DATE]: new Date().toISOString(),
             }
         }
@@ -1637,16 +1637,16 @@ export class PostHog implements PostHogInterface {
         if (event_name === ProductTourEventName.SHOWN) {
             const tourType = properties?.[ProductTourEventProperties.TOUR_TYPE]
             if (tourType) {
-                data.$set = {
-                    ...data.$set,
+                data.ade_set = {
+                    ...data.ade_set,
                     [`${ProductTourEventProperties.TOUR_LAST_SEEN_DATE}/${tourType}`]: new Date().toISOString(),
                 }
             }
         }
 
-        // Top-level $set overriding values from the one from properties is taken from the plugin-server normalizeEvent
-        // This doesn't handle $set_once, because posthog-people doesn't either
-        const finalSet = { ...data.properties['$set'], ...data['$set'] }
+        // Top-level ade_set overriding values from the one from properties is taken from the plugin-server normalizeEvent
+        // This doesn't handle ade_set_once, because posthog-people doesn't either
+        const finalSet = { ...data.properties['ade_set'], ...data['ade_set'] }
         if (!isEmptyObject(finalSet)) {
             this.setPersonPropertiesForFlags(finalSet)
         }
@@ -1748,12 +1748,12 @@ export class PostHog implements PostHogInterface {
     /**
      * This method is used internally to calculate the event properties before sending it to PostHog. It can also be
      * used by integrations (e.g. Segment) to enrich events with PostHog properties before sending them to Segment,
-     * which is required for some PostHog products to work correctly. (e.g. to have a correct $session_id property).
+     * which is required for some PostHog products to work correctly. (e.g. to have a correct session_id property).
      *
-     * @param {String} eventName The name of the event. This can be anything the user does - 'Button Click', 'Sign Up', '$pageview', etc.
+     * @param {String} eventName The name of the event. This can be anything the user does - 'Button Click', 'Sign Up', 'ade_pageview', etc.
      * @param {Object} eventProperties The properties to include with the event.
      * @param {Date} [timestamp] The timestamp of the event, e.g. for calculating time on page. If not set, it'll automatically be set to the current time.
-     * @param {String} [uuid] The uuid of the event, e.g. for storing the $pageview ID.
+     * @param {String} [uuid] The uuid of the event, e.g. for storing the ade_pageview ID.
      * @param {Boolean} [readOnly] Set this if you do not intend to actually send the event, and therefore do not want to update internal state e.g. session timeout
      *
      * @internal
@@ -1780,14 +1780,14 @@ export class PostHog implements PostHogInterface {
         const startTimestamp = readOnly ? undefined : this.persistence.remove_event_timer(eventName)
         let properties = { ...eventProperties }
         properties['token'] = this.config.token
-        properties['$config_defaults'] = this.config.defaults
+        properties['config_defaults'] = this.config.defaults
 
         if (this._inCookielessMode()) {
             // Set a flag to tell the plugin server to use cookieless server hash mode
             properties[COOKIELESS_MODE_FLAG_PROPERTY] = true
         }
 
-        if (eventName === '$snapshot') {
+        if (eventName === 'ade_snapshot') {
             const persistenceProps = { ...this.persistence.properties(), ...this.sessionPersistence.properties() }
             properties['distinct_id'] = persistenceProps.distinct_id
             if (
@@ -1813,8 +1813,8 @@ export class PostHog implements PostHogInterface {
                 timestamp.getTime(),
                 true
             )
-            properties['$session_id'] = sessionId
-            properties['$window_id'] = windowId
+            properties['session_id'] = sessionId
+            properties['window_id'] = windowId
         }
         if (this.sessionPropsManager) {
             extend(properties, this.sessionPropsManager.getSessionProps())
@@ -1824,13 +1824,13 @@ export class PostHog implements PostHogInterface {
             if (this.sessionRecording) {
                 extend(properties, this.sessionRecording.sdkDebugProperties)
             }
-            properties['$sdk_debug_retry_queue_size'] = this._retryQueue?.length
+            properties['sdk_debug_retry_queue_size'] = this._retryQueue?.length
         } catch (e: any) {
-            properties['$sdk_debug_error_capturing_properties'] = String(e)
+            properties['sdk_debug_error_capturing_properties'] = String(e)
         }
 
         if (this.requestRouter.region === RequestRouterRegion.CUSTOM) {
-            properties['$lib_custom_api_host'] = this.config.api_host
+            properties['lib_custom_api_host'] = this.config.api_host
         }
 
         let pageviewProperties: Record<string, any>
@@ -1847,23 +1847,23 @@ export class PostHog implements PostHogInterface {
             properties['title'] = document.title
         }
 
-        // set $duration if time_event was previously called for this event
+        // set duration if time_event was previously called for this event
         if (!isUndefined(startTimestamp)) {
             const duration_in_ms = timestamp.getTime() - startTimestamp
-            properties['$duration'] = parseFloat((duration_in_ms / 1000).toFixed(3))
+            properties['duration'] = parseFloat((duration_in_ms / 1000).toFixed(3))
         }
 
         // this is only added when this.config.opt_out_useragent_filter is true,
         // or it would always add "browser"
         if (userAgent && this.config.opt_out_useragent_filter) {
-            properties['$browser_type'] = this._is_bot() ? 'bot' : 'browser'
+            properties['browser_type'] = this._is_bot() ? 'bot' : 'browser'
         }
 
         // note: extend writes to the first object, so lets make sure we
         // don't write to the persistence properties object and info
         // properties object by passing in a new object
 
-        // $referrer / $referring_domain are written to the sessionPersistence from document.referrer
+        // referrer / referring_domain are written to the sessionPersistence from document.referrer
         // on every capture, and sessionPersistence is merged after the regular persistence below, so
         // they normally win. When the user has explicitly set one of these via posthog.register()
         // (which writes to the regular persistence), let that value win instead. Resolve the
@@ -1872,7 +1872,7 @@ export class PostHog implements PostHogInterface {
         // reports document.referrer (the iframe's own origin) rather than the registered value.
         const persistenceProperties = this.persistence.properties()
         const sessionPersistenceProperties = this.sessionPersistence.properties()
-        each(['$referrer', '$referring_domain'], (referrerKey) => {
+        each(['referrer', 'referring_domain'], (referrerKey) => {
             if (referrerKey in persistenceProperties) {
                 delete sessionPersistenceProperties[referrerKey]
             }
@@ -1895,7 +1895,7 @@ export class PostHog implements PostHogInterface {
             ...properties,
         })
 
-        properties['$is_identified'] = this._isIdentified()
+        properties['is_identified'] = this._isIdentified()
 
         if (isArray(this.config.property_denylist)) {
             each(this.config.property_denylist, function (denylisted_prop) {
@@ -1918,7 +1918,7 @@ export class PostHog implements PostHogInterface {
 
         // add person processing flag as very last step, so it cannot be overridden
         const hasPersonProcessing = this._hasPersonProcessing()
-        properties['$process_person_profile'] = hasPersonProcessing
+        properties['process_person_profile'] = hasPersonProcessing
         // if the event has person processing, ensure that all future events will too, even if the setting changes
         if (hasPersonProcessing && !readOnly) {
             this._requirePersonProcessing('_calculate_event_properties')
@@ -1936,9 +1936,9 @@ export class PostHog implements PostHogInterface {
      * persistence.
      * @param dataSetOnce
      * @param markAsSent - if true, marks the properties as sent so they won't be included in future events.
-     *                     Set to false for events like $groupidentify where the server doesn't process person props.
+     *                     Set to false for events like ade_groupidentify where the server doesn't process person props.
      * @param forceIncludeInitialProps - if true, include initial person props even if they've already been sent.
-     *                                   Used for $identify which creates/merges persons and may be processed out of order.
+     *                                   Used for ade_identify which creates/merges persons and may be processed out of order.
      */
     _calculate_set_once_properties(
         dataSetOnce?: Properties,
@@ -1961,7 +1961,7 @@ export class PostHog implements PostHogInterface {
         const sanitize_properties = this.config.sanitize_properties
         if (sanitize_properties) {
             logger.error(SANITIZE_DEPRECATED)
-            setOnceProperties = sanitize_properties(setOnceProperties, '$set_once')
+            setOnceProperties = sanitize_properties(setOnceProperties, 'ade_set_once')
         }
         if (markAsSent) {
             this._personProcessingSetOncePropertiesSent = true
@@ -2201,7 +2201,7 @@ export class PostHog implements PostHogInterface {
      * @public
      *
      * @param {string} key Key of the feature flag.
-     * @param {FeatureFlagOptions} [options] Optional lookup settings. If `{ send_event: false }`, we won't send a `$feature_flag_called` event to PostHog. If `{ fresh: true }`, we won't return cached values from localStorage - only values loaded from the server.
+     * @param {FeatureFlagOptions} [options] Optional lookup settings. If `{ send_event: false }`, we won't send a `ade_feature_flag_called` event to PostHog. If `{ fresh: true }`, we won't return cached values from localStorage - only values loaded from the server.
      * @returns {boolean | string | undefined} The feature flag value, or undefined if the flag is unavailable.
      */
     getFeatureFlag(key: string, options?: FeatureFlagOptions): boolean | string | undefined {
@@ -2236,7 +2236,7 @@ export class PostHog implements PostHogInterface {
     /**
      * Get a feature flag evaluation result including both the flag value and payload.
      *
-     * By default, this method emits the `$feature_flag_called` event.
+     * By default, this method emits the `ade_feature_flag_called` event.
      *
      * {@label Feature flags}
      *
@@ -2261,7 +2261,7 @@ export class PostHog implements PostHogInterface {
      *
      * @param {string} key Key of the feature flag.
      * @param {Object} [options] Options for the feature flag lookup.
-     * @param {boolean} [options.send_event=true] If false, won't send the $feature_flag_called event.
+     * @param {boolean} [options.send_event=true] If false, won't send the ade_feature_flag_called event.
      * @param {boolean} [options.fresh=false] If true, won't return cached values from localStorage - only values loaded from the server.
      * @returns {FeatureFlagResult | undefined} The feature flag result including key, enabled, variant, and payload.
      */
@@ -2272,7 +2272,7 @@ export class PostHog implements PostHogInterface {
     /**
      * Returns all currently cached feature flags as `FeatureFlagResult`s. This is a synchronous read of
      * the flags from the last load (no network request); call `reloadFeatureFlags()` first to refresh.
-     * Unlike `getFeatureFlag()`, it does not send a `$feature_flag_called` event.
+     * Unlike `getFeatureFlag()`, it does not send a `ade_feature_flag_called` event.
      *
      * @returns {FeatureFlagResult[]} All loaded flags, or an empty array if none are loaded.
      */
@@ -2302,14 +2302,14 @@ export class PostHog implements PostHogInterface {
      * ```js
      * // disable event tracking
      * if (posthog.isFeatureEnabled('feature', { send_event: false })) {
-     *     // flag checked without sending $feature_flag_called event
+     *     // flag checked without sending ade_feature_flag_called event
      * }
      * ```
      *
      * @public
      *
      * @param {string} key Key of the feature flag.
-     * @param {IsFeatureEnabledOptions} [options] Optional lookup settings. If `{ send_event: false }`, we won't send a `$feature_flag_called` event to PostHog. If `{ fresh: true }`, we won't return cached values from localStorage - only values loaded from the server. If `{ defaultValue: false }`, we return that value instead of undefined when the flag has no value.
+     * @param {IsFeatureEnabledOptions} [options] Optional lookup settings. If `{ send_event: false }`, we won't send a `ade_feature_flag_called` event to PostHog. If `{ fresh: true }`, we won't return cached values from localStorage - only values loaded from the server. If `{ defaultValue: false }`, we return that value instead of undefined when the flag has no value.
      * @returns {boolean | undefined} Whether the feature flag is enabled; when the flag has no value, defaultValue if given, otherwise undefined.
      */
     isFeatureEnabled(key: string, options: IsFeatureEnabledOptions & { defaultValue: boolean }): boolean
@@ -2867,14 +2867,14 @@ export class PostHog implements PostHogInterface {
         const identityChangedDuringSync =
             this.persistence.syncCookieProperties() && this.get_distinct_id() !== preSyncDistinctId
         // Clean up the adopted identity before applying this call's explicit
-        // person properties. Consuming it during the $identify/$set capture would
+        // person properties. Consuming it during the ade_identify/ade_set capture would
         // otherwise remove the properties that were just supplied by the caller.
         const processedCookieIdentityChange = this._processCookieIdentityChange(false)
         const cookieSyncSuppressionStarted = this.persistence._beginCookieSyncSuppression()
         let identifyCompleted = false
         try {
             const previous_distinct_id = this.get_distinct_id()
-            this.register({ $user_id: new_distinct_id })
+            this.register({ user_id: new_distinct_id })
 
             if (!this.get_property(DEVICE_ID)) {
                 // The persisted distinct id might not actually be a device id at all
@@ -2882,8 +2882,8 @@ export class PostHog implements PostHogInterface {
                 const device_id = previous_distinct_id
                 this.register_once(
                     {
-                        $had_persisted_distinct_id: true,
-                        $device_id: device_id,
+                        had_persisted_distinct_id: true,
+                        device_id: device_id,
                     },
                     ''
                 )
@@ -2901,14 +2901,14 @@ export class PostHog implements PostHogInterface {
             const identityDidChange = new_distinct_id !== previous_distinct_id
             const shouldTransitionToIdentified = !identityDidChange && isKnownAnonymous
 
-            // send an $identify event any time the distinct_id is changing and the old ID is an anonymous ID
+            // send an ade_identify event any time the distinct_id is changing and the old ID is an anonymous ID
             // - logic on the server will determine whether or not to do anything with it.
             if (identityDidChange && isKnownAnonymous) {
                 this.persistence.set_property(USER_STATE, USER_STATE_IDENTIFIED)
 
                 // Update current user properties
                 this.setPersonPropertiesForFlags(
-                    { $set: userPropertiesToSet || {}, $set_once: userPropertiesToSetOnce || {} },
+                    { ade_set: userPropertiesToSet || {}, ade_set_once: userPropertiesToSetOnce || {} },
                     false
                 )
 
@@ -2922,9 +2922,9 @@ export class PostHog implements PostHogInterface {
                     EVENT_IDENTIFY,
                     {
                         distinct_id: new_distinct_id,
-                        $anon_distinct_id: previous_distinct_id,
+                        anon_distinct_id: previous_distinct_id,
                     },
-                    { $set: userPropertiesToSet || {}, $set_once: userPropertiesToSetOnce || {} }
+                    { ade_set: userPropertiesToSet || {}, ade_set_once: userPropertiesToSetOnce || {} }
                 )
 
                 this._cachedPersonProperties = getPersonPropertiesHash(
@@ -2941,11 +2941,11 @@ export class PostHog implements PostHogInterface {
 
                 const setProperties = userPropertiesToSet || {}
                 const setOnceProperties = userPropertiesToSetOnce || {}
-                this.setPersonPropertiesForFlags({ $set: setProperties, $set_once: setOnceProperties }, false)
+                this.setPersonPropertiesForFlags({ ade_set: setProperties, ade_set_once: setOnceProperties }, false)
                 if (this.config.cookieWinsOnConflict) {
                     this.persistence._publishSuppressedCookieSnapshot()
                 }
-                this.capture('$set', { $set: setProperties, $set_once: setOnceProperties })
+                this.capture('ade_set', { ade_set: setProperties, ade_set_once: setOnceProperties })
 
                 // This transition must create/update the person even when an identical property call was cached earlier.
                 // Cache only after capture so deduplication cannot suppress the transition event.
@@ -2956,7 +2956,7 @@ export class PostHog implements PostHogInterface {
                 )
             } else if (userPropertiesToSet || userPropertiesToSetOnce) {
                 // If the distinct_id is not changing, but we have user properties to set, we can check if they have changed
-                // and if so, send a $set event
+                // and if so, send a ade_set event
 
                 this.setPersonProperties(userPropertiesToSet, userPropertiesToSetOnce)
             }
@@ -3007,8 +3007,8 @@ export class PostHog implements PostHogInterface {
      * ```js
      * // set properties
      * posthog.setPersonProperties(
-     *     { name: 'Max Hedgehog' },  // $set properties
-     *     { initial_url: '/blog' }   // $set_once properties
+     *     { name: 'Max Hedgehog' },  // ade_set properties
+     *     { initial_url: '/blog' }   // ade_set_once properties
      * )
      * ```
      *
@@ -3029,7 +3029,7 @@ export class PostHog implements PostHogInterface {
 
         const hash = getPersonPropertiesHash(this.get_distinct_id(), userPropertiesToSet, userPropertiesToSetOnce)
 
-        // if exactly this $set call has been sent before, don't send it again - determine based on hash of properties
+        // if exactly this ade_set call has been sent before, don't send it again - determine based on hash of properties
         if (this._cachedPersonProperties === hash) {
             logger.info('A duplicate setPersonProperties call was made with the same properties. It has been ignored.')
             return
@@ -3037,11 +3037,11 @@ export class PostHog implements PostHogInterface {
 
         // Update current user properties
         this.setPersonPropertiesForFlags(
-            { $set: userPropertiesToSet || {}, $set_once: userPropertiesToSetOnce || {} },
+            { ade_set: userPropertiesToSet || {}, ade_set_once: userPropertiesToSetOnce || {} },
             true
         )
 
-        this.capture('$set', { $set: userPropertiesToSet || {}, $set_once: userPropertiesToSetOnce || {} })
+        this.capture('ade_set', { ade_set: userPropertiesToSet || {}, ade_set_once: userPropertiesToSetOnce || {} })
 
         this._cachedPersonProperties = hash
     }
@@ -3054,7 +3054,7 @@ export class PostHog implements PostHogInterface {
      *
      * @remarks
      * Deletes the given person properties from the person profile in PostHog. This is the
-     * counterpart to {@link setPersonProperties} — instead of hand-passing `$unset` inside a
+     * counterpart to {@link setPersonProperties} — instead of hand-passing `unset` inside a
      * `capture()` call, you can remove properties with a dedicated method.
      * If `person_profiles` is set to `never`, this call is ignored.
      *
@@ -3090,7 +3090,7 @@ export class PostHog implements PostHogInterface {
         // so flags re-evaluate without the unset values, mirroring setPersonPropertiesForFlags.
         this.featureFlags?.unsetPersonPropertiesForFlags(names, true)
 
-        this.capture('$set', { $unset: names })
+        this.capture('ade_set', { unset: names })
 
         // Invalidate the setPersonProperties dedupe cache so a subsequent set of an unset
         // property is not skipped as a duplicate.
@@ -3147,18 +3147,18 @@ export class PostHog implements PostHogInterface {
             this.resetGroupPropertiesForFlags(groupType)
         }
 
-        this.register({ $groups: { ...existingGroups, [groupType]: groupKey } })
+        this.register({ groups: { ...existingGroups, [groupType]: groupKey } })
 
-        // Send $groupidentify when the group is new/changed OR when properties
+        // Send ade_groupidentify when the group is new/changed OR when properties
         // are provided. Skip only when the group already exists with the same
         // key and no new properties are being set.
         if (isNewGroup || groupPropertiesToSet) {
             const groupIdentifyProperties: Properties = {
-                $group_type: groupType,
-                $group_key: groupKey,
+                group_type: groupType,
+                group_key: groupKey,
             }
             if (groupPropertiesToSet) {
-                groupIdentifyProperties.$group_set = groupPropertiesToSet
+                groupIdentifyProperties.group_set = groupPropertiesToSet
             }
             this.capture(EVENT_GROUPIDENTIFY, groupIdentifyProperties)
         }
@@ -3188,7 +3188,7 @@ export class PostHog implements PostHogInterface {
      * @public
      */
     resetGroups(): void {
-        this.register({ $groups: {} })
+        this.register({ groups: {} })
         this.resetGroupPropertiesForFlags()
 
         // If groups changed, reload feature flags.
@@ -3370,8 +3370,8 @@ export class PostHog implements PostHogInterface {
         this.featureFlags?.updateConfig?.(this.config, this._shouldDisableFlags())
 
         const device_id = this.get_property(DEVICE_ID)
-        // $device_model describes the physical device, not the user, so preserve it across reset()
-        // the same way $device_id is — it is only ever re-resolved at init.
+        // device_model describes the physical device, not the user, so preserve it across reset()
+        // the same way device_id is — it is only ever re-resolved at init.
         const device_model = this.get_property(DEVICE_MODEL)
         // Snapshot the session-recording remote config before clearing persistence.
         // It's server-defined config (sample rate, masking, canvas, triggers, …),
@@ -3417,7 +3417,7 @@ export class PostHog implements PostHogInterface {
                 this.register_once(
                     {
                         distinct_id: COOKIELESS_SENTINEL_VALUE,
-                        $device_id: null,
+                        device_id: null,
                     },
                     ''
                 )
@@ -3426,7 +3426,7 @@ export class PostHog implements PostHogInterface {
                 this.register_once(
                     {
                         distinct_id: uuid,
-                        $device_id: reset_device_id ? uuid : device_id,
+                        device_id: reset_device_id ? uuid : device_id,
                     },
                     ''
                 )
@@ -3437,7 +3437,7 @@ export class PostHog implements PostHogInterface {
 
             this.register(
                 {
-                    $last_posthog_reset: new Date().toISOString(),
+                    last_posthog_reset: new Date().toISOString(),
                 },
                 1
             )
@@ -3619,7 +3619,7 @@ export class PostHog implements PostHogInterface {
      * @returns The current groups
      */
     getGroups(): Record<string, any> {
-        return this.get_property('$groups') || {}
+        return this.get_property('groups') || {}
     }
 
     /**
@@ -3717,10 +3717,10 @@ export class PostHog implements PostHogInterface {
      *
      * @param {String} alias A unique identifier that you want to use for this user in the future.
      * @param {String} [original] The current identifier being used for this user.
-     * @returns The `$create_alias` capture result, `-1` if alias matches the current distinct ID, `-2` if aliasing would duplicate a People user, or void if person processing is disabled.
+     * @returns The `ade_create_alias` capture result, `-1` if alias matches the current distinct ID, `-2` if aliasing would duplicate a People user, or void if person processing is disabled.
      */
     alias(alias: string, original?: string): CaptureResult | void | number {
-        // If the $people_distinct_id key exists in persistence, there has been a previous
+        // If the people_distinct_id key exists in persistence, there has been a previous
         // posthog.people.identify() call made for this user. It is VERY BAD to make an alias with
         // this ID, as it will duplicate users.
         if (alias === this.get_property(PEOPLE_DISTINCT_ID_KEY)) {
@@ -3736,7 +3736,7 @@ export class PostHog implements PostHogInterface {
         }
         if (alias !== original) {
             this._register_single(ALIAS_ID_KEY, alias)
-            return this.capture('$create_alias', { alias: alias, distinct_id: original })
+            return this.capture('ade_create_alias', { alias: alias, distinct_id: original })
         } else {
             logger.warn('alias matches current distinct_id - skipping api call.')
             this.identify(alias)
@@ -3813,7 +3813,7 @@ export class PostHog implements PostHogInterface {
     /**
      * @internal
      * Allows wrapper SDKs (e.g. posthog-flutter, posthog-react-native) to override the
-     * `$lib` and `$lib_version` properties sent with every event.
+     * `lib` and `lib_version` properties sent with every event.
      *
      * This is not a public API and may change without notice.
      */
@@ -4107,10 +4107,10 @@ export class PostHog implements PostHogInterface {
      *
      * @example
      * ```js
-     * // grab value for '$user_id' after the posthog library has loaded
+     * // grab value for 'user_id' after the posthog library has loaded
      * posthog.init('<YOUR PROJECT TOKEN>', {
      *     loaded: function(posthog) {
-     *         user_id = posthog.get_property('$user_id');
+     *         user_id = posthog.get_property('user_id');
      *     }
      * });
      * ```
@@ -4215,17 +4215,17 @@ export class PostHog implements PostHogInterface {
         if (!this._requirePersonProcessing('posthog.createPersonProfile')) {
             return
         }
-        // sent a $set event. We don't set any properties here, but attribution props will be added later
+        // sent a ade_set event. We don't set any properties here, but attribution props will be added later
         this.setPersonProperties({}, {})
     }
 
     /**
-     * Marks the current user as a test user by setting the `$internal_or_test_user` person property to `true`.
+     * Marks the current user as a test user by setting the `internal_or_test_user` person property to `true`.
      * This also enables person processing for the current user.
      *
      * This is useful for using in a cohort your internal/test filters for your posthog org.
      * @see https://posthog.com/tutorials/filter-internal-users
-     * Create a cohort with `$internal_or_test_user` IS SET, and set your internal test filters to be NOT IN that cohort.
+     * Create a cohort with `internal_or_test_user` IS SET, and set your internal test filters to be NOT IN that cohort.
      *
      * {@label Identification}
      *
@@ -4244,7 +4244,7 @@ export class PostHog implements PostHogInterface {
         if (!this._requirePersonProcessing('posthog.setInternalOrTestUser')) {
             return
         }
-        this.setPersonProperties({ $internal_or_test_user: true })
+        this.setPersonProperties({ internal_or_test_user: true })
     }
 
     /**
@@ -4304,7 +4304,7 @@ export class PostHog implements PostHogInterface {
      *
      * @remarks
      * Enables event tracking and data persistence (cookies/localStorage) for this PostHog instance.
-     * By default, captures an `$opt_in` event unless disabled.
+     * By default, captures an `ade_opt_in` event unless disabled.
      *
      * @example
      * ```js
@@ -4332,7 +4332,7 @@ export class PostHog implements PostHogInterface {
      * @public
      *
      * @param {Object} [options] A dictionary of opt-in options.
-     * @param {EventName | null | false} [options.captureEventName] Event name to use for capturing the opt-in action. Set to `null` or `false` to skip capturing the opt-in event. Defaults to `$opt_in`.
+     * @param {EventName | null | false} [options.captureEventName] Event name to use for capturing the opt-in action. Set to `null` or `false` to skip capturing the opt-in event. Defaults to `ade_opt_in`.
      * @param {Properties} [options.captureProperties] Set of properties to capture along with the opt-in action.
      */
     opt_in_capturing(options?: {
@@ -4387,7 +4387,7 @@ export class PostHog implements PostHogInterface {
 
         // Don't capture if captureEventName is null or false
         if (isUndefined(options?.captureEventName) || options?.captureEventName) {
-            this.capture(options?.captureEventName ?? '$opt_in', options?.captureProperties, { send_instantly: true })
+            this.capture(options?.captureEventName ?? 'ade_opt_in', options?.captureProperties, { send_instantly: true })
         }
 
         if (this.config.capture_pageview) {
@@ -4430,7 +4430,7 @@ export class PostHog implements PostHogInterface {
             // If cookieless_mode is COOKIELESS_ON_REJECT, we start capturing events in cookieless mode
             this.register({
                 distinct_id: COOKIELESS_SENTINEL_VALUE,
-                $device_id: null,
+                device_id: null,
             })
             // tear down rrweb observers before sessionManager goes away — late events would throw
             this.sessionRecording?.stopRecording()
@@ -4591,7 +4591,7 @@ export class PostHog implements PostHogInterface {
             return
         }
 
-        // Extra check here to guarantee we only ever trigger a single `$pageview` event
+        // Extra check here to guarantee we only ever trigger a single `ade_pageview` event
         if (!this._initialPageviewCaptured) {
             this._initialPageviewCaptured = true
             this.capture(EVENT_PAGEVIEW, { title: document.title }, { send_instantly: true })
@@ -4746,9 +4746,9 @@ export class PostHog implements PostHogInterface {
      * @param userFeedback The feedback to capture.
      */
     captureTraceFeedback(traceId: string | number, userFeedback: string) {
-        this.capture('$ai_feedback', {
-            $ai_trace_id: String(traceId),
-            $ai_feedback_text: userFeedback,
+        this.capture('ade_ai_feedback', {
+            ai_trace_id: String(traceId),
+            ai_feedback_text: userFeedback,
         })
     }
 
@@ -4764,10 +4764,10 @@ export class PostHog implements PostHogInterface {
      * @param metricValue The value of the metric to capture.
      */
     captureTraceMetric(traceId: string | number, metricName: string, metricValue: string | number | boolean) {
-        this.capture('$ai_metric', {
-            $ai_trace_id: String(traceId),
-            $ai_metric_name: metricName,
-            $ai_metric_value: String(metricValue),
+        this.capture('ade_ai_metric', {
+            ai_trace_id: String(traceId),
+            ai_metric_name: metricName,
+            ai_metric_value: String(metricValue),
         })
     }
 

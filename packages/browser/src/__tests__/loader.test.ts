@@ -51,7 +51,7 @@ describe(`Module-based loader in Node env`, () => {
         sinon.assert.calledOnce(posthog.capture as sinon.SinonSpy<any>)
         const captureArgs = (posthog.capture as sinon.SinonSpy<any>).args[0]
         const event = captureArgs[0]
-        expect(event).toBe('$pageview')
+        expect(event).toBe('ade_pageview')
         expect(loaded).toBe(true)
 
         posthog.capture = _originalCapture

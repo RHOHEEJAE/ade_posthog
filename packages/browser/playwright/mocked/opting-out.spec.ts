@@ -33,7 +33,7 @@ test.describe('opting out', () => {
             await page.expectCapturedEventsToBe([])
         })
 
-        test('sends a $pageview event when opting in', async ({ page, context }) => {
+        test('sends a ade_pageview event when opting in', async ({ page, context }) => {
             await start(
                 {
                     flagsResponseOverrides: {
@@ -54,10 +54,10 @@ test.describe('opting out', () => {
                 ;(window as WindowWithPostHog).posthog?.opt_in_capturing()
             })
 
-            await page.expectCapturedEventsToBe(['$opt_in', '$pageview'])
+            await page.expectCapturedEventsToBe(['ade_opt_in', 'ade_pageview'])
         })
 
-        test('does not send a duplicate $pageview event when opting in', async ({ page, context }) => {
+        test('does not send a duplicate ade_pageview event when opting in', async ({ page, context }) => {
             await start(
                 {
                     flagsResponseOverrides: {
@@ -73,13 +73,13 @@ test.describe('opting out', () => {
                 context
             )
 
-            await page.expectCapturedEventsToBe(['$pageview'])
+            await page.expectCapturedEventsToBe(['ade_pageview'])
 
             await page.evaluate(() => {
                 ;(window as WindowWithPostHog).posthog?.opt_in_capturing()
             })
 
-            await page.expectCapturedEventsToBe(['$pageview', '$opt_in'])
+            await page.expectCapturedEventsToBe(['ade_pageview', 'ade_opt_in'])
         })
     })
 
@@ -96,11 +96,11 @@ test.describe('opting out', () => {
                 context
             )
 
-            await page.expectCapturedEventsToBe(['$pageview'])
+            await page.expectCapturedEventsToBe(['ade_pageview'])
 
             await page.click('[data-cy-custom-event-button]')
 
-            await page.expectCapturedEventsToBe(['$pageview', '$autocapture', 'custom-event'])
+            await page.expectCapturedEventsToBe(['ade_pageview', 'ade_autocapture', 'custom-event'])
 
             await page.evaluate(() => {
                 ;(window as WindowWithPostHog).posthog?.opt_out_capturing()
@@ -109,7 +109,7 @@ test.describe('opting out', () => {
             await page.click('[data-cy-custom-event-button]')
 
             // no new events
-            await page.expectCapturedEventsToBe(['$pageview', '$autocapture', 'custom-event'])
+            await page.expectCapturedEventsToBe(['ade_pageview', 'ade_autocapture', 'custom-event'])
         })
     })
 })

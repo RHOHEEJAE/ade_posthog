@@ -528,8 +528,8 @@ describe('Autocapture system', () => {
     describe('_getDefaultProperties', () => {
         it('should return the default properties', () => {
             expect(getDefaultProperties('test')).toEqual({
-                $event_type: 'test',
-                $ce_version: 1,
+                event_type: 'test',
+                ce_version: 1,
             })
         })
     })
@@ -546,15 +546,15 @@ describe('Autocapture system', () => {
                 'rageclick detection is active',
                 true,
                 null,
-                ['$autocapture', '$autocapture', '$rageclick', '$autocapture'],
+                ['ade_autocapture', 'ade_autocapture', 'ade_rageclick', 'ade_autocapture'],
             ],
-            ['rageclick detection is inactive', false, null, ['$autocapture', '$autocapture', '$autocapture']],
+            ['rageclick detection is inactive', false, null, ['ade_autocapture', 'ade_autocapture', 'ade_autocapture']],
             ['rageclick detection with ph-no-capture', true, 'ph-no-capture', []],
             [
                 'rageclick detection with ph-no-rageclick',
                 true,
                 'ph-no-rageclick',
-                ['$autocapture', '$autocapture', '$autocapture'],
+                ['ade_autocapture', 'ade_autocapture', 'ade_autocapture'],
             ],
             [
                 'rageclick detection with custom classname overrides default',
@@ -562,7 +562,7 @@ describe('Autocapture system', () => {
                     css_selector_ignorelist: ['.custom-rageclick'],
                 },
                 'ph-no-rageclick',
-                ['$autocapture', '$autocapture', '$rageclick', '$autocapture'],
+                ['ade_autocapture', 'ade_autocapture', 'ade_rageclick', 'ade_autocapture'],
             ],
             [
                 'rageclick detection with custom classname',
@@ -570,7 +570,7 @@ describe('Autocapture system', () => {
                     css_selector_ignorelist: ['.custom-rageclick'],
                 },
                 'custom-rageclick',
-                ['$autocapture', '$autocapture', '$autocapture'],
+                ['ade_autocapture', 'ade_autocapture', 'ade_autocapture'],
             ],
         ])(
             'autocapture and rageclick testcase: %s',
@@ -614,7 +614,7 @@ describe('Autocapture system', () => {
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 0 },
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 100 },
                     ],
-                    ['$autocapture', '$rageclick', '$autocapture'],
+                    ['ade_autocapture', 'ade_rageclick', 'ade_autocapture'],
                 ],
                 [
                     'custom click_count threshold of 5',
@@ -625,7 +625,7 @@ describe('Autocapture system', () => {
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 200 },
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 300 },
                     ],
-                    ['$autocapture', '$autocapture', '$autocapture', '$autocapture'],
+                    ['ade_autocapture', 'ade_autocapture', 'ade_autocapture', 'ade_autocapture'],
                 ],
                 [
                     'custom timeout_ms of 10ms - clicks too far apart',
@@ -635,7 +635,7 @@ describe('Autocapture system', () => {
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 100 },
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 200 },
                     ],
-                    ['$autocapture', '$autocapture', '$autocapture'],
+                    ['ade_autocapture', 'ade_autocapture', 'ade_autocapture'],
                 ],
                 [
                     'custom timeout_ms of 500ms - clicks within window',
@@ -645,7 +645,7 @@ describe('Autocapture system', () => {
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 100 },
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 200 },
                     ],
-                    ['$autocapture', '$autocapture', '$rageclick', '$autocapture'],
+                    ['ade_autocapture', 'ade_autocapture', 'ade_rageclick', 'ade_autocapture'],
                 ],
                 [
                     'custom threshold_px of 5 - clicks beyond threshold',
@@ -655,7 +655,7 @@ describe('Autocapture system', () => {
                         { target: 'button', clientX: 10, clientY: 0, timestamp: 100 },
                         { target: 'button', clientX: 10, clientY: 0, timestamp: 200 },
                     ],
-                    ['$autocapture', '$autocapture', '$autocapture'],
+                    ['ade_autocapture', 'ade_autocapture', 'ade_autocapture'],
                 ],
                 [
                     'custom threshold_px of 50 - clicks within threshold',
@@ -665,7 +665,7 @@ describe('Autocapture system', () => {
                         { target: 'button', clientX: 10, clientY: 0, timestamp: 100 },
                         { target: 'button', clientX: 10, clientY: 0, timestamp: 200 },
                     ],
-                    ['$autocapture', '$autocapture', '$rageclick', '$autocapture'],
+                    ['ade_autocapture', 'ade_autocapture', 'ade_rageclick', 'ade_autocapture'],
                 ],
                 [
                     'combined custom thresholds',
@@ -674,7 +674,7 @@ describe('Autocapture system', () => {
                         { target: 'button', clientX: 5, clientY: 5, timestamp: 0 },
                         { target: 'button', clientX: 8, clientY: 8, timestamp: 100 },
                     ],
-                    ['$autocapture', '$rageclick', '$autocapture'],
+                    ['ade_autocapture', 'ade_rageclick', 'ade_autocapture'],
                 ],
             ]
             test.each(testCases)(
@@ -764,7 +764,7 @@ describe('Autocapture system', () => {
                     ['button', undefined, true],
                     ['a', undefined, true],
                 ] as [string, string | undefined, boolean][])(
-                    'rapid clicks on <%s type=%s> capture $rageclick: %s',
+                    'rapid clicks on <%s type=%s> capture ade_rageclick: %s',
                     (tag, type, shouldRageclick) => {
                         const el = document.createElement(tag)
                         if (type) {
@@ -774,18 +774,18 @@ describe('Autocapture system', () => {
                         const captured = rageClickThreeTimes(el)
 
                         if (shouldRageclick) {
-                            expect(captured).toContain('$rageclick')
+                            expect(captured).toContain('ade_rageclick')
                         } else {
-                            expect(captured).not.toContain('$rageclick')
+                            expect(captured).not.toContain('ade_rageclick')
                         }
                     }
                 )
 
-                it.each(['true', ''])('rapid clicks on contenteditable="%s" do not capture $rageclick', (value) => {
+                it.each(['true', ''])('rapid clicks on contenteditable="%s" do not capture ade_rageclick', (value) => {
                     const el = document.createElement('div')
                     el.setAttribute('contenteditable', value)
 
-                    expect(rageClickThreeTimes(el)).not.toContain('$rageclick')
+                    expect(rageClickThreeTimes(el)).not.toContain('ade_rageclick')
                 })
             })
 
@@ -801,16 +801,16 @@ describe('Autocapture system', () => {
                 }
 
                 it.each(['+', '-', '−', '–', '>', '<'])(
-                    'rapid clicks on a "%s" stepper/nav button do not capture $rageclick',
+                    'rapid clicks on a "%s" stepper/nav button do not capture ade_rageclick',
                     (text) => {
-                        expect(rageClickThreeTimes(buttonWithText(text))).not.toContain('$rageclick')
+                        expect(rageClickThreeTimes(buttonWithText(text))).not.toContain('ade_rageclick')
                     }
                 )
 
                 it.each(['C++', '5 > 3', 'sign-up', 'Save'])(
-                    'rapid clicks on a "%s" button still capture $rageclick (symbol keywords match exactly)',
+                    'rapid clicks on a "%s" button still capture ade_rageclick (symbol keywords match exactly)',
                     (text) => {
-                        expect(rageClickThreeTimes(buttonWithText(text))).toContain('$rageclick')
+                        expect(rageClickThreeTimes(buttonWithText(text))).toContain('ade_rageclick')
                     }
                 )
             })
@@ -827,16 +827,16 @@ describe('Autocapture system', () => {
                 }
 
                 it.each(['>', '<', 'next', 'previous', 'prev'])(
-                    'rapid clicks on a "%s" button do not capture $rageclick (exact symbol/word match)',
+                    'rapid clicks on a "%s" button do not capture ade_rageclick (exact symbol/word match)',
                     (text) => {
-                        expect(rageClickThreeTimes(buttonWithText(text))).not.toContain('$rageclick')
+                        expect(rageClickThreeTimes(buttonWithText(text))).not.toContain('ade_rageclick')
                     }
                 )
 
                 it.each(['Learn more >', '< Back', 'Go >', 'home > settings'])(
-                    'rapid clicks on a "%s" button still capture $rageclick (symbol keywords match exactly)',
+                    'rapid clicks on a "%s" button still capture ade_rageclick (symbol keywords match exactly)',
                     (text) => {
-                        expect(rageClickThreeTimes(buttonWithText(text))).toContain('$rageclick')
+                        expect(rageClickThreeTimes(buttonWithText(text))).toContain('ade_rageclick')
                     }
                 )
             })
@@ -846,11 +846,11 @@ describe('Autocapture system', () => {
                 (rageclickConfig) => {
                     posthog.config.rageclick = rageclickConfig
 
-                    expect(rageClickThreeTimes(document.createElement('textarea'))).toContain('$rageclick')
+                    expect(rageClickThreeTimes(document.createElement('textarea'))).toContain('ade_rageclick')
 
                     const stepper = document.createElement('button')
                     stepper.textContent = '+'
-                    expect(rageClickThreeTimes(stepper)).toContain('$rageclick')
+                    expect(rageClickThreeTimes(stepper)).toContain('ade_rageclick')
                 }
             )
         })
@@ -872,14 +872,14 @@ describe('Autocapture system', () => {
 
                 setWindowTextSelection('copy this test')
 
-                autocapture['_captureEvent'](fakeEvent, '$copy_autocapture')
+                autocapture['_captureEvent'](fakeEvent, 'ade_copy_autocapture')
 
                 expect(beforeSendMock).toHaveBeenCalledTimes(1)
                 const mockCall = beforeSendMock.mock.calls[0][0]
-                expect(mockCall.event).toEqual('$copy_autocapture')
-                expect(mockCall.properties).toHaveProperty('$selected_content', 'copy this test')
-                expect(mockCall.properties).toHaveProperty('$clipboard_text_length', 14)
-                expect(mockCall.properties).toHaveProperty('$copy_type', 'copy')
+                expect(mockCall.event).toEqual('ade_copy_autocapture')
+                expect(mockCall.properties).toHaveProperty('selected_content', 'copy this test')
+                expect(mockCall.properties).toHaveProperty('clipboard_text_length', 14)
+                expect(mockCall.properties).toHaveProperty('copy_type', 'copy')
             })
 
             it('should capture cut', () => {
@@ -889,14 +889,14 @@ describe('Autocapture system', () => {
 
                 setWindowTextSelection('cut this test')
 
-                autocapture['_captureEvent'](fakeEvent, '$copy_autocapture')
+                autocapture['_captureEvent'](fakeEvent, 'ade_copy_autocapture')
 
                 const spyArgs = beforeSendMock.mock.calls
                 expect(spyArgs.length).toBe(1)
-                expect(spyArgs[0][0].event).toEqual('$copy_autocapture')
-                expect(spyArgs[0][0].properties).toHaveProperty('$selected_content', 'cut this test')
-                expect(spyArgs[0][0].properties).toHaveProperty('$clipboard_text_length', 13)
-                expect(spyArgs[0][0].properties).toHaveProperty('$copy_type', 'cut')
+                expect(spyArgs[0][0].event).toEqual('ade_copy_autocapture')
+                expect(spyArgs[0][0].properties).toHaveProperty('selected_content', 'cut this test')
+                expect(spyArgs[0][0].properties).toHaveProperty('clipboard_text_length', 13)
+                expect(spyArgs[0][0].properties).toHaveProperty('copy_type', 'cut')
             })
 
             it('captures paste without reading pasted text', async () => {
@@ -917,10 +917,10 @@ describe('Autocapture system', () => {
                     expect(getData).not.toHaveBeenCalled()
                     expect(pasteBeforeSend).toHaveBeenCalledTimes(1)
                     const captured = pasteBeforeSend.mock.calls[0][0]
-                    expect(captured.event).toEqual('$copy_autocapture')
-                    expect(captured.properties).toHaveProperty('$copy_type', 'paste')
-                    expect(captured.properties).not.toHaveProperty('$clipboard_text_length')
-                    expect(captured.properties).not.toHaveProperty('$selected_content')
+                    expect(captured.event).toEqual('ade_copy_autocapture')
+                    expect(captured.properties).toHaveProperty('copy_type', 'paste')
+                    expect(captured.properties).not.toHaveProperty('clipboard_text_length')
+                    expect(captured.properties).not.toHaveProperty('selected_content')
                 } finally {
                     await pastePosthog.shutdown()
                 }
@@ -948,10 +948,10 @@ describe('Autocapture system', () => {
 
                     expect(pasteBeforeSend).toHaveBeenCalledTimes(2)
                     for (const [captured] of pasteBeforeSend.mock.calls) {
-                        expect(captured.event).toEqual('$copy_autocapture')
-                        expect(captured.properties).toHaveProperty('$copy_type', 'paste')
-                        expect(captured.properties).not.toHaveProperty('$clipboard_text_length')
-                        expect(captured.properties).not.toHaveProperty('$selected_content')
+                        expect(captured.event).toEqual('ade_copy_autocapture')
+                        expect(captured.properties).toHaveProperty('copy_type', 'paste')
+                        expect(captured.properties).not.toHaveProperty('clipboard_text_length')
+                        expect(captured.properties).not.toHaveProperty('selected_content')
                     }
                 } finally {
                     container.remove()
@@ -966,7 +966,7 @@ describe('Autocapture system', () => {
 
                 setWindowTextSelection('')
 
-                autocapture['_captureEvent'](fakeEvent, '$copy_autocapture')
+                autocapture['_captureEvent'](fakeEvent, 'ade_copy_autocapture')
 
                 const spyArgs = beforeSendMock.mock.calls
                 expect(spyArgs.length).toBe(0)
@@ -980,7 +980,7 @@ describe('Autocapture system', () => {
                 // oh no, a social security number!
                 setWindowTextSelection('123-45-6789')
 
-                autocapture['_captureEvent'](fakeEvent, '$copy_autocapture')
+                autocapture['_captureEvent'](fakeEvent, 'ade_copy_autocapture')
 
                 const spyArgs = beforeSendMock.mock.calls
                 expect(spyArgs.length).toBe(0)
@@ -1000,12 +1000,12 @@ describe('Autocapture system', () => {
 
                     const fakeEvent = makeCopyEvent({ target: paragraph })
 
-                    autocapture['_captureEvent'](fakeEvent, '$copy_autocapture')
+                    autocapture['_captureEvent'](fakeEvent, 'ade_copy_autocapture')
 
                     expect(beforeSendMock).toHaveBeenCalledTimes(1)
                     const captured = beforeSendMock.mock.calls[0][0]
-                    expect(captured.event).toEqual('$copy_autocapture')
-                    expect(captured.properties.$elements_chain).toContain('some-element')
+                    expect(captured.event).toEqual('ade_copy_autocapture')
+                    expect(captured.properties.elements_chain).toContain('some-element')
                 } finally {
                     host.remove()
                 }
@@ -1037,13 +1037,13 @@ describe('Autocapture system', () => {
                     },
                     selectedText: 'detached',
                 },
-            ])('does not throw on copy from $name', ({ buildTarget, selectedText }) => {
+            ])('does not throw on copy from name', ({ buildTarget, selectedText }) => {
                 const { target, cleanup } = buildTarget()
 
                 try {
                     setWindowTextSelection(selectedText)
                     const fakeEvent = makeCopyEvent({ target })
-                    expect(() => autocapture['_captureEvent'](fakeEvent, '$copy_autocapture')).not.toThrow()
+                    expect(() => autocapture['_captureEvent'](fakeEvent, 'ade_copy_autocapture')).not.toThrow()
                 } finally {
                     cleanup?.()
                 }
@@ -1140,13 +1140,13 @@ describe('Autocapture system', () => {
             const captureArgs = beforeSendMock.mock.calls[0]
             const event = captureArgs[0].event
             const props = captureArgs[0].properties
-            expect(event).toBe('$autocapture')
-            expect(props['$event_type']).toBe('click')
-            expect(props['$elements'][0]).toHaveProperty('attr__href', 'https://test.com')
-            expect(props['$elements'][1]).toHaveProperty('tag_name', 'span')
-            expect(props['$elements'][2]).toHaveProperty('tag_name', 'div')
-            expect(props['$elements'][props['$elements'].length - 1]).toHaveProperty('tag_name', 'body')
-            expect(props['$external_click_url']).toEqual('https://test.com')
+            expect(event).toBe('ade_autocapture')
+            expect(props['event_type']).toBe('click')
+            expect(props['elements'][0]).toHaveProperty('attr__href', 'https://test.com')
+            expect(props['elements'][1]).toHaveProperty('tag_name', 'span')
+            expect(props['elements'][2]).toHaveProperty('tag_name', 'div')
+            expect(props['elements'][props['elements'].length - 1]).toHaveProperty('tag_name', 'body')
+            expect(props['external_click_url']).toEqual('https://test.com')
         })
 
         it('truncate any element property value to 1024 bytes', () => {
@@ -1169,7 +1169,7 @@ describe('Autocapture system', () => {
             const captureArgs = beforeSendMock.mock.calls[0]
             const props = captureArgs[0].properties
             expect(longString).toBe('prop'.repeat(400))
-            expect(props['$elements'][0]).toHaveProperty('attr__data-props', 'prop'.repeat(256) + '...')
+            expect(props['elements'][0]).toHaveProperty('attr__data-props', 'prop'.repeat(256) + '...')
         })
 
         it('assigns element_selector if htmlelement matches known selectors', () => {
@@ -1193,9 +1193,9 @@ describe('Autocapture system', () => {
             )
 
             const props = beforeSendMock.mock.calls[0][0].properties
-            expect(props['$element_selectors']).toContain('#primary_button')
-            expect(props['$elements'][0]).toHaveProperty('attr__href', 'https://test.com')
-            expect(props['$external_click_url']).toEqual('https://test.com')
+            expect(props['element_selectors']).toContain('#primary_button')
+            expect(props['elements'][0]).toHaveProperty('attr__href', 'https://test.com')
+            expect(props['external_click_url']).toEqual('https://test.com')
         })
 
         it('gets the href attribute from parent anchor tags', () => {
@@ -1211,8 +1211,8 @@ describe('Autocapture system', () => {
                 })
             )
             const props = beforeSendMock.mock.calls[0][0].properties
-            expect(props['$elements'][0]).toHaveProperty('attr__href', 'https://test.com')
-            expect(props['$external_click_url']).toEqual('https://test.com')
+            expect(props['elements'][0]).toHaveProperty('attr__href', 'https://test.com')
+            expect(props['external_click_url']).toEqual('https://test.com')
         })
 
         it('does not include $click_external_href for same site', () => {
@@ -1229,8 +1229,8 @@ describe('Autocapture system', () => {
                 })
             )
             const props = beforeSendMock.mock.calls[0][0].properties
-            expect(props['$elements'][0]).toHaveProperty('attr__href', 'https://www.example.com/link')
-            expect(props['$external_click_url']).toBeUndefined()
+            expect(props['elements'][0]).toHaveProperty('attr__href', 'https://www.example.com/link')
+            expect(props['external_click_url']).toBeUndefined()
         })
 
         it('does not capture href attribute values from password elements', () => {
@@ -1260,7 +1260,7 @@ describe('Autocapture system', () => {
                     target: elTarget,
                 })
             )
-            expect(beforeSendMock.mock.calls[0][0].properties['$elements'][0]).not.toHaveProperty('attr__href')
+            expect(beforeSendMock.mock.calls[0][0].properties['elements'][0]).not.toHaveProperty('attr__href')
         })
 
         it('does not capture href attribute values that look like credit card numbers', () => {
@@ -1275,7 +1275,7 @@ describe('Autocapture system', () => {
                     target: elTarget,
                 })
             )
-            expect(beforeSendMock.mock.calls[0][0].properties['$elements'][0]).not.toHaveProperty('attr__href')
+            expect(beforeSendMock.mock.calls[0][0].properties['elements'][0]).not.toHaveProperty('attr__href')
         })
 
         it('does not capture href attribute values that look like social-security numbers', () => {
@@ -1290,7 +1290,7 @@ describe('Autocapture system', () => {
                     target: elTarget,
                 })
             )
-            expect(beforeSendMock.mock.calls[0][0].properties['$elements'][0]).not.toHaveProperty('attr__href')
+            expect(beforeSendMock.mock.calls[0][0].properties['elements'][0]).not.toHaveProperty('attr__href')
         })
 
         it('correctly identifies and formats text content', () => {
@@ -1337,8 +1337,8 @@ describe('Autocapture system', () => {
             const props1 = beforeSendMock.mock.calls[0][0].properties
             const text1 =
                 "Some super duper really long Text with new lines that we'll strip out and also we will want to make this text shorter since it's not likely people really care about text content that's super long and it also takes up more space and bandwidth. Some super d"
-            expect(props1['$elements'][0]).toHaveProperty('$el_text', text1)
-            expect(props1['$el_text']).toEqual(text1)
+            expect(props1['elements'][0]).toHaveProperty('el_text', text1)
+            expect(props1['el_text']).toEqual(text1)
 
             const e2 = makeMouseEvent({
                 target: span1,
@@ -1346,8 +1346,8 @@ describe('Autocapture system', () => {
             beforeSendMock.mockClear()
             autocapture['_captureEvent'](e2)
             const props2 = beforeSendMock.mock.calls[0][0].properties
-            expect(props2['$elements'][0]).toHaveProperty('$el_text', 'Some text')
-            expect(props2['$el_text']).toEqual('Some text')
+            expect(props2['elements'][0]).toHaveProperty('el_text', 'Some text')
+            expect(props2['el_text']).toEqual('Some text')
 
             const e3 = makeMouseEvent({
                 target: img2,
@@ -1355,8 +1355,8 @@ describe('Autocapture system', () => {
             beforeSendMock.mockClear()
             autocapture['_captureEvent'](e3)
             const props3 = beforeSendMock.mock.calls[0][0].properties
-            expect(props3['$elements'][0]).toHaveProperty('$el_text', '')
-            expect(props3).not.toHaveProperty('$el_text')
+            expect(props3['elements'][0]).toHaveProperty('el_text', '')
+            expect(props3).not.toHaveProperty('el_text')
         })
 
         it('does not capture sensitive text content', () => {
@@ -1383,24 +1383,24 @@ describe('Autocapture system', () => {
             })
             autocapture['_captureEvent'](e1)
             const props1 = beforeSendMock.mock.calls[0][0].properties
-            expect(props1['$elements'][0]).toHaveProperty('$el_text')
-            expect(props1['$elements'][0]['$el_text']).toMatch(/Why\s+hello\s+there/)
+            expect(props1['elements'][0]).toHaveProperty('el_text')
+            expect(props1['elements'][0]['el_text']).toMatch(/Why\s+hello\s+there/)
 
             const e2 = makeMouseEvent({
                 target: button2,
             })
             autocapture['_captureEvent'](e2)
             const props2 = beforeSendMock.mock.calls[0][0].properties
-            expect(props2['$elements'][0]).toHaveProperty('$el_text')
-            expect(props2['$elements'][0]['$el_text']).toMatch(/Why\s+hello\s+there/)
+            expect(props2['elements'][0]).toHaveProperty('el_text')
+            expect(props2['elements'][0]['el_text']).toMatch(/Why\s+hello\s+there/)
 
             const e3 = makeMouseEvent({
                 target: button3,
             })
             autocapture['_captureEvent'](e3)
             const props3 = beforeSendMock.mock.calls[0][0].properties
-            expect(props3['$elements'][0]).toHaveProperty('$el_text')
-            expect(props3['$elements'][0]['$el_text']).toMatch(/Why\s+hello\s+there/)
+            expect(props3['elements'][0]).toHaveProperty('el_text')
+            expect(props3['elements'][0]['el_text']).toMatch(/Why\s+hello\s+there/)
         })
 
         it('should capture a submit event with form field props', () => {
@@ -1411,7 +1411,7 @@ describe('Autocapture system', () => {
             autocapture['_captureEvent'](e)
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
             const props = beforeSendMock.mock.calls[0][0].properties
-            expect(props['$event_type']).toBe('submit')
+            expect(props['event_type']).toBe('submit')
         })
 
         it('should capture a click event inside a form with form field props', () => {
@@ -1428,7 +1428,7 @@ describe('Autocapture system', () => {
             autocapture['_captureEvent'](e)
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
             const props = beforeSendMock.mock.calls[0][0].properties
-            expect(props['$event_type']).toBe('click')
+            expect(props['event_type']).toBe('click')
         })
 
         it('should capture a click event inside a shadowroot', () => {
@@ -1444,7 +1444,7 @@ describe('Autocapture system', () => {
             autocapture['_captureEvent'](e)
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
             const props = beforeSendMock.mock.calls[0][0].properties
-            expect(props['$event_type']).toBe('click')
+            expect(props['event_type']).toBe('click')
         })
 
         it('should never capture an element with `ph-no-capture` class', () => {
@@ -1484,7 +1484,7 @@ describe('Autocapture system', () => {
             autocapture['_captureEvent'](e1)
 
             const props1 = beforeSendMock.mock.calls[0][0].properties
-            expect('attr__formmethod' in props1['$elements'][0]).toEqual(false)
+            expect('attr__formmethod' in props1['elements'][0]).toEqual(false)
         })
 
         it('does not capture any textContent if mask_all_text is set', () => {
@@ -1504,7 +1504,7 @@ describe('Autocapture system', () => {
             autocapture['_captureEvent'](e1)
             const props1 = beforeSendMock.mock.calls[0][0].properties
 
-            expect(props1['$elements'][0]).not.toHaveProperty('$el_text')
+            expect(props1['elements'][0]).not.toHaveProperty('el_text')
         })
 
         it('returns elementsChain instead of elements when set', () => {
@@ -1528,8 +1528,8 @@ describe('Autocapture system', () => {
             autocapture['_captureEvent'](e)
             const props1 = beforeSendMock.mock.calls[0][0].properties
 
-            expect(props1['$elements_chain']).toBeDefined()
-            expect(props1['$elements']).toBeUndefined()
+            expect(props1['elements_chain']).toBeDefined()
+            expect(props1['elements']).toBeUndefined()
         })
 
         it('returns elementsChain correctly with newlines in css', () => {
@@ -1551,7 +1551,7 @@ describe('Autocapture system', () => {
             autocapture['_captureEvent'](e)
             const props1 = beforeSendMock.mock.calls[0][0].properties
 
-            expect(props1['$elements_chain']).toBe(
+            expect(props1['elements_chain']).toBe(
                 'a.test-class.test-class2.test-class3.test-class4.test-class5:attr__class="test-class test-class2 test-class3 test-class4 test-class5"attr__href="http://test.com"href="http://test.com"nth-child="1"nth-of-type="1";span:nth-child="1"nth-of-type="1"'
             )
         })
@@ -1582,9 +1582,9 @@ describe('Autocapture system', () => {
 
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
             const props = beforeSendMock.mock.calls[0][0].properties
-            const capturedButton = props['$elements'][1]
+            const capturedButton = props['elements'][1]
             expect(capturedButton['tag_name']).toBe('button')
-            expect(capturedButton['$el_text']).toBe('the button text with more <!-- --> info')
+            expect(capturedButton['el_text']).toBe('the button text with more <!-- --> info')
         })
     })
 
@@ -1601,10 +1601,10 @@ describe('Autocapture system', () => {
             simulateClick(button)
             simulateClick(button)
             expect(beforeSendMock).toHaveBeenCalledTimes(2)
-            expect(beforeSendMock.mock.calls[0][0].event).toBe('$autocapture')
-            expect(beforeSendMock.mock.calls[0][0].properties['$event_type']).toBe('click')
-            expect(beforeSendMock.mock.calls[1][0].event).toBe('$autocapture')
-            expect(beforeSendMock.mock.calls[1][0].properties['$event_type']).toBe('click')
+            expect(beforeSendMock.mock.calls[0][0].event).toBe('ade_autocapture')
+            expect(beforeSendMock.mock.calls[0][0].properties['event_type']).toBe('click')
+            expect(beforeSendMock.mock.calls[1][0].event).toBe('ade_autocapture')
+            expect(beforeSendMock.mock.calls[1][0].properties['event_type']).toBe('click')
         })
     })
 
@@ -2096,7 +2096,7 @@ describe('Autocapture system', () => {
                 disableCaptureUrlHashes: false,
             })
 
-            expect(props['$event_type']).toEqual('click')
+            expect(props['event_type']).toEqual('click')
         })
     })
 })

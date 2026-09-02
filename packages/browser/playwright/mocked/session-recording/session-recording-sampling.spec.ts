@@ -38,7 +38,7 @@ test.describe('Session recording - sampling', () => {
         })
         await waitForSessionRecordingToStart(page)
 
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['ade_pageview'])
         await page.resetCapturedEvents()
     })
 
@@ -57,7 +57,7 @@ test.describe('Session recording - sampling', () => {
             ph?.capture('test_registered_property')
         })
         await page.expectCapturedEventsToBe(['test_registered_property'])
-        expect((await page.capturedEvents())[0]['properties']['$session_recording_start_reason']).toEqual(
+        expect((await page.capturedEvents())[0]['properties']['session_recording_start_reason']).toEqual(
             'sampling_overridden'
         )
 
@@ -87,6 +87,6 @@ test.describe('Session recording - sampling', () => {
 
         const afterReloadCapturedEvents = await page.capturedEvents()
         const lastCaptured = afterReloadCapturedEvents[afterReloadCapturedEvents.length - 1]
-        expect(lastCaptured['event']).toEqual('$snapshot')
+        expect(lastCaptured['event']).toEqual('ade_snapshot')
     })
 })

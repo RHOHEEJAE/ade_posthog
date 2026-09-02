@@ -1547,8 +1547,8 @@ describe('SurveyManager', () => {
             expect(mockPH.capture).toHaveBeenLastCalledWith(
                 'survey sent',
                 expect.objectContaining({
-                    $survey_response_q1: 1,
-                    $survey_response_q2: 'because reasons',
+                    survey_response_q1: 1,
+                    survey_response_q2: 'because reasons',
                 })
             )
         })
@@ -2002,9 +2002,9 @@ describe('SurveyManager', () => {
             expect(mockPostHog.capture).toHaveBeenCalledWith(
                 'survey sent',
                 expect.objectContaining({
-                    $survey_id: 'prefill-survey',
-                    $survey_response_q1: 8,
-                    $survey_completed: false,
+                    survey_id: 'prefill-survey',
+                    survey_response_q1: 8,
+                    survey_completed: false,
                 })
             )
         })
@@ -2047,8 +2047,8 @@ describe('SurveyManager', () => {
             expect(mockPostHog.capture).toHaveBeenCalledWith(
                 'survey sent',
                 expect.objectContaining({
-                    $survey_id: 'prefill-survey-props',
-                    $survey_response_q1: 8,
+                    survey_id: 'prefill-survey-props',
+                    survey_response_q1: 8,
                     account_number: 'A12345',
                     month: 'January',
                 })
@@ -2164,9 +2164,9 @@ describe('SurveyManager', () => {
             expect(mockPostHog.capture).toHaveBeenCalledWith(
                 'survey sent',
                 expect.objectContaining({
-                    $survey_id: 'prefill-survey-complete',
-                    $survey_response_q1: 8,
-                    $survey_completed: true,
+                    survey_id: 'prefill-survey-complete',
+                    survey_response_q1: 8,
+                    survey_completed: true,
                 })
             )
         })
@@ -2216,15 +2216,15 @@ describe('SurveyManager', () => {
             expect(mockPostHog.capture).toHaveBeenCalledWith(
                 'survey sent',
                 expect.objectContaining({
-                    $survey_id: 'prefill-survey-partial',
-                    $survey_response_q1: 8,
-                    $survey_completed: false,
+                    survey_id: 'prefill-survey-partial',
+                    survey_response_q1: 8,
+                    survey_completed: false,
                 })
             )
             expect(mockPostHog.capture).toHaveBeenCalledWith(
                 'survey sent',
                 expect.not.objectContaining({
-                    $survey_response_q2: 5,
+                    survey_response_q2: 5,
                 })
             )
         })

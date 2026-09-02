@@ -315,7 +315,7 @@ export class Heatmaps implements Extension {
         }
 
         this.instance.capture('$$heatmap', {
-            $heatmap_data: this.getAndClearBuffer(),
+            heatmap_data: this.getAndClearBuffer(),
         })
     }
 }

@@ -18,7 +18,7 @@ describe('identify', () => {
         posthog.identify(distinctId)
 
         // assert
-        expect(posthog.persistence!.properties()['$user_id']).toEqual(distinctId)
+        expect(posthog.persistence!.properties()['user_id']).toEqual(distinctId)
         expect(mockLogger.error).toBeCalledTimes(0)
         expect(mockLogger.warn).toBeCalledTimes(0)
     })
@@ -34,7 +34,7 @@ describe('identify', () => {
         posthog.identify(distinctIdNum as any)
 
         // assert
-        expect(posthog.persistence!.properties()['$user_id']).toEqual(distinctIdString)
+        expect(posthog.persistence!.properties()['user_id']).toEqual(distinctIdString)
         expect(mockLogger.error).toBeCalledTimes(0)
         expect(mockLogger.warn).toBeCalledWith(
             'The first argument to posthog.identify was a number, but it should be a string. It has been converted to a string.'
@@ -70,7 +70,7 @@ describe('identify', () => {
         })
     })
 
-    it('should send $is_identified = true with the identify event and following events', async () => {
+    it('should send is_identified = true with the identify event and following events', async () => {
         // arrange
         const token = uuidv7()
         const beforeSendMock = jest.fn().mockImplementation((e) => e)
@@ -84,11 +84,11 @@ describe('identify', () => {
 
         // assert
         const eventBeforeIdentify = beforeSendMock.mock.calls[0]
-        expect(eventBeforeIdentify[0].properties.$is_identified).toEqual(false)
+        expect(eventBeforeIdentify[0].properties.is_identified).toEqual(false)
         const identifyCall = beforeSendMock.mock.calls[1]
-        expect(identifyCall[0].event).toEqual('$identify')
-        expect(identifyCall[0].properties.$is_identified).toEqual(true)
+        expect(identifyCall[0].event).toEqual('ade_identify')
+        expect(identifyCall[0].properties.is_identified).toEqual(true)
         const eventAfterIdentify = beforeSendMock.mock.calls[2]
-        expect(eventAfterIdentify[0].properties.$is_identified).toEqual(true)
+        expect(eventAfterIdentify[0].properties.is_identified).toEqual(true)
     })
 })

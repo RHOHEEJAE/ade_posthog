@@ -34,8 +34,8 @@ function findLinkNodeId(events: any[], hrefFragment: string): number | undefined
         return undefined
     }
     for (const event of events) {
-        if (event.event !== '$snapshot') continue
-        const snapshotData = (event.properties?.$snapshot_data ?? []) as any[]
+        if (event.event !== 'ade_snapshot') continue
+        const snapshotData = (event.properties?.snapshot_data ?? []) as any[]
         for (const item of snapshotData) {
             const root = item.type === 2 ? item.data?.node : (item.data?.adds ?? []).map((a: any) => a.node)
             if (!root) continue
@@ -52,8 +52,8 @@ function findLinkNodeId(events: any[], hrefFragment: string): number | undefined
 function countCssTextDeliveries(events: any[], linkId: number): number {
     let count = 0
     for (const event of events) {
-        if (event.event !== '$snapshot') continue
-        const snapshotData = (event.properties?.$snapshot_data ?? []) as any[]
+        if (event.event !== 'ade_snapshot') continue
+        const snapshotData = (event.properties?.snapshot_data ?? []) as any[]
         for (const item of snapshotData) {
             if (item.type === 3) {
                 const attrs = (item.data?.attributes ?? []) as any[]
@@ -71,8 +71,8 @@ function countCssTextDeliveries(events: any[], linkId: number): number {
 function countFullSnapshots(events: any[]): number {
     let count = 0
     for (const event of events) {
-        if (event.event !== '$snapshot') continue
-        const snapshotData = (event.properties?.$snapshot_data ?? []) as any[]
+        if (event.event !== 'ade_snapshot') continue
+        const snapshotData = (event.properties?.snapshot_data ?? []) as any[]
         for (const item of snapshotData) {
             if (item.type === 2) count += 1
         }

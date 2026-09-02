@@ -51,7 +51,7 @@ test.describe('Session Recording - cookieless mode with opt-in', () => {
         // Initial cookieless pageview fires at init (the fix for #2841)
         await page.locator('[data-cy-input]').type('hello posthog!')
         await page.waitForTimeout(250)
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['ade_pageview'])
 
         // Now the user gives consent and opts in
         await page.waitingForNetworkCausedBy({
@@ -65,7 +65,7 @@ test.describe('Session Recording - cookieless mode with opt-in', () => {
         })
 
         // Verify opt-in event is captured (pageview already fired at init, so no second one)
-        await page.expectCapturedEventsToBe(['$pageview', '$opt_in'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'ade_opt_in'])
 
         // Check localStorage to confirm opt-in is stored
         const optInValue = await page.evaluate(() => {
@@ -80,7 +80,7 @@ test.describe('Session Recording - cookieless mode with opt-in', () => {
 
         // Now interact and verify session recording works
         await page.locator('[data-cy-input]').type('test after consent')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'ade_snapshot')
         await assertThatRecordingStarted(page)
     })
 
@@ -114,11 +114,11 @@ test.describe('Session Recording - cookieless mode with opt-in', () => {
             },
         })
 
-        await page.expectCapturedEventsToBe(['$opt_in', '$pageview'])
+        await page.expectCapturedEventsToBe(['ade_opt_in', 'ade_pageview'])
         await page.resetCapturedEvents()
 
         await page.locator('[data-cy-input]').type('test after consent')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'ade_snapshot')
         await assertThatRecordingStarted(page)
     })
 
@@ -146,12 +146,12 @@ test.describe('Session Recording - cookieless mode with opt-in', () => {
             },
         })
 
-        await page.expectCapturedEventsToBe(['$pageview', '$opt_in'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'ade_opt_in'])
         await page.resetCapturedEvents()
 
         // Verify recording works after opt-in
         await page.locator('[data-cy-input]').type('hello posthog!')
-        await pollUntilEventCaptured(page, '$snapshot')
+        await pollUntilEventCaptured(page, 'ade_snapshot')
         await assertThatRecordingStarted(page)
     })
 })

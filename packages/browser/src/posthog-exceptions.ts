@@ -128,7 +128,7 @@ export class PostHogExceptions implements Extension {
 
     sendExceptionEvent(properties: Properties): CaptureResult | undefined {
         try {
-            const exceptionList = properties.$exception_list
+            const exceptionList = properties.exception_list
 
             if (this._isExceptionList(exceptionList)) {
                 if (this._matchesSuppressionRule(exceptionList)) {
@@ -160,17 +160,17 @@ export class PostHogExceptions implements Extension {
             }
 
             const propertiesForExceptionCapture =
-                this._exceptionStepsConfig.enabled && isNullish(properties.$exception_steps)
+                this._exceptionStepsConfig.enabled && isNullish(properties.exception_steps)
                     ? this._addBufferedExceptionSteps(properties)
                     : properties
 
             const injectedReleaseId = ErrorTracking.getInjectedReleaseId()
             if (injectedReleaseId) {
-                propertiesForExceptionCapture.$release_id = injectedReleaseId
+                propertiesForExceptionCapture.release_id = injectedReleaseId
             }
 
             try {
-                const result = this._instance.capture('$exception', propertiesForExceptionCapture, {
+                const result = this._instance.capture('ade_exception', propertiesForExceptionCapture, {
                     _noTruncate: true,
                     _batchKey: 'exceptionEvent',
                     _originatedFromCaptureException: true,
@@ -202,7 +202,7 @@ export class PostHogExceptions implements Extension {
 
             return {
                 ...properties,
-                $exception_steps: exceptionSteps,
+                exception_steps: exceptionSteps,
             }
         } catch (error) {
             logger.error('Failed to read buffered exception steps. Capturing exception without steps.', error)
@@ -240,16 +240,16 @@ export class PostHogExceptions implements Extension {
             const exceptionValues = exceptionList.reduce(
                 (acc, { type, value }) => {
                     if (isString(type) && type.length > 0) {
-                        acc['$exception_types'].push(type)
+                        acc['exception_types'].push(type)
                     }
                     if (isString(value) && value.length > 0) {
-                        acc['$exception_values'].push(value)
+                        acc['exception_values'].push(value)
                     }
                     return acc
                 },
                 {
-                    $exception_types: [] as string[],
-                    $exception_values: [] as string[],
+                    exception_types: [] as string[],
+                    exception_values: [] as string[],
                 }
             )
 

@@ -50,13 +50,13 @@ describe('identify()', () => {
 
         instance.persistence!.set_property(USER_STATE, 'anonymous')
         instance.persistence!.props['distinct_id'] = 'oldIdentity'
-        instance.persistence!.props['$device_id'] = 'oldIdentity'
+        instance.persistence!.props['device_id'] = 'oldIdentity'
     })
 
     it('registers new user id and updates alias', () => {
         instance.identify('a-new-id')
 
-        expect(instance.register).toHaveBeenCalledWith({ $user_id: 'a-new-id' })
+        expect(instance.register).toHaveBeenCalledWith({ user_id: 'a-new-id' })
         expect(instance.register).toHaveBeenCalledWith({ distinct_id: 'a-new-id' })
     })
 
@@ -64,7 +64,7 @@ describe('identify()', () => {
         instance.config.cookieWinsOnConflict = true
         jest.spyOn(instance.persistence!, 'syncCookieProperties').mockImplementation(() => {
             instance.persistence!.props.distinct_id = 'a-new-id'
-            instance.persistence!.props.$user_state = 'identified'
+            instance.persistence!.props.user_state = 'identified'
             return true
         })
 
@@ -79,7 +79,7 @@ describe('identify()', () => {
         jest.spyOn(instance.persistence!, 'syncCookieProperties')
             .mockImplementationOnce(() => {
                 instance.persistence!.props.distinct_id = 'sibling-anonymous-id'
-                instance.persistence!.props.$user_state = 'anonymous'
+                instance.persistence!.props.user_state = 'anonymous'
                 return true
             })
             .mockReturnValue(false)
@@ -94,7 +94,7 @@ describe('identify()', () => {
         expect(resetFeatureFlags.mock.invocationCallOrder[0]).toBeLessThan(
             setPersonPropertiesForFlags.mock.invocationCallOrder[0]!
         )
-        expect(setPersonPropertiesForFlags).toHaveBeenCalledWith({ $set: { plan: 'pro' }, $set_once: {} }, false)
+        expect(setPersonPropertiesForFlags).toHaveBeenCalledWith({ ade_set: { plan: 'pro' }, ade_set_once: {} }, false)
     })
 
     it('releases suppression without publishing a final snapshot when identify throws', () => {
@@ -128,10 +128,10 @@ describe('identify()', () => {
 
         expect(beforeSendMock).toHaveBeenCalledWith(
             expect.objectContaining({
-                event: '$identify',
+                event: 'ade_identify',
                 properties: expect.objectContaining({
                     distinct_id: 'calls capture when identity changes',
-                    $anon_distinct_id: 'oldIdentity',
+                    anon_distinct_id: 'oldIdentity',
                 }),
             })
         )
@@ -147,17 +147,17 @@ describe('identify()', () => {
     })
 
     it('adds props to next capture when there is no device id', () => {
-        instance.persistence!.set_property('$device_id', null)
+        instance.persistence!.set_property('device_id', null)
         instance.persistence!.set_property('distinct_id', 'oldIdentity')
 
         instance.identify('a-new-id')
 
         expect(beforeSendMock).toHaveBeenCalledWith(
             expect.objectContaining({
-                event: '$identify',
+                event: 'ade_identify',
                 properties: expect.objectContaining({
                     distinct_id: 'a-new-id',
-                    $anon_distinct_id: 'oldIdentity',
+                    anon_distinct_id: 'oldIdentity',
                 }),
             })
         )
@@ -167,16 +167,16 @@ describe('identify()', () => {
     it('calls capture when there is no device id (on first check) even if user is not set to anonymous', () => {
         instance.persistence!.set_property(USER_STATE, undefined)
         instance.persistence!.props['distinct_id'] = 'oldIdentity'
-        instance.persistence!.props['$device_id'] = null
+        instance.persistence!.props['device_id'] = null
 
         instance.identify('a-new-id')
 
         expect(beforeSendMock).toHaveBeenCalledWith(
             expect.objectContaining({
-                event: '$identify',
+                event: 'ade_identify',
                 properties: expect.objectContaining({
                     distinct_id: 'a-new-id',
-                    $anon_distinct_id: 'oldIdentity',
+                    anon_distinct_id: 'oldIdentity',
                 }),
             })
         )
@@ -187,7 +187,7 @@ describe('identify()', () => {
         /**
          * originally this was a proxy for back-to-back identify calls
          */
-        instance.persistence!.props['$device_id'] = 'not the oldIdentity'
+        instance.persistence!.props['device_id'] = 'not the oldIdentity'
         // now this is set explicitly by identify
         instance.persistence!.set_property(USER_STATE, 'identified')
 
@@ -204,7 +204,7 @@ describe('identify()', () => {
          * user_state does not override existing behavior
          */
         instance.persistence!.props['distinct_id'] = 'oldIdentity'
-        instance.persistence!.props['$device_id'] = 'not the oldIdentity'
+        instance.persistence!.props['device_id'] = 'not the oldIdentity'
 
         instance.persistence!.set_property(USER_STATE, 'identified')
 
@@ -216,17 +216,17 @@ describe('identify()', () => {
 
     it('does call capture when distinct_id changes and device id does not match the previous_id but user is marked as anonymous', () => {
         instance.persistence!.props['distinct_id'] = 'oldIdentity'
-        instance.persistence!.props['$device_id'] = 'not the oldIdentity'
+        instance.persistence!.props['device_id'] = 'not the oldIdentity'
         instance.persistence!.set_property(USER_STATE, 'anonymous')
 
         instance.identify('a-new-id')
 
         expect(beforeSendMock).toHaveBeenCalledWith(
             expect.objectContaining({
-                event: '$identify',
+                event: 'ade_identify',
                 properties: expect.objectContaining({
                     distinct_id: 'a-new-id',
-                    $anon_distinct_id: 'oldIdentity',
+                    anon_distinct_id: 'oldIdentity',
                 }),
             })
         )
@@ -237,23 +237,23 @@ describe('identify()', () => {
 
         expect(beforeSendMock).toHaveBeenCalledWith(
             expect.objectContaining({
-                event: '$identify',
+                event: 'ade_identify',
                 properties: expect.objectContaining({
                     distinct_id: 'a-new-id',
-                    $anon_distinct_id: 'oldIdentity',
+                    anon_distinct_id: 'oldIdentity',
                 }),
-                $set: { email: 'john@example.com' },
-                $set_once: expect.objectContaining({ howOftenAmISet: 'once!' }),
+                ade_set: { email: 'john@example.com' },
+                ade_set_once: expect.objectContaining({ howOftenAmISet: 'once!' }),
             })
         )
         expect(instance.featureFlags.setAnonymousDistinctId).toHaveBeenCalledWith('oldIdentity')
 
         const capturedEvent = beforeSendMock.mock.calls[0][0]
-        expect(capturedEvent.properties.$device_id).toBe('oldIdentity')
+        expect(capturedEvent.properties.device_id).toBe('oldIdentity')
         expect(
             normalizeCaptureResult(capturedEvent, [
                 ...standardVolatileCaptureProperties.filter(
-                    (field) => field !== 'distinct_id' && field !== '$device_id'
+                    (field) => field !== 'distinct_id' && field !== 'device_id'
                 ),
                 'token',
             ])
@@ -272,49 +272,49 @@ describe('identify()', () => {
                 instance.persistence!.set_property(USER_STATE, 'anonymous')
             })
 
-            it('marks the user identified and captures one person-processed $set event', () => {
+            it('marks the user identified and captures one person-processed ade_set event', () => {
                 instance.identify('a-new-id')
 
                 expect(instance.persistence!.get_property(USER_STATE)).toBe('identified')
                 expect(beforeSendMock).toHaveBeenCalledTimes(1)
                 expect(beforeSendMock).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        event: '$set',
+                        event: 'ade_set',
                         properties: expect.objectContaining({
-                            $process_person_profile: true,
-                            $set: {},
-                            $set_once: {},
+                            process_person_profile: true,
+                            ade_set: {},
+                            ade_set_once: {},
                         }),
-                        $set_once: expect.objectContaining({
-                            $initial_current_url: expect.any(String),
+                        ade_set_once: expect.objectContaining({
+                            initial_current_url: expect.any(String),
                         }),
                     })
                 )
                 expect(beforeSendMock).not.toHaveBeenCalledWith(
                     expect.objectContaining({
-                        event: '$identify',
+                        event: 'ade_identify',
                     })
                 )
                 expect(instance.featureFlags.reloadFeatureFlags).not.toHaveBeenCalled()
-                expect(instance.unregister).not.toHaveBeenCalledWith('$flag_call_reported')
+                expect(instance.unregister).not.toHaveBeenCalledWith('flag_call_reported')
             })
 
-            it('captures exactly one $set event with properties and does not duplicate it on the next identify', () => {
+            it('captures exactly one ade_set event with properties and does not duplicate it on the next identify', () => {
                 instance.identify('a-new-id', { email: 'john@example.com' }, { howOftenAmISet: 'once!' })
                 instance.identify('a-new-id', { email: 'john@example.com' }, { howOftenAmISet: 'once!' })
 
                 expect(beforeSendMock).toHaveBeenCalledTimes(1)
                 expect(beforeSendMock).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        event: '$set',
+                        event: 'ade_set',
                         properties: expect.objectContaining({
-                            $set: { email: 'john@example.com' },
-                            $set_once: expect.objectContaining({ howOftenAmISet: 'once!' }),
+                            ade_set: { email: 'john@example.com' },
+                            ade_set_once: expect.objectContaining({ howOftenAmISet: 'once!' }),
                         }),
                     })
                 )
                 expect(instance.featureFlags.reloadFeatureFlags).toHaveBeenCalledTimes(1)
-                expect(instance.unregister).not.toHaveBeenCalledWith('$flag_call_reported')
+                expect(instance.unregister).not.toHaveBeenCalledWith('flag_call_reported')
             })
 
             it('does not let an existing property cache suppress the identity-state transition event', () => {
@@ -326,10 +326,10 @@ describe('identify()', () => {
                 instance.identify('a-new-id', properties)
 
                 expect(beforeSendMock).toHaveBeenCalledTimes(1)
-                expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: '$set' }))
+                expect(beforeSendMock).toHaveBeenCalledWith(expect.objectContaining({ event: 'ade_set' }))
                 expect(instance.persistence!.get_property(USER_STATE)).toBe('identified')
                 expect(instance.featureFlags.reloadFeatureFlags).toHaveBeenCalledTimes(1)
-                expect(instance.unregister).not.toHaveBeenCalledWith('$flag_call_reported')
+                expect(instance.unregister).not.toHaveBeenCalledWith('flag_call_reported')
             })
         })
 
@@ -340,25 +340,25 @@ describe('identify()', () => {
             expect(instance.featureFlags.setAnonymousDistinctId).not.toHaveBeenCalled()
         })
 
-        it('calls $set when user properties passed with same ID', () => {
+        it('calls ade_set when user properties passed with same ID', () => {
             instance.identify('a-new-id', { email: 'john@example.com' }, { howOftenAmISet: 'once!' })
 
             expect(beforeSendMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    event: '$set',
+                    event: 'ade_set',
                     // get set at the top level and in properties
-                    // $set: { email: 'john@example.com' },
-                    // $set_once: expect.objectContaining({ howOftenAmISet: 'once!' }),
+                    // ade_set: { email: 'john@example.com' },
+                    // ade_set_once: expect.objectContaining({ howOftenAmISet: 'once!' }),
                     properties: expect.objectContaining({
-                        $set: { email: 'john@example.com' },
-                        $set_once: expect.objectContaining({ howOftenAmISet: 'once!' }),
+                        ade_set: { email: 'john@example.com' },
+                        ade_set_once: expect.objectContaining({ howOftenAmISet: 'once!' }),
                     }),
                 })
             )
             expect(instance.featureFlags.setAnonymousDistinctId).not.toHaveBeenCalled()
         })
 
-        it('does not call $set when duplicate properties are passed', () => {
+        it('does not call ade_set when duplicate properties are passed', () => {
             instance.identify('a-new-id', { email: 'john@example.com' }, { howOftenAmISet: 'once!' })
             instance.identify('a-new-id', { email: 'john@example.com' }, { howOftenAmISet: 'once!' })
 
@@ -366,7 +366,7 @@ describe('identify()', () => {
             expect(instance.featureFlags.setAnonymousDistinctId).not.toHaveBeenCalled()
         })
 
-        it('calls $set when different properties are passed with the same distinct_id', () => {
+        it('calls ade_set when different properties are passed with the same distinct_id', () => {
             instance.identify('a-new-id', { email: 'john@example.com' }, { howOftenAmISet: 'once!' })
             instance.identify('a-new-id', { email: 'john@example.com' }, { howOftenAmISet: 'twice!' })
 
@@ -392,19 +392,19 @@ describe('identify()', () => {
             )
         })
 
-        it('does not update user when distinct ID is $posthog_cookieless', () => {
+        it('does not update user when distinct ID is posthog_cookieless', () => {
             console.error = jest.fn()
             console.log = jest.fn()
 
             instance.debug()
 
-            instance.identify('$posthog_cookieless')
+            instance.identify('posthog_cookieless')
 
             expect(beforeSendMock).not.toHaveBeenCalled()
             expect(instance.register).not.toHaveBeenCalled()
             expect(console.error).toHaveBeenCalledWith(
                 '[PostHog.js]',
-                'The string "$posthog_cookieless" was set in posthog.identify which indicates an error. This ID is only used as a sentinel value.'
+                'The string "posthog_cookieless" was set in posthog.identify which indicates an error. This ID is only used as a sentinel value.'
             )
         })
     })
@@ -436,7 +436,7 @@ describe('identify()', () => {
             expect(instance.featureFlags.setAnonymousDistinctId).not.toHaveBeenCalled()
             expect(instance.featureFlags.reloadFeatureFlags).not.toHaveBeenCalled()
             expect(instance.featureFlags.setPersonPropertiesForFlags).toHaveBeenCalledWith(
-                { $set: { email: 'john@example.com' }, $set_once: { howOftenAmISet: 'once!' } },
+                { ade_set: { email: 'john@example.com' }, ade_set_once: { howOftenAmISet: 'once!' } },
                 true
             )
         })
@@ -447,7 +447,7 @@ describe('identify()', () => {
             expect(instance.featureFlags.setAnonymousDistinctId).toHaveBeenCalledWith('oldIdentity')
             expect(instance.featureFlags.reloadFeatureFlags).toHaveBeenCalled()
             expect(instance.featureFlags.setPersonPropertiesForFlags).toHaveBeenCalledWith(
-                { $set: { email: 'john@example.com' }, $set_once: { howOftenAmISet: 'once!' } },
+                { ade_set: { email: 'john@example.com' }, ade_set_once: { howOftenAmISet: 'once!' } },
                 false
             )
         })
@@ -464,18 +464,18 @@ describe('identify()', () => {
             instance.persistence!.props['distinct_id'] = 'a-new-id'
         })
 
-        it('captures a $set event', () => {
+        it('captures a ade_set event', () => {
             instance.setPersonProperties({ email: 'john@example.com' }, { name: 'john' })
 
             expect(beforeSendMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    event: '$set',
+                    event: 'ade_set',
                     // get set at the top level and in properties
-                    // $set: { email: 'john@example.com' },
-                    // $set_once: expect.objectContaining({ name: 'john' }),
+                    // ade_set: { email: 'john@example.com' },
+                    // ade_set_once: expect.objectContaining({ name: 'john' }),
                     properties: expect.objectContaining({
-                        $set: { email: 'john@example.com' },
-                        $set_once: { name: 'john' },
+                        ade_set: { email: 'john@example.com' },
+                        ade_set_once: { name: 'john' },
                     }),
                 })
             )
@@ -486,10 +486,10 @@ describe('identify()', () => {
 
             expect(beforeSendMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    event: '$set',
+                    event: 'ade_set',
                     properties: expect.objectContaining({
-                        $set: { email: 'john@example.com' },
-                        $set_once: {},
+                        ade_set: { email: 'john@example.com' },
+                        ade_set_once: {},
                     }),
                 })
             )
@@ -501,10 +501,10 @@ describe('identify()', () => {
 
             expect(beforeSendMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    event: '$set',
+                    event: 'ade_set',
                     properties: expect.objectContaining({
-                        $set: {},
-                        $set_once: { email: 'john@example.com' },
+                        ade_set: {},
+                        ade_set_once: { email: 'john@example.com' },
                     }),
                 })
             )
@@ -521,15 +521,15 @@ describe('identify()', () => {
             ['single property', 'plan', ['plan']],
             ['multiple properties', ['plan', 'email'], ['plan', 'email']],
         ] as Array<[string, string | string[], string[]]>)(
-            'captures a $set event with a $unset array for %s',
+            'captures a ade_set event with a unset array for %s',
             (_, propertyNames, expectedUnset) => {
                 instance.unsetPersonProperties(propertyNames)
 
                 expect(beforeSendMock).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        event: '$set',
+                        event: 'ade_set',
                         properties: expect.objectContaining({
-                            $unset: expectedUnset,
+                            unset: expectedUnset,
                         }),
                     })
                 )
@@ -560,10 +560,10 @@ describe('identify()', () => {
             expect(beforeSendMock).toHaveBeenCalledTimes(3)
             expect(beforeSendMock).toHaveBeenLastCalledWith(
                 expect.objectContaining({
-                    event: '$set',
+                    event: 'ade_set',
                     properties: expect.objectContaining({
-                        $set: { plan: 'free' },
-                        $set_once: {},
+                        ade_set: { plan: 'free' },
+                        ade_set_once: {},
                     }),
                 })
             )

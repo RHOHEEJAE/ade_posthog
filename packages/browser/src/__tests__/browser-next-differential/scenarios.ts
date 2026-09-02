@@ -6,7 +6,7 @@ const identityEvents = (client: BehaviorClient) =>
     client.events().map(({ event, properties }) => ({
         event,
         distinctId: client.normalizeId(properties.distinct_id),
-        anonymousId: client.normalizeId(properties.$anon_distinct_id),
+        anonymousId: client.normalizeId(properties.anon_distinct_id),
         plan: properties.plan,
     }))
 
@@ -17,9 +17,9 @@ const eventContext = (client: BehaviorClient, eventName: string) => {
     }
     return {
         distinctId: client.normalizeId(properties.distinct_id),
-        sessionId: client.normalizeId(properties.$session_id, 'session'),
-        windowId: client.normalizeId(properties.$window_id, 'window'),
-        groups: properties.$groups ?? {},
+        sessionId: client.normalizeId(properties.session_id, 'session'),
+        windowId: client.normalizeId(properties.window_id, 'window'),
+        groups: properties.groups ?? {},
     }
 }
 
@@ -79,7 +79,7 @@ export const identifyScenario: BehaviorScenario<unknown> = {
         },
         events: [
             {
-                event: '$identify',
+                event: 'ade_identify',
                 distinctId: 'user-123',
                 anonymousId: '<anonymous-id-1>',
                 plan: undefined,
@@ -91,7 +91,7 @@ export const identifyScenario: BehaviorScenario<unknown> = {
                 plan: 'team',
             },
         ],
-        deliveredEventNames: ['$identify', 'identified_event'],
+        deliveredEventNames: ['ade_identify', 'identified_event'],
     },
     async run(client) {
         await client.identify('user-123')
@@ -200,7 +200,7 @@ export const repeatedIdentifyScenario: BehaviorScenario<unknown> = {
         },
         events: [
             {
-                event: '$identify',
+                event: 'ade_identify',
                 distinctId: 'user-123',
                 anonymousId: '<anonymous-id-1>',
                 plan: undefined,
@@ -212,7 +212,7 @@ export const repeatedIdentifyScenario: BehaviorScenario<unknown> = {
                 plan: undefined,
             },
         ],
-        deliveredEventNames: ['$identify', 'after_repeat'],
+        deliveredEventNames: ['ade_identify', 'after_repeat'],
     },
     async run(client) {
         await client.identify('user-123')
@@ -236,13 +236,13 @@ export const identifiedSwitchScenario: BehaviorScenario<unknown> = {
         },
         events: [
             {
-                event: '$identify',
+                event: 'ade_identify',
                 distinctId: 'user-one',
                 anonymousId: '<anonymous-id-1>',
                 plan: undefined,
             },
             {
-                event: '$set',
+                event: 'ade_set',
                 distinctId: 'user-two',
                 anonymousId: undefined,
                 plan: undefined,
@@ -255,17 +255,17 @@ export const identifiedSwitchScenario: BehaviorScenario<unknown> = {
             },
         ],
         mutation: { role: 'admin' },
-        deliveredEventNames: ['$identify', '$set', 'after_switch'],
+        deliveredEventNames: ['ade_identify', 'ade_set', 'after_switch'],
     },
     async run(client) {
         await client.identify('user-one')
         await client.identify('user-two', { role: 'admin' })
         await client.capture('after_switch')
-        const mutation = client.events().find(({ event }) => event === '$set')
+        const mutation = client.events().find(({ event }) => event === 'ade_set')
         return {
             identity: client.identity(),
             events: identityEvents(client),
-            mutation: mutation?.properties.$set,
+            mutation: mutation?.properties.ade_set,
             deliveredEventNames: deliveredEventNames(client),
         }
     },
@@ -292,7 +292,7 @@ export const resetScenario: BehaviorScenario<unknown> = {
             windowId: '<window-id-2>',
             groups: {},
         },
-        deliveredEventNames: ['before_reset', '$identify', '$groupidentify', 'after_reset'],
+        deliveredEventNames: ['before_reset', 'ade_identify', 'ade_groupidentify', 'after_reset'],
     },
     async run(client) {
         await client.capture('before_reset')
@@ -367,7 +367,7 @@ export const idleSessionScenario: BehaviorScenario<unknown> = {
 export const identifyPropertiesScenario: BehaviorScenario<unknown> = {
     name: 'same-ID identify emits one person-property mutation without relinking',
     expected: {
-        eventNames: ['$identify', '$set'],
+        eventNames: ['ade_identify', 'ade_set'],
         identify: {
             distinctId: 'user-123',
             anonymousId: '<anonymous-id-1>',
@@ -380,18 +380,18 @@ export const identifyPropertiesScenario: BehaviorScenario<unknown> = {
             set: { plan: 'pro' },
             setOnce: { source: 'docs' },
         },
-        deliveredEventNames: ['$identify', '$set'],
+        deliveredEventNames: ['ade_identify', 'ade_set'],
     },
     async run(client) {
         await client.identify('user-123', { email: 'first@example.com' })
         await client.identify('user-123', { plan: 'pro' }, { source: 'docs' })
         const [identify, mutation] = client.events()
         const project = (record: typeof identify | undefined, setKeys: string[], setOnceKeys: string[]) => {
-            const set = record?.properties.$set as Record<string, unknown> | undefined
-            const setOnce = record?.properties.$set_once as Record<string, unknown> | undefined
+            const set = record?.properties.ade_set as Record<string, unknown> | undefined
+            const setOnce = record?.properties.ade_set_once as Record<string, unknown> | undefined
             return {
                 distinctId: client.normalizeId(record?.properties.distinct_id),
-                anonymousId: client.normalizeId(record?.properties.$anon_distinct_id),
+                anonymousId: client.normalizeId(record?.properties.anon_distinct_id),
                 set: Object.fromEntries(setKeys.flatMap((key) => (isUndefined(set?.[key]) ? [] : [[key, set[key]]]))),
                 setOnce: Object.fromEntries(
                     setOnceKeys.flatMap((key) => (isUndefined(setOnce?.[key]) ? [] : [[key, setOnce[key]]]))
@@ -423,19 +423,19 @@ export const groupScenario: BehaviorScenario<unknown> = {
             windowId: '<window-id-1>',
             groups: { organization: 'org-123' },
         },
-        deliveredEventNames: ['$groupidentify', 'after_group'],
+        deliveredEventNames: ['ade_groupidentify', 'after_group'],
     },
     async run(client) {
         await client.group('organization', 'org-123', { name: 'Acme' })
         await client.capture('after_group')
-        const groupIdentify = client.events().find(({ event }) => event === '$groupidentify')?.properties
+        const groupIdentify = client.events().find(({ event }) => event === 'ade_groupidentify')?.properties
         return {
             groups: client.groups(),
             groupIdentify: {
-                groupType: groupIdentify?.$group_type,
-                groupKey: groupIdentify?.$group_key,
-                groupSet: groupIdentify?.$group_set,
-                groups: groupIdentify?.$groups,
+                groupType: groupIdentify?.group_type,
+                groupKey: groupIdentify?.group_key,
+                groupSet: groupIdentify?.group_set,
+                groups: groupIdentify?.groups,
             },
             after: eventContext(client, 'after_group'),
             deliveredEventNames: deliveredEventNames(client),
@@ -459,7 +459,7 @@ export const groupIdempotenceScenario: BehaviorScenario<unknown> = {
                 groupSet: { name: 'Acme' },
             },
         ],
-        deliveredEventNames: ['$groupidentify', '$groupidentify'],
+        deliveredEventNames: ['ade_groupidentify', 'ade_groupidentify'],
     },
     async run(client) {
         await client.group('organization', 'org-123')
@@ -468,9 +468,9 @@ export const groupIdempotenceScenario: BehaviorScenario<unknown> = {
         return {
             groups: client.groups(),
             groupIdentifyEvents: client.events().map(({ properties }) => ({
-                groupType: properties.$group_type,
-                groupKey: properties.$group_key,
-                groupSet: properties.$group_set,
+                groupType: properties.group_type,
+                groupKey: properties.group_key,
+                groupSet: properties.group_set,
             })),
             deliveredEventNames: deliveredEventNames(client),
         }

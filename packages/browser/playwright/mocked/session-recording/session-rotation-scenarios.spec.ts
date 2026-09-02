@@ -3,9 +3,9 @@ import { start, waitForSessionRecordingToStart } from '../utils/setup'
 import { Page } from '@playwright/test'
 
 function summariseSnapshot(snapshot: any, initialSessionId: string, newSessionId: string) {
-    const sessionId = snapshot.properties.$session_id
+    const sessionId = snapshot.properties.session_id
     const label = sessionId === initialSessionId ? 'initial' : sessionId === newSessionId ? 'new' : 'unknown'
-    const snapshotData: any[] = snapshot.properties.$snapshot_data || []
+    const snapshotData: any[] = snapshot.properties.snapshot_data || []
     return snapshotData.map((event: any) => ({
         sessionId: label,
         type: event.type,
@@ -33,7 +33,7 @@ async function simulateSessionExpiry(page: Page): Promise<void> {
         // @ts-expect-error - accessing private properties for test
         ph.sessionManager['_sessionStartTimestamp'] = expiredStartTs
         // @ts-expect-error - accessing private properties for test
-        ph.persistence.register({ $sesid: [expiredActivityTs, sessionId, expiredStartTs] })
+        ph.persistence.register({ sesid: [expiredActivityTs, sessionId, expiredStartTs] })
     })
 }
 
@@ -43,11 +43,11 @@ async function simulateFrozenTabIdle(page: Page): Promise<void> {
         const persistence = ph?.persistence as any
         const sessionManager = ph?.sessionManager as any
 
-        const [, sessionId, startTimestamp] = persistence.props['$sesid']
+        const [, sessionId, startTimestamp] = persistence.props['sesid']
         // register a NEW array: register() skips reference-equal values, and the
         // doctored timestamp must reach localStorage because the cross-tab
         // refresh re-reads it from storage before declaring the session idle
-        persistence.register({ $sesid: [Date.now() - 35 * 60 * 1000, sessionId, startTimestamp] })
+        persistence.register({ sesid: [Date.now() - 35 * 60 * 1000, sessionId, startTimestamp] })
         persistence.flush?.()
         sessionManager._sessionActivityTimestamp = null
     })
@@ -94,7 +94,7 @@ test.describe('Session rotation scenarios', () => {
             },
         })
         await waitForSessionRecordingToStart(page)
-        await page.expectCapturedEventsToBe(['$pageview'])
+        await page.expectCapturedEventsToBe(['ade_pageview'])
         await page.resetCapturedEvents()
 
         await page.waitingForNetworkCausedBy({
@@ -122,27 +122,27 @@ test.describe('Session rotation scenarios', () => {
         expect(newSessionId).not.toEqual(initialSessionId)
 
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'ade_snapshot')
         const allEvents = snapshots.flatMap((s) => summariseSnapshot(s, initialSessionId, newSessionId))
         const significant = significantOnly(allEvents)
 
         const oldSessionEvents = significant.filter((e) => e.sessionId === 'initial')
-        expect(oldSessionEvents.some((e) => e.tag === '$session_ending')).toBe(true)
+        expect(oldSessionEvents.some((e) => e.tag === 'session_ending')).toBe(true)
 
         const newSessionEvents = significant.filter((e) => e.sessionId === 'new')
         const nonPlugin = newSessionEvents.filter((e) => e.type !== 6)
         expect(nonPlugin[0]).toMatchObject({ type: 4, tag: null })
         expect(nonPlugin[1]).toMatchObject({ type: 2, tag: null })
-        expect(newSessionEvents.some((e) => e.tag === '$session_id_change')).toBe(true)
-        expect(newSessionEvents.some((e) => e.tag === '$session_starting')).toBe(true)
+        expect(newSessionEvents.some((e) => e.tag === 'session_id_change')).toBe(true)
+        expect(newSessionEvents.some((e) => e.tag === 'session_starting')).toBe(true)
 
         await page.evaluate(() => {
             ;(window as WindowWithPostHog).posthog?.capture('post_rotation_event')
         })
         const allAfter = await page.capturedEvents()
         const analyticsEvent = allAfter.find((e) => e.event === 'post_rotation_event')
-        expect(analyticsEvent?.properties.$session_id).toEqual(newSessionId)
-        expect(analyticsEvent?.properties.$session_recording_start_reason).toEqual('session_id_changed')
+        expect(analyticsEvent?.properties.session_id).toEqual(newSessionId)
+        expect(analyticsEvent?.properties.session_recording_start_reason).toEqual('session_id_changed')
     })
 
     test('rotates session after simulated expiry', async ({ page }) => {
@@ -162,7 +162,7 @@ test.describe('Session rotation scenarios', () => {
         expect(newSessionId).not.toEqual(initialSessionId)
 
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'ade_snapshot')
         const allEvents = snapshots.flatMap((s) => summariseSnapshot(s, initialSessionId, newSessionId))
         const significant = significantOnly(allEvents)
 
@@ -170,15 +170,15 @@ test.describe('Session rotation scenarios', () => {
         const nonPlugin = newSessionEvents.filter((e) => e.type !== 6)
         expect(nonPlugin[0]).toMatchObject({ type: 4, tag: null })
         expect(nonPlugin[1]).toMatchObject({ type: 2, tag: null })
-        expect(newSessionEvents.some((e) => e.tag === '$session_id_change')).toBe(true)
+        expect(newSessionEvents.some((e) => e.tag === 'session_id_change')).toBe(true)
 
         await page.evaluate(() => {
             ;(window as WindowWithPostHog).posthog?.capture('after_expiry')
         })
         const allAfter = await page.capturedEvents()
         const analyticsEvent = allAfter.find((e) => e.event === 'after_expiry')
-        expect(analyticsEvent?.properties.$session_id).toEqual(newSessionId)
-        expect(analyticsEvent?.properties.$session_recording_start_reason).toEqual('session_id_changed')
+        expect(analyticsEvent?.properties.session_id).toEqual(newSessionId)
+        expect(analyticsEvent?.properties.session_recording_start_reason).toEqual('session_id_changed')
     })
 
     test('rotates session on forced idle timeout and restarts on activity', async ({ page }) => {
@@ -204,11 +204,11 @@ test.describe('Session rotation scenarios', () => {
         expect(newSessionId).not.toEqual(initialSessionId)
 
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'ade_snapshot')
 
-        const newSessionSnapshots = snapshots.filter((s) => s.properties.$session_id === newSessionId)
+        const newSessionSnapshots = snapshots.filter((s) => s.properties.session_id === newSessionId)
         expect(newSessionSnapshots.length).toBeGreaterThanOrEqual(1)
-        const snapshotData = newSessionSnapshots[0].properties.$snapshot_data
+        const snapshotData = newSessionSnapshots[0].properties.snapshot_data
         const nonPlugin = snapshotData.filter((s: any) => s.type !== 6)
         expect(nonPlugin[0]?.type).toEqual(4)
         expect(nonPlugin[1]?.type).toEqual(2)
@@ -218,8 +218,8 @@ test.describe('Session rotation scenarios', () => {
         })
         const allAfter = await page.capturedEvents()
         const analyticsEvent = allAfter.find((e) => e.event === 'after_forced_idle')
-        expect(analyticsEvent?.properties.$session_id).toEqual(newSessionId)
-        expect(analyticsEvent?.properties.$session_recording_start_reason).toEqual('session_id_changed')
+        expect(analyticsEvent?.properties.session_id).toEqual(newSessionId)
+        expect(analyticsEvent?.properties.session_recording_start_reason).toEqual('session_id_changed')
     })
 
     test('rotates session on posthog.reset() without linking markers', async ({ page }) => {
@@ -247,13 +247,13 @@ test.describe('Session rotation scenarios', () => {
         expect(newSessionId).not.toEqual(initialSessionId)
 
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'ade_snapshot')
         const allEvents = snapshots.flatMap((s) => summariseSnapshot(s, initialSessionId, newSessionId))
         const significant = significantOnly(allEvents)
 
-        expect(significant.some((e) => e.tag === '$session_ending')).toBe(false)
-        expect(significant.some((e) => e.tag === '$session_starting')).toBe(false)
-        expect(significant.some((e) => e.tag === '$session_id_change')).toBe(true)
+        expect(significant.some((e) => e.tag === 'session_ending')).toBe(false)
+        expect(significant.some((e) => e.tag === 'session_starting')).toBe(false)
+        expect(significant.some((e) => e.tag === 'session_id_change')).toBe(true)
 
         const newSessionEvents = significant.filter((e) => e.sessionId === 'new')
         const nonPlugin = newSessionEvents.filter((e) => e.type !== 6)
@@ -261,8 +261,8 @@ test.describe('Session rotation scenarios', () => {
         expect(nonPlugin[1]).toMatchObject({ type: 2, tag: null })
 
         const changeEvent = snapshots
-            .flatMap((s: any) => s.properties.$snapshot_data)
-            .find((e: any) => e.data?.tag === '$session_id_change')
+            .flatMap((s: any) => s.properties.snapshot_data)
+            .find((e: any) => e.data?.tag === 'session_id_change')
         expect(changeEvent?.data?.payload?.changeReason?.noSessionId).toBe(true)
         expect(changeEvent?.data?.payload?.changeReason?.activityTimeout).toBe(false)
         expect(changeEvent?.data?.payload?.changeReason?.sessionPastMaximumLength).toBe(false)
@@ -274,7 +274,7 @@ test.describe('Session rotation scenarios', () => {
         await simulateFrozenTabIdle(page)
 
         await page.evaluate(() => {
-            ;(window as WindowWithPostHog).posthog?.capture('$pageleave')
+            ;(window as WindowWithPostHog).posthog?.capture('ade_pageleave')
         })
 
         const newSessionId = await getSessionId(page)
@@ -289,29 +289,29 @@ test.describe('Session rotation scenarios', () => {
 
         const capturedEvents = await page.capturedEvents()
 
-        const pageleaveEvent = capturedEvents.find((e) => e.event === '$pageleave')
-        expect(pageleaveEvent?.properties.$session_id).toEqual(newSessionId)
+        const pageleaveEvent = capturedEvents.find((e) => e.event === 'ade_pageleave')
+        expect(pageleaveEvent?.properties.session_id).toEqual(newSessionId)
 
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
-        const newSessionSnapshots = snapshots.filter((s) => s.properties.$session_id === newSessionId)
+        const snapshots = capturedEvents.filter((e) => e.event === 'ade_snapshot')
+        const newSessionSnapshots = snapshots.filter((s) => s.properties.session_id === newSessionId)
         expect(newSessionSnapshots.length).toBeGreaterThanOrEqual(1)
 
-        const snapshotData = newSessionSnapshots[0].properties.$snapshot_data
+        const snapshotData = newSessionSnapshots[0].properties.snapshot_data
         const nonPlugin = snapshotData.filter((s: any) => s.type !== 6)
         expect(nonPlugin[0]?.type).toEqual(4)
         expect(nonPlugin[1]?.type).toEqual(2)
 
         const allCustomTags = snapshotData.filter((s: any) => s.type === 5).map((s: any) => s.data?.tag)
-        expect(allCustomTags).toContain('$session_id_change')
-        expect(allCustomTags).toContain('$session_starting')
+        expect(allCustomTags).toContain('session_id_change')
+        expect(allCustomTags).toContain('session_starting')
 
         await page.evaluate(() => {
             ;(window as WindowWithPostHog).posthog?.capture('post_idle_rotation_event')
         })
         const allAfter = await page.capturedEvents()
         const postEvent = allAfter.find((e) => e.event === 'post_idle_rotation_event')
-        expect(postEvent?.properties.$session_id).toEqual(newSessionId)
-        expect(postEvent?.properties.$session_recording_start_reason).toEqual('session_id_changed')
+        expect(postEvent?.properties.session_id).toEqual(newSessionId)
+        expect(postEvent?.properties.session_recording_start_reason).toEqual('session_id_changed')
     })
 
     test('rotates session on external resetSessionId() call', async ({ page }) => {
@@ -332,19 +332,19 @@ test.describe('Session rotation scenarios', () => {
         expect(newSessionId).not.toEqual(initialSessionId)
 
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'ade_snapshot')
 
-        const newSessionSnapshots = snapshots.filter((s) => s.properties.$session_id === newSessionId)
+        const newSessionSnapshots = snapshots.filter((s) => s.properties.session_id === newSessionId)
         expect(newSessionSnapshots.length).toBeGreaterThanOrEqual(1)
-        const snapshotData = newSessionSnapshots[0].properties.$snapshot_data
+        const snapshotData = newSessionSnapshots[0].properties.snapshot_data
         const nonPlugin = snapshotData.filter((s: any) => s.type !== 6)
         expect(nonPlugin[0]?.type).toEqual(4)
         expect(nonPlugin[1]?.type).toEqual(2)
 
         const allCustomTags = snapshotData.filter((s: any) => s.type === 5).map((s: any) => s.data?.tag)
-        expect(allCustomTags).not.toContain('$session_ending')
-        expect(allCustomTags).not.toContain('$session_starting')
-        expect(allCustomTags).toContain('$session_id_change')
+        expect(allCustomTags).not.toContain('session_ending')
+        expect(allCustomTags).not.toContain('session_starting')
+        expect(allCustomTags).toContain('session_id_change')
     })
 
     test('preserves session across page reload', async ({ page, context }) => {
@@ -368,19 +368,19 @@ test.describe('Session rotation scenarios', () => {
         expect(await getSessionId(page)).toEqual(initialSessionId)
 
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'ade_snapshot')
 
         for (const s of snapshots) {
-            expect(s.properties.$session_id).toEqual(initialSessionId)
+            expect(s.properties.session_id).toEqual(initialSessionId)
         }
 
         const allCustomTags = snapshots
-            .flatMap((s: any) => s.properties.$snapshot_data)
+            .flatMap((s: any) => s.properties.snapshot_data)
             .filter((e: any) => e.type === 5)
             .map((e: any) => e.data?.tag)
-        expect(allCustomTags).not.toContain('$session_ending')
-        expect(allCustomTags).not.toContain('$session_starting')
-        expect(allCustomTags).not.toContain('$session_id_change')
+        expect(allCustomTags).not.toContain('session_ending')
+        expect(allCustomTags).not.toContain('session_starting')
+        expect(allCustomTags).not.toContain('session_id_change')
     })
 
     test('stop and start recording preserves session', async ({ page }) => {
@@ -394,7 +394,7 @@ test.describe('Session rotation scenarios', () => {
         await page.locator('[data-cy-input]').type('while stopped')
         await page.waitForTimeout(250)
         const stoppedEvents = await page.capturedEvents()
-        expect(stoppedEvents.filter((e) => e.event === '$snapshot')).toEqual([])
+        expect(stoppedEvents.filter((e) => e.event === 'ade_snapshot')).toEqual([])
 
         await page.evaluate(() => {
             ;(window as WindowWithPostHog).posthog?.startSessionRecording()
@@ -412,14 +412,14 @@ test.describe('Session rotation scenarios', () => {
         expect(await getSessionId(page)).toEqual(initialSessionId)
 
         const capturedEvents = await page.capturedEvents()
-        const snapshots = capturedEvents.filter((e) => e.event === '$snapshot')
+        const snapshots = capturedEvents.filter((e) => e.event === 'ade_snapshot')
         const allCustomTags = snapshots
-            .flatMap((s: any) => s.properties.$snapshot_data)
+            .flatMap((s: any) => s.properties.snapshot_data)
             .filter((e: any) => e.type === 5)
             .map((e: any) => e.data?.tag)
-        expect(allCustomTags).not.toContain('$session_ending')
-        expect(allCustomTags).not.toContain('$session_starting')
-        expect(allCustomTags).not.toContain('$session_id_change')
+        expect(allCustomTags).not.toContain('session_ending')
+        expect(allCustomTags).not.toContain('session_starting')
+        expect(allCustomTags).not.toContain('session_id_change')
     })
 })
 
@@ -465,13 +465,13 @@ test.describe('Session rotation without user interaction', () => {
 
             const capturedAnalytics = await page.capturedEvents()
             const backgroundEvent = capturedAnalytics.find((e) => e.event === 'background_tab_event')
-            expect(backgroundEvent?.properties.$session_id).toEqual(newSessionId)
+            expect(backgroundEvent?.properties.session_id).toEqual(newSessionId)
 
             // without interaction the rotation-born session must not ship anything —
             // wait out a couple of flush cycles to prove the timer doesn't flush it
             await page.waitForTimeout(5000)
             const heldSnapshots = (await page.capturedEvents()).filter(
-                (e) => e.event === '$snapshot' && e.properties.$session_id === newSessionId
+                (e) => e.event === 'ade_snapshot' && e.properties.session_id === newSessionId
             )
             expect(heldSnapshots).toEqual([])
 
@@ -486,10 +486,10 @@ test.describe('Session rotation without user interaction', () => {
             // allow a further flush cycle to land so a duplicated restart would be visible below
             await page.waitForTimeout(2500)
 
-            const snapshots = (await page.capturedEvents()).filter((e) => e.event === '$snapshot')
+            const snapshots = (await page.capturedEvents()).filter((e) => e.event === 'ade_snapshot')
             const newSessionSnapshotData = snapshots
-                .filter((s) => s.properties.$session_id === newSessionId)
-                .flatMap((s: any) => s.properties.$snapshot_data)
+                .filter((s) => s.properties.session_id === newSessionId)
+                .flatMap((s: any) => s.properties.snapshot_data)
 
             // the new session must open with Meta then FullSnapshot so it is playable,
             // and the rotation must restart the recorder exactly once — a single pair

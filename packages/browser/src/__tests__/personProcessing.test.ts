@@ -6,7 +6,7 @@ import { INITIAL_CAMPAIGN_PARAMS, INITIAL_REFERRER_INFO } from '../constants'
 import { RemoteConfig } from '../types'
 
 const INITIAL_CAMPAIGN_PARAMS_NULL = {
-    $initial_current_url: null,
+    initial_current_url: null,
     $initial__kx: null,
     $initial_dclid: null,
     $initial_epik: null,
@@ -46,7 +46,7 @@ const CAMPAIGN_PARAMS_NULL = {
     gbraid: null,
     gclid: null,
     gclsrc: null,
-    $host: null,
+    host: null,
     igshid: null,
     irclid: null,
     li_fat_id: null,
@@ -210,12 +210,12 @@ describe('person processing', () => {
             // assert
             expect(mockLogger.error).toBeCalledTimes(0)
             const eventBeforeIdentify = beforeSendMock.mock.calls[0]
-            expect(eventBeforeIdentify[0].properties.$process_person_profile).toEqual(false)
+            expect(eventBeforeIdentify[0].properties.process_person_profile).toEqual(false)
             const identifyCall = beforeSendMock.mock.calls[1]
-            expect(identifyCall[0].event).toEqual('$identify')
-            expect(identifyCall[0].properties.$process_person_profile).toEqual(true)
+            expect(identifyCall[0].event).toEqual('ade_identify')
+            expect(identifyCall[0].properties.process_person_profile).toEqual(true)
             const eventAfterIdentify = beforeSendMock.mock.calls[2]
-            expect(eventAfterIdentify[0].properties.$process_person_profile).toEqual(true)
+            expect(eventAfterIdentify[0].properties.process_person_profile).toEqual(true)
         })
 
         it('should not change $person_process if process_person is always', async () => {
@@ -229,12 +229,12 @@ describe('person processing', () => {
             // assert
             expect(mockLogger.error).toBeCalledTimes(0)
             const eventBeforeIdentify = beforeSendMock.mock.calls[0]
-            expect(eventBeforeIdentify[0].properties.$process_person_profile).toEqual(true)
+            expect(eventBeforeIdentify[0].properties.process_person_profile).toEqual(true)
             const identifyCall = beforeSendMock.mock.calls[1]
-            expect(identifyCall[0].event).toEqual('$identify')
-            expect(identifyCall[0].properties.$process_person_profile).toEqual(true)
+            expect(identifyCall[0].event).toEqual('ade_identify')
+            expect(identifyCall[0].properties.process_person_profile).toEqual(true)
             const eventAfterIdentify = beforeSendMock.mock.calls[2]
-            expect(eventAfterIdentify[0].properties.$process_person_profile).toEqual(true)
+            expect(eventAfterIdentify[0].properties.process_person_profile).toEqual(true)
         })
 
         it('should include initial referrer info in identify event if identified_only', async () => {
@@ -246,21 +246,21 @@ describe('person processing', () => {
 
             // assert
             const identifyCall = beforeSendMock.mock.calls[0]
-            expect(identifyCall[0].event).toEqual('$identify')
-            expect(identifyCall[0].$set_once).toEqual({
+            expect(identifyCall[0].event).toEqual('ade_identify')
+            expect(identifyCall[0].ade_set_once).toEqual({
                 ...INITIAL_CAMPAIGN_PARAMS_NULL,
                 ...CAMPAIGN_PARAMS_NULL,
-                $initial_current_url: 'https://example.com?utm_source=foo',
+                initial_current_url: 'https://example.com?utm_source=foo',
                 $initial_host: 'example.com',
                 $initial_pathname: '/',
                 $initial_referrer: 'https://referrer.com',
                 $initial_referring_domain: 'referrer.com',
                 $initial_utm_source: 'foo',
-                $current_url: 'https://example.com?utm_source=foo',
-                $host: 'example.com',
-                $pathname: '/',
-                $referrer: 'https://referrer.com',
-                $referring_domain: 'referrer.com',
+                current_url: 'https://example.com?utm_source=foo',
+                host: 'example.com',
+                pathname: '/',
+                referrer: 'https://referrer.com',
+                referring_domain: 'referrer.com',
                 utm_source: 'foo',
             })
         })
@@ -282,24 +282,24 @@ describe('person processing', () => {
             const { posthog, beforeSendMock } = await setup('identified_only', undefined, persistenceName)
 
             // act
-            posthog.capture('$pageview')
+            posthog.capture('ade_pageview')
             posthog.identify(distinctId)
 
             // assert
             const anonymousPageview = beforeSendMock.mock.calls[0][0]
-            expect(anonymousPageview.event).toBe('$pageview')
+            expect(anonymousPageview.event).toBe('ade_pageview')
             expect(anonymousPageview.properties.gclid).toBe(gclid)
-            expect(anonymousPageview.properties.$process_person_profile).toBe(false)
-            expect(anonymousPageview.$set_once).toBeUndefined()
+            expect(anonymousPageview.properties.process_person_profile).toBe(false)
+            expect(anonymousPageview.ade_set_once).toBeUndefined()
 
             const identifyCall = beforeSendMock.mock.calls[1][0]
-            expect(identifyCall.event).toBe('$identify')
+            expect(identifyCall.event).toBe('ade_identify')
             expect(identifyCall.properties.gclid).toBe(gclid)
-            expect(identifyCall.properties.$process_person_profile).toBe(true)
-            expect(identifyCall.$set_once).toMatchObject({
-                $initial_current_url: directUrl,
-                $initial_referrer: '$direct',
-                $initial_referring_domain: '$direct',
+            expect(identifyCall.properties.process_person_profile).toBe(true)
+            expect(identifyCall.ade_set_once).toMatchObject({
+                initial_current_url: directUrl,
+                $initial_referrer: 'direct',
+                $initial_referring_domain: 'direct',
                 $initial_gclid: null,
                 gclid,
             })
@@ -333,30 +333,30 @@ describe('person processing', () => {
             const eventS2Identify = beforeSendMock.mock.calls[2]
             const eventS2After = beforeSendMock.mock.calls[3]
 
-            expect(eventS1[0].$set_once).toEqual(undefined)
+            expect(eventS1[0].ade_set_once).toEqual(undefined)
 
-            expect(eventS2Before[0].$set_once).toEqual(undefined)
+            expect(eventS2Before[0].ade_set_once).toEqual(undefined)
 
-            expect(eventS2Identify[0].event).toEqual('$identify')
-            expect(eventS2Identify[0].$set_once).toEqual({
+            expect(eventS2Identify[0].event).toEqual('ade_identify')
+            expect(eventS2Identify[0].ade_set_once).toEqual({
                 ...INITIAL_CAMPAIGN_PARAMS_NULL,
                 ...CAMPAIGN_PARAMS_NULL,
-                $initial_current_url: 'https://example1.com/pathname1?utm_source=foo1',
+                initial_current_url: 'https://example1.com/pathname1?utm_source=foo1',
                 $initial_host: 'example1.com',
                 $initial_pathname: '/pathname1',
                 $initial_referrer: 'https://referrer1.com',
                 $initial_referring_domain: 'referrer1.com',
                 $initial_utm_source: 'foo1',
-                $current_url: 'https://example2.com/pathname2?utm_source=foo2',
-                $host: 'example2.com',
-                $pathname: '/pathname2',
-                $referrer: 'https://referrer2.com',
-                $referring_domain: 'referrer2.com',
+                current_url: 'https://example2.com/pathname2?utm_source=foo2',
+                host: 'example2.com',
+                pathname: '/pathname2',
+                referrer: 'https://referrer2.com',
+                referring_domain: 'referrer2.com',
                 utm_source: 'foo2',
             })
 
             expect(eventS2After[0].event).toEqual('event s2 after identify')
-            expect(eventS2After[0].$set_once).toEqual(undefined)
+            expect(eventS2After[0].ade_set_once).toEqual(undefined)
         })
 
         it('should preserve initial referrer info across subdomain', async () => {
@@ -399,33 +399,33 @@ describe('person processing', () => {
             const eventS2Identify = beforeSendMock2.mock.calls[1]
             const eventS2After = beforeSendMock2.mock.calls[2]
 
-            expect(eventS1[0].$set_once).toEqual(undefined)
+            expect(eventS1[0].ade_set_once).toEqual(undefined)
             expect(eventS1[0].properties.testProp).toEqual('foo')
 
-            expect(eventS2Before[0].$set_once).toEqual(undefined)
+            expect(eventS2Before[0].ade_set_once).toEqual(undefined)
             // most properties are lost across subdomain, that's intentional as we don't want to save too many things in cookies
             expect(eventS2Before[0].properties.testProp).toEqual(undefined)
 
-            expect(eventS2Identify[0].event).toEqual('$identify')
-            expect(eventS2Identify[0].$set_once).toEqual({
+            expect(eventS2Identify[0].event).toEqual('ade_identify')
+            expect(eventS2Identify[0].ade_set_once).toEqual({
                 ...INITIAL_CAMPAIGN_PARAMS_NULL,
                 ...CAMPAIGN_PARAMS_NULL,
-                $initial_current_url: 'https://example1.com/pathname1?utm_source=foo1',
+                initial_current_url: 'https://example1.com/pathname1?utm_source=foo1',
                 $initial_host: 'example1.com',
                 $initial_pathname: '/pathname1',
                 $initial_referrer: 'https://referrer1.com',
                 $initial_referring_domain: 'referrer1.com',
                 $initial_utm_source: 'foo1',
-                $current_url: 'https://example2.com/pathname2?utm_source=foo2',
-                $host: 'example2.com',
-                $pathname: '/pathname2',
-                $referrer: 'https://referrer2.com',
-                $referring_domain: 'referrer2.com',
+                current_url: 'https://example2.com/pathname2?utm_source=foo2',
+                host: 'example2.com',
+                pathname: '/pathname2',
+                referrer: 'https://referrer2.com',
+                referring_domain: 'referrer2.com',
                 utm_source: 'foo2',
             })
 
             expect(eventS2After[0].event).toEqual('event s2 after identify')
-            expect(eventS2After[0].$set_once).toEqual(undefined)
+            expect(eventS2After[0].ade_set_once).toEqual(undefined)
         })
 
         it('should include initial referrer info in identify event if always', async () => {
@@ -437,21 +437,21 @@ describe('person processing', () => {
 
             // assert
             const identifyCall = beforeSendMock.mock.calls[0]
-            expect(identifyCall[0].event).toEqual('$identify')
-            expect(identifyCall[0].$set_once).toEqual({
+            expect(identifyCall[0].event).toEqual('ade_identify')
+            expect(identifyCall[0].ade_set_once).toEqual({
                 ...INITIAL_CAMPAIGN_PARAMS_NULL,
                 ...CAMPAIGN_PARAMS_NULL,
-                $initial_current_url: 'https://example.com?utm_source=foo',
+                initial_current_url: 'https://example.com?utm_source=foo',
                 $initial_host: 'example.com',
                 $initial_pathname: '/',
                 $initial_referrer: 'https://referrer.com',
                 $initial_referring_domain: 'referrer.com',
                 $initial_utm_source: 'foo',
-                $current_url: 'https://example.com?utm_source=foo',
-                $host: 'example.com',
-                $pathname: '/',
-                $referrer: 'https://referrer.com',
-                $referring_domain: 'referrer.com',
+                current_url: 'https://example.com?utm_source=foo',
+                host: 'example.com',
+                pathname: '/',
+                referrer: 'https://referrer.com',
+                referring_domain: 'referrer.com',
                 utm_source: 'foo',
             })
         })
@@ -465,11 +465,11 @@ describe('person processing', () => {
 
             // assert
             const identifyCall = beforeSendMock.mock.calls[0]
-            expect(identifyCall[0].event).toEqual('$identify')
-            expect(identifyCall[0].$set_once).toEqual({
+            expect(identifyCall[0].event).toEqual('ade_identify')
+            expect(identifyCall[0].ade_set_once).toEqual({
                 ...INITIAL_CAMPAIGN_PARAMS_NULL,
                 ...CAMPAIGN_PARAMS_NULL,
-                $initial_current_url: 'https://example.com?utm_source=foo',
+                initial_current_url: 'https://example.com?utm_source=foo',
                 $initial_host: 'example.com',
                 $initial_pathname: '/',
                 $initial_referrer: 'https://www.google.com?q=bar',
@@ -477,14 +477,14 @@ describe('person processing', () => {
                 $initial_utm_source: 'foo',
                 $initial_ph_keyword: 'bar',
                 $initial_search_engine: 'google',
-                $current_url: 'https://example.com?utm_source=foo',
-                $host: 'example.com',
-                $pathname: '/',
-                $referrer: 'https://www.google.com?q=bar',
-                $referring_domain: 'www.google.com',
+                current_url: 'https://example.com?utm_source=foo',
+                host: 'example.com',
+                pathname: '/',
+                referrer: 'https://www.google.com?q=bar',
+                referring_domain: 'www.google.com',
                 utm_source: 'foo',
                 ph_keyword: 'bar',
-                $search_engine: 'google',
+                search_engine: 'google',
             })
         })
 
@@ -506,17 +506,17 @@ describe('person processing', () => {
 
             // assert
             const identifyCall = beforeSendMock.mock.calls[0]
-            expect(identifyCall[0].event).toEqual('$identify')
-            expect(identifyCall[0].$set_once).toEqual({
+            expect(identifyCall[0].event).toEqual('ade_identify')
+            expect(identifyCall[0].ade_set_once).toEqual({
                 ...CAMPAIGN_PARAMS_NULL,
                 $initial_referrer: 'https://deprecated-referrer.com',
                 $initial_referring_domain: 'deprecated-referrer.com',
                 $initial_utm_source: 'deprecated-source',
-                $host: 'mocked.example.com',
-                $pathname: '/mocked-path',
-                $referrer: 'https://mocked.referrer.com',
-                $referring_domain: 'mocked.referrer.com',
-                $current_url: 'https://mocked.example.com/mocked-path?utm_source=mocked-source',
+                host: 'mocked.example.com',
+                pathname: '/mocked-path',
+                referrer: 'https://mocked.referrer.com',
+                referring_domain: 'mocked.referrer.com',
+                current_url: 'https://mocked.example.com/mocked-path?utm_source=mocked-source',
                 utm_source: 'mocked-source',
             })
         })
@@ -534,22 +534,22 @@ describe('person processing', () => {
 
             // assert
             const eventBeforeIdentify = beforeSendMock.mock.calls[0]
-            expect(eventBeforeIdentify[0].$set_once).toBeUndefined()
+            expect(eventBeforeIdentify[0].ade_set_once).toBeUndefined()
             const eventAfterIdentify = beforeSendMock.mock.calls[1]
-            expect(eventAfterIdentify[0].$set_once).toEqual({
+            expect(eventAfterIdentify[0].ade_set_once).toEqual({
                 ...INITIAL_CAMPAIGN_PARAMS_NULL,
                 ...CAMPAIGN_PARAMS_NULL,
-                $initial_current_url: 'https://example.com?utm_source=foo',
+                initial_current_url: 'https://example.com?utm_source=foo',
                 $initial_host: 'example.com',
                 $initial_pathname: '/',
                 $initial_referrer: 'https://referrer.com',
                 $initial_referring_domain: 'referrer.com',
                 $initial_utm_source: 'foo',
-                $current_url: 'https://example.com?utm_source=foo',
-                $host: 'example.com',
-                $pathname: '/',
-                $referrer: 'https://referrer.com',
-                $referring_domain: 'referrer.com',
+                current_url: 'https://example.com?utm_source=foo',
+                host: 'example.com',
+                pathname: '/',
+                referrer: 'https://referrer.com',
+                referring_domain: 'referrer.com',
                 utm_source: 'foo',
             })
         })
@@ -565,24 +565,24 @@ describe('person processing', () => {
 
             // assert
             const eventBeforeIdentify = beforeSendMock.mock.calls[0]
-            expect(eventBeforeIdentify[0].$set_once).toEqual({
+            expect(eventBeforeIdentify[0].ade_set_once).toEqual({
                 ...INITIAL_CAMPAIGN_PARAMS_NULL,
                 ...CAMPAIGN_PARAMS_NULL,
-                $initial_current_url: 'https://example.com?utm_source=foo',
+                initial_current_url: 'https://example.com?utm_source=foo',
                 $initial_host: 'example.com',
                 $initial_pathname: '/',
                 $initial_referrer: 'https://referrer.com',
                 $initial_referring_domain: 'referrer.com',
                 $initial_utm_source: 'foo',
-                $current_url: 'https://example.com?utm_source=foo',
-                $host: 'example.com',
-                $pathname: '/',
-                $referrer: 'https://referrer.com',
-                $referring_domain: 'referrer.com',
+                current_url: 'https://example.com?utm_source=foo',
+                host: 'example.com',
+                pathname: '/',
+                referrer: 'https://referrer.com',
+                referring_domain: 'referrer.com',
                 utm_source: 'foo',
             })
             const eventAfterIdentify = beforeSendMock.mock.calls[1]
-            expect(eventAfterIdentify[0].$set_once).toEqual(undefined)
+            expect(eventAfterIdentify[0].ade_set_once).toEqual(undefined)
         })
     })
 
@@ -598,16 +598,16 @@ describe('person processing', () => {
 
             // assert
             const eventBeforeGroup = beforeSendMock.mock.calls[0]
-            expect(eventBeforeGroup[0].properties.$process_person_profile).toEqual(false)
+            expect(eventBeforeGroup[0].properties.process_person_profile).toEqual(false)
             const groupIdentify = beforeSendMock.mock.calls[1]
-            expect(groupIdentify[0].event).toEqual('$groupidentify')
-            expect(groupIdentify[0].properties.$process_person_profile).toEqual(true)
+            expect(groupIdentify[0].event).toEqual('ade_groupidentify')
+            expect(groupIdentify[0].properties.process_person_profile).toEqual(true)
             const eventAfterGroup = beforeSendMock.mock.calls[2]
-            expect(eventAfterGroup[0].properties.$process_person_profile).toEqual(true)
+            expect(eventAfterGroup[0].properties.process_person_profile).toEqual(true)
         })
 
-        it('should send the $groupidentify event even if person_processing is set to never', async () => {
-            // Groups are separate from person processing - $groupidentify should always be sent
+        it('should send the ade_groupidentify event even if person_processing is set to never', async () => {
+            // Groups are separate from person processing - ade_groupidentify should always be sent
             // arrange
             const { posthog, beforeSendMock } = await setup('never')
 
@@ -623,20 +623,20 @@ describe('person processing', () => {
                 'posthog.setGroupPropertiesForFlags was called, but process_person is set to "never". This call will be ignored.'
             )
 
-            // $groupidentify is sent (groups are independent of person processing)
+            // ade_groupidentify is sent (groups are independent of person processing)
             expect(beforeSendMock).toBeCalledTimes(3)
             const eventBeforeGroup = beforeSendMock.mock.calls[0]
-            expect(eventBeforeGroup[0].properties.$process_person_profile).toEqual(false)
+            expect(eventBeforeGroup[0].properties.process_person_profile).toEqual(false)
             const groupIdentify = beforeSendMock.mock.calls[1]
-            expect(groupIdentify[0].event).toEqual('$groupidentify')
-            // $groupidentify doesn't set $process_person_profile since it doesn't process persons
+            expect(groupIdentify[0].event).toEqual('ade_groupidentify')
+            // ade_groupidentify doesn't set process_person_profile since it doesn't process persons
             const eventAfterGroup = beforeSendMock.mock.calls[2]
-            expect(eventAfterGroup[0].properties.$process_person_profile).toEqual(false)
+            expect(eventAfterGroup[0].properties.process_person_profile).toEqual(false)
         })
     })
 
     describe('setPersonProperties', () => {
-        it("should not send a $set event if process_person is set to 'never'", async () => {
+        it("should not send a ade_set event if process_person is set to 'never'", async () => {
             // arrange
             const { posthog, beforeSendMock } = await setup('never')
 
@@ -651,7 +651,7 @@ describe('person processing', () => {
             )
         })
 
-        it("should send a $set event if process_person is set to 'always'", async () => {
+        it("should send a ade_set event if process_person is set to 'always'", async () => {
             // arrange
             const { posthog, beforeSendMock } = await setup('always')
 
@@ -660,7 +660,7 @@ describe('person processing', () => {
 
             // assert
             expect(beforeSendMock).toBeCalledTimes(1)
-            expect(beforeSendMock.mock.calls[0][0].event).toEqual('$set')
+            expect(beforeSendMock.mock.calls[0][0].event).toEqual('ade_set')
         })
 
         it('should start person processing for identified_only users', async () => {
@@ -674,12 +674,12 @@ describe('person processing', () => {
 
             // assert
             const eventBeforeGroup = beforeSendMock.mock.calls[0]
-            expect(eventBeforeGroup[0].properties.$process_person_profile).toEqual(false)
+            expect(eventBeforeGroup[0].properties.process_person_profile).toEqual(false)
             const set = beforeSendMock.mock.calls[1]
-            expect(set[0].event).toEqual('$set')
-            expect(set[0].properties.$process_person_profile).toEqual(true)
+            expect(set[0].event).toEqual('ade_set')
+            expect(set[0].properties.process_person_profile).toEqual(true)
             const eventAfterGroup = beforeSendMock.mock.calls[2]
-            expect(eventAfterGroup[0].properties.$process_person_profile).toEqual(true)
+            expect(eventAfterGroup[0].properties.process_person_profile).toEqual(true)
         })
     })
 
@@ -695,15 +695,15 @@ describe('person processing', () => {
 
             // assert
             const eventBeforeGroup = beforeSendMock.mock.calls[0]
-            expect(eventBeforeGroup[0].properties.$process_person_profile).toEqual(false)
+            expect(eventBeforeGroup[0].properties.process_person_profile).toEqual(false)
             const alias = beforeSendMock.mock.calls[1]
-            expect(alias[0].event).toEqual('$create_alias')
-            expect(alias[0].properties.$process_person_profile).toEqual(true)
+            expect(alias[0].event).toEqual('ade_create_alias')
+            expect(alias[0].properties.process_person_profile).toEqual(true)
             const eventAfterGroup = beforeSendMock.mock.calls[2]
-            expect(eventAfterGroup[0].properties.$process_person_profile).toEqual(true)
+            expect(eventAfterGroup[0].properties.process_person_profile).toEqual(true)
         })
 
-        it('should not send a $create_alias event if person processing is set to "never"', async () => {
+        it('should not send a ade_create_alias event if person processing is set to "never"', async () => {
             // arrange
             const { posthog, beforeSendMock } = await setup('never')
 
@@ -732,12 +732,12 @@ describe('person processing', () => {
             // assert
             expect(beforeSendMock.mock.calls.length).toEqual(3)
             const eventBeforeGroup = beforeSendMock.mock.calls[0]
-            expect(eventBeforeGroup[0].properties.$process_person_profile).toEqual(false)
+            expect(eventBeforeGroup[0].properties.process_person_profile).toEqual(false)
             const set = beforeSendMock.mock.calls[1]
-            expect(set[0].event).toEqual('$set')
-            expect(set[0].properties.$process_person_profile).toEqual(true)
+            expect(set[0].event).toEqual('ade_set')
+            expect(set[0].properties.process_person_profile).toEqual(true)
             const eventAfterGroup = beforeSendMock.mock.calls[2]
-            expect(eventAfterGroup[0].properties.$process_person_profile).toEqual(true)
+            expect(eventAfterGroup[0].properties.process_person_profile).toEqual(true)
         })
 
         it('should do nothing if already has person profiles', async () => {
@@ -781,7 +781,7 @@ describe('person processing', () => {
             // assert
             expect(posthog._isIdentified()).toBe(false)
             expect(beforeSendMock.mock.calls.length).toEqual(3)
-            expect(beforeSendMock.mock.calls[2][0].properties.$process_person_profile).toEqual(false)
+            expect(beforeSendMock.mock.calls[2][0].properties.process_person_profile).toEqual(false)
         })
     })
 
@@ -807,8 +807,8 @@ describe('person processing', () => {
             // assert
             expect(beforeSendMock1.mock.calls.length).toEqual(1)
             expect(beforeSendMock2.mock.calls.length).toEqual(1)
-            expect(beforeSendMock1.mock.calls[0][0].properties.$process_person_profile).toEqual(true)
-            expect(beforeSendMock2.mock.calls[0][0].properties.$process_person_profile).toEqual(true)
+            expect(beforeSendMock1.mock.calls[0][0].properties.process_person_profile).toEqual(true)
+            expect(beforeSendMock2.mock.calls[0][0].properties.process_person_profile).toEqual(true)
         })
 
         it('should work when always is set on a later visit', async () => {
@@ -832,8 +832,8 @@ describe('person processing', () => {
             // assert
             expect(beforeSendMock1.mock.calls.length).toEqual(1)
             expect(beforeSendMock2.mock.calls.length).toEqual(1)
-            expect(beforeSendMock1.mock.calls[0][0].properties.$process_person_profile).toEqual(false)
-            expect(beforeSendMock2.mock.calls[0][0].properties.$process_person_profile).toEqual(true)
+            expect(beforeSendMock1.mock.calls[0][0].properties.process_person_profile).toEqual(false)
+            expect(beforeSendMock2.mock.calls[0][0].properties.process_person_profile).toEqual(true)
         })
     })
 
@@ -849,8 +849,8 @@ describe('person processing', () => {
 
             // assert
             expect(beforeSendMock.mock.calls.length).toEqual(2)
-            expect(beforeSendMock.mock.calls[0][0].properties.$process_person_profile).toEqual(false)
-            expect(beforeSendMock.mock.calls[1][0].properties.$process_person_profile).toEqual(false)
+            expect(beforeSendMock.mock.calls[0][0].properties.process_person_profile).toEqual(false)
+            expect(beforeSendMock.mock.calls[1][0].properties.process_person_profile).toEqual(false)
         })
 
         it('should NOT change the person mode from user-defined when flags response is handled', async () => {
@@ -864,8 +864,8 @@ describe('person processing', () => {
 
             // assert
             expect(beforeSendMock.mock.calls.length).toEqual(2)
-            expect(beforeSendMock.mock.calls[0][0].properties.$process_person_profile).toEqual(false)
-            expect(beforeSendMock.mock.calls[1][0].properties.$process_person_profile).toEqual(false)
+            expect(beforeSendMock.mock.calls[0][0].properties.process_person_profile).toEqual(false)
+            expect(beforeSendMock.mock.calls[1][0].properties.process_person_profile).toEqual(false)
         })
     })
 
@@ -879,10 +879,10 @@ describe('person processing', () => {
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
             expect(beforeSendMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    event: '$set',
+                    event: 'ade_set',
                     properties: expect.objectContaining({
-                        $set: { email: 'john@example.com' },
-                        $set_once: {},
+                        ade_set: { email: 'john@example.com' },
+                        ade_set_once: {},
                     }),
                 })
             )
@@ -935,8 +935,8 @@ describe('person processing', () => {
             posthog.setPersonProperties({ email: 'john@example.com' })
 
             const calls = beforeSendMock.mock.calls
-            expect(calls.filter((call) => call[0].event === '$set').length).toEqual(2)
-            expect(calls.filter((call) => call[0].event === '$identify').length).toEqual(1)
+            expect(calls.filter((call) => call[0].event === 'ade_set').length).toEqual(2)
+            expect(calls.filter((call) => call[0].event === 'ade_identify').length).toEqual(1)
         })
 
         it('should deduplicate when using people.set with identical properties', async () => {
@@ -993,29 +993,29 @@ describe('person processing', () => {
 
             expect(beforeSendMock).toHaveBeenCalledTimes(1)
             const calls = beforeSendMock.mock.calls
-            expect(calls.filter((call) => call[0].event === '$identify').length).toEqual(1)
+            expect(calls.filter((call) => call[0].event === 'ade_identify').length).toEqual(1)
         })
 
-        it('should not deduplicate a setPersonProperties call after identify() if the $set properties are different', async () => {
+        it('should not deduplicate a setPersonProperties call after identify() if the ade_set properties are different', async () => {
             const { posthog, beforeSendMock } = await setup('always')
 
             posthog.identify('new-id', { email: 'john@example.com' }, { first_seen: 'today' })
             posthog.setPersonProperties({ email: 'jane@example.com' }, { first_seen: 'today' })
 
             const calls = beforeSendMock.mock.calls
-            expect(calls.filter((call) => call[0].event === '$identify').length).toEqual(1)
-            expect(calls.filter((call) => call[0].event === '$set').length).toEqual(1)
+            expect(calls.filter((call) => call[0].event === 'ade_identify').length).toEqual(1)
+            expect(calls.filter((call) => call[0].event === 'ade_set').length).toEqual(1)
         })
 
-        it('should not deduplicate a setPersonProperties call after identify() if the $set_onceproperties are different', async () => {
+        it('should not deduplicate a setPersonProperties call after identify() if the ade_set_onceproperties are different', async () => {
             const { posthog, beforeSendMock } = await setup('always')
 
             posthog.identify('new-id', { email: 'john@example.com' }, { first_seen: 'today' })
             posthog.setPersonProperties({ email: 'john@example.com' }, { first_seen: 'yesterday' })
 
             const calls = beforeSendMock.mock.calls
-            expect(calls.filter((call) => call[0].event === '$identify').length).toEqual(1)
-            expect(calls.filter((call) => call[0].event === '$set').length).toEqual(1)
+            expect(calls.filter((call) => call[0].event === 'ade_identify').length).toEqual(1)
+            expect(calls.filter((call) => call[0].event === 'ade_set').length).toEqual(1)
         })
 
         it('should not deduplicate a call after an identity change', async () => {
@@ -1027,8 +1027,8 @@ describe('person processing', () => {
 
             const calls = beforeSendMock.mock.calls
 
-            expect(calls.filter((call) => call[0].event === '$identify').length).toEqual(1)
-            expect(calls.filter((call) => call[0].event === '$set').length).toEqual(2)
+            expect(calls.filter((call) => call[0].event === 'ade_identify').length).toEqual(1)
+            expect(calls.filter((call) => call[0].event === 'ade_set').length).toEqual(2)
         })
     })
 })

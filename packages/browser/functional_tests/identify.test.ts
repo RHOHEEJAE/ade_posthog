@@ -25,10 +25,10 @@ describe('FunctionalTests / Identify', () => {
         await waitFor(() =>
             expect(getRequests(token)['/e/']).toContainEqual(
                 expect.objectContaining({
-                    event: '$identify',
+                    event: 'ade_identify',
                     properties: expect.objectContaining({
                         distinct_id: 'test-id',
-                        $anon_distinct_id: anonymousId,
+                        anon_distinct_id: anonymousId,
                         token: posthog.config.token,
                     }),
                 })
@@ -38,42 +38,42 @@ describe('FunctionalTests / Identify', () => {
         expect(jest.mocked(logger).error).toBeCalledTimes(0)
     })
 
-    test('identify sends an engage request if identify called twice with the same distinct id and with $set/$set_once', async () => {
-        // The intention here is to reduce the number of unncecessary $identify
+    test('identify sends an engage request if identify called twice with the same distinct id and with ade_set/ade_set_once', async () => {
+        // The intention here is to reduce the number of unncecessary ade_identify
         // requests to process.
-        // The first time we identify, it calls the /e/ endpoint with an $identify
+        // The first time we identify, it calls the /e/ endpoint with an ade_identify
         posthog.identify('test-id', { email: 'first@email.com' }, { location: 'first' })
 
         await waitFor(() =>
             expect(getRequests(token)['/e/']).toContainEqual(
                 expect.objectContaining({
-                    event: '$identify',
-                    $set: { email: 'first@email.com' },
-                    $set_once: expect.objectContaining({
+                    event: 'ade_identify',
+                    ade_set: { email: 'first@email.com' },
+                    ade_set_once: expect.objectContaining({
                         location: 'first',
                     }),
                     properties: expect.objectContaining({
                         distinct_id: 'test-id',
-                        $anon_distinct_id: anonymousId,
+                        anon_distinct_id: anonymousId,
                     }),
                 })
             )
         )
 
-        // The second time we identify, it instead sents an event of type "$set".
+        // The second time we identify, it instead sents an event of type "ade_set".
         posthog.identify('test-id', { email: 'test@email.com' }, { location: 'second' })
 
         await waitFor(() =>
             expect(getRequests(token)['/e/']).toContainEqual(
                 expect.objectContaining({
-                    event: '$set',
+                    event: 'ade_set',
                     properties: expect.objectContaining({
-                        $browser: 'Safari',
-                        $browser_version: null,
-                        $referrer: '$direct',
-                        $referring_domain: '$direct',
-                        $set: { email: 'test@email.com' },
-                        $set_once: { location: 'second' },
+                        browser: 'Safari',
+                        browser_version: null,
+                        referrer: 'direct',
+                        referring_domain: 'direct',
+                        ade_set: { email: 'test@email.com' },
+                        ade_set_once: { location: 'second' },
                         distinct_id: 'test-id',
                         token: posthog.config.token,
                     }),
@@ -82,42 +82,42 @@ describe('FunctionalTests / Identify', () => {
         )
     })
 
-    test('identify sends an $set event if identify called twice with a different distinct_id', async () => {
-        // This is due to $identify only being called for anonymous users.
-        // The first time we identify, it calls the /e/ endpoint with an $identify
+    test('identify sends an ade_set event if identify called twice with a different distinct_id', async () => {
+        // This is due to ade_identify only being called for anonymous users.
+        // The first time we identify, it calls the /e/ endpoint with an ade_identify
         posthog.identify('test-id', { email: 'first@email.com' }, { location: 'first' })
 
         await waitFor(() =>
             expect(getRequests(token)['/e/']).toContainEqual(
                 expect.objectContaining({
-                    event: '$identify',
-                    $set: { email: 'first@email.com' },
-                    $set_once: expect.objectContaining({
+                    event: 'ade_identify',
+                    ade_set: { email: 'first@email.com' },
+                    ade_set_once: expect.objectContaining({
                         location: 'first',
                     }),
                     properties: expect.objectContaining({
                         distinct_id: 'test-id',
-                        $anon_distinct_id: anonymousId,
+                        anon_distinct_id: anonymousId,
                     }),
                 })
             )
         )
 
-        // The second time we identify, it sends a $set event instead, with no
+        // The second time we identify, it sends a ade_set event instead, with no
         // reference to the anonymous id(?)
         posthog.identify('another-test-id', { email: 'test@email.com' }, { location: 'second' })
 
         await waitFor(() =>
             expect(getRequests(token)['/e/']).toContainEqual(
                 expect.objectContaining({
-                    event: '$set',
+                    event: 'ade_set',
                     properties: expect.objectContaining({
-                        $browser: 'Safari',
-                        $browser_version: null,
-                        $referrer: '$direct',
-                        $referring_domain: '$direct',
-                        $set: { email: 'test@email.com' },
-                        $set_once: { location: 'second' },
+                        browser: 'Safari',
+                        browser_version: null,
+                        referrer: 'direct',
+                        referring_domain: 'direct',
+                        ade_set: { email: 'test@email.com' },
+                        ade_set_once: { location: 'second' },
                         distinct_id: 'another-test-id',
                     }),
                 })

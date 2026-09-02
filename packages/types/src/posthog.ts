@@ -103,7 +103,7 @@ export interface PostHog {
     captureException(error: unknown, additionalProperties?: Properties): CaptureResult | undefined
 
     /**
-     * Adds a breadcrumb-like step that will be attached to the next captured exception as `$exception_steps`.
+     * Adds a breadcrumb-like step that will be attached to the next captured exception as `exception_steps`.
      *
      * @param message - The step message
      * @param properties - Additional context for this step
@@ -136,8 +136,8 @@ export interface PostHog {
      * Identify a user with a distinct ID and optionally set person properties.
      *
      * @param new_distinct_id - The new distinct ID for the user
-     * @param userPropertiesToSet - Properties to set on the user (using $set)
-     * @param userPropertiesToSetOnce - Properties to set once on the user (using $set_once)
+     * @param userPropertiesToSet - Properties to set on the user (using ade_set)
+     * @param userPropertiesToSetOnce - Properties to set once on the user (using ade_set_once)
      */
     identify(new_distinct_id?: string, userPropertiesToSet?: Properties, userPropertiesToSetOnce?: Properties): void
 
@@ -157,15 +157,15 @@ export interface PostHog {
     /**
      * Set properties on the current user.
      *
-     * @param userPropertiesToSet - Properties to set on the user (using $set)
-     * @param userPropertiesToSetOnce - Properties to set once on the user (using $set_once)
+     * @param userPropertiesToSet - Properties to set on the user (using ade_set)
+     * @param userPropertiesToSetOnce - Properties to set once on the user (using ade_set_once)
      */
     setPersonProperties(userPropertiesToSet?: Properties, userPropertiesToSetOnce?: Properties): void
 
     /**
      * Remove properties from the current user.
      *
-     * @param propertyNames - The name (or names) of the person properties to remove (using $unset)
+     * @param propertyNames - The name (or names) of the person properties to remove (using unset)
      */
     unsetPersonProperties(propertyNames: string | string[]): void
 
@@ -214,12 +214,12 @@ export interface PostHog {
     createPersonProfile(): void
 
     /**
-     * Marks the current user as a test user by setting the `$internal_or_test_user` person property to `true`.
+     * Marks the current user as a test user by setting the `internal_or_test_user` person property to `true`.
      * This also enables person processing for the current user.
      *
      * This is useful for using in a cohort your internal/test filters for your posthog org.
      * @see https://posthog.com/tutorials/filter-internal-users
-     * Create a cohort with `$internal_or_test_user` IS SET, and set your internal test filters to be NOT IN that cohort.
+     * Create a cohort with `internal_or_test_user` IS SET, and set your internal test filters to be NOT IN that cohort.
      *
      * {@label Identification}
      *
@@ -301,7 +301,7 @@ export interface PostHog {
      *
      * @param key - The feature flag key
      * @param options - Options for the feature flag lookup
-     * @param options.send_event - Whether to send a $feature_flag_called event (default: true)
+     * @param options.send_event - Whether to send a ade_feature_flag_called event (default: true)
      * @param options.fresh - If true, only return values loaded from the server, not cached localStorage values (default: false)
      * @returns The feature flag value (boolean for simple flags, string for multivariate)
      */
@@ -319,11 +319,11 @@ export interface PostHog {
     /**
      * Get a feature flag evaluation result including both the flag value and payload.
      *
-     * By default, this method emits the `$feature_flag_called` event.
+     * By default, this method emits the `ade_feature_flag_called` event.
      *
      * @param key - The feature flag key
      * @param options - Options for the feature flag lookup
-     * @param options.send_event - Whether to send a $feature_flag_called event (default: true)
+     * @param options.send_event - Whether to send a ade_feature_flag_called event (default: true)
      * @param options.fresh - If true, only return values loaded from the server, not cached localStorage values (default: false)
      * @returns The feature flag result including key, enabled, variant, and payload, or undefined if not loaded
      */
@@ -334,7 +334,7 @@ export interface PostHog {
      *
      * @param key - The feature flag key
      * @param options - Options for the feature flag lookup
-     * @param options.send_event - Whether to send a $feature_flag_called event (default: true)
+     * @param options.send_event - Whether to send a ade_feature_flag_called event (default: true)
      * @param options.fresh - If true, only return values loaded from the server, not cached localStorage values (default: false)
      * @param options.defaultValue - Value to return when the flag has no value (default: undefined)
      * @returns Whether the feature flag is enabled

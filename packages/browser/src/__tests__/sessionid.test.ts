@@ -206,7 +206,7 @@ describe('Session ID manager', () => {
             const sessionIdManager = sessionIdMgr(persistence)
             sessionIdManager.checkAndGetSessionAndWindowId(undefined, timestamp)
             expect(registerMock).toHaveBeenCalledWith({
-                $configured_session_timeout_ms: config.session_idle_timeout_seconds * 1000,
+                configured_session_timeout_ms: config.session_idle_timeout_seconds * 1000,
             })
         })
     })
@@ -1040,7 +1040,7 @@ describe('Session ID manager', () => {
         it.each([
             { description: 'just past timeout', offsetMs: 1 },
             { description: 'well past timeout', offsetMs: 1000 },
-        ])('rotates the session when wall clock crosses timeout ($description)', ({ offsetMs }) => {
+        ])('rotates the session when wall clock crosses timeout (description)', ({ offsetMs }) => {
             const realPersistence = new PostHogPersistence(memoryConfig)
             const testTimestamp = 1603107479471
 

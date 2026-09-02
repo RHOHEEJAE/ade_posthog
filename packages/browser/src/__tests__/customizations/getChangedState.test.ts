@@ -365,7 +365,7 @@ describe('getChangedState', () => {
                     },
                 },
             },
-        ])('should handle $name', ({ prevState, nextState, maxDepth }) => {
+        ])('should handle name', ({ prevState, nextState, maxDepth }) => {
             const result = getChangedState(prevState, nextState, maxDepth)
             expect(result).toMatchSnapshot()
         })

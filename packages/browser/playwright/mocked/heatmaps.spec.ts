@@ -31,10 +31,10 @@ test.describe('Heatmaps', () => {
         expect(heatmapEvents.length).toBeGreaterThanOrEqual(1)
 
         const heatmapEvent = heatmapEvents[0]
-        expect(heatmapEvent.properties.$heatmap_data).toBeDefined()
+        expect(heatmapEvent.properties.heatmap_data).toBeDefined()
 
-        // $heatmap_data is an object keyed by URL
-        const heatmapData = heatmapEvent.properties.$heatmap_data
+        // heatmap_data is an object keyed by URL
+        const heatmapData = heatmapEvent.properties.heatmap_data
         expect(typeof heatmapData).toBe('object')
 
         // Get the events for the current URL
@@ -85,7 +85,7 @@ test.describe('Heatmaps', () => {
         expect(heatmapEvents.length).toBeGreaterThanOrEqual(1)
 
         const heatmapEvent = heatmapEvents[0]
-        const heatmapData = heatmapEvent.properties.$heatmap_data
+        const heatmapData = heatmapEvent.properties.heatmap_data
         const urls = Object.keys(heatmapData)
         const eventData = heatmapData[urls[0]]
 

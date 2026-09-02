@@ -52,7 +52,7 @@ describe('posthog.set_config', () => {
             { initial: false, setValue: true, expectedDebug: true, expectedStorage: 'true' },
             { initial: true, setValue: false, expectedDebug: false, expectedStorage: null },
         ])(
-            'should set debug to $setValue when initially $initial',
+            'should set debug to ade_setValue when initially $initial',
             ({ initial, setValue, expectedDebug, expectedStorage }) => {
                 const token = uuidv7()
                 const posthog = defaultPostHog().init(token, { debug: initial }, token)!

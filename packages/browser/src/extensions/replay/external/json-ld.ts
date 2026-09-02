@@ -135,7 +135,7 @@ const TYPES_WITHOUT_PROPERTIES =
         ' '
     )
 
-export const JSON_LD_EVENT_TAG = '$json_ld'
+export const JSON_LD_EVENT_TAG = 'json_ld'
 
 function getOwnProperty(value: Record<string, unknown>, property: string): unknown {
     return hasOwnProperty.call(value, property) ? value[property] : undefined

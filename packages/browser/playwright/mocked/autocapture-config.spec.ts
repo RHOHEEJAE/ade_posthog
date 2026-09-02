@@ -36,7 +36,7 @@ test.describe('autocapture config', () => {
         await page.locator('[data-cy-input]').fill('hello posthog!')
         // blur the input
         await page.locator('body').click()
-        await page.expectCapturedEventsToBe(['custom-event', '$autocapture'])
+        await page.expectCapturedEventsToBe(['custom-event', 'ade_autocapture'])
     })
 
     test('capture clicks when configured to', async ({ page, context }) => {
@@ -50,13 +50,13 @@ test.describe('autocapture config', () => {
         )
 
         await page.locator('[data-cy-custom-event-button]').click()
-        await page.expectCapturedEventsToBe(['$pageview', '$autocapture', 'custom-event'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'ade_autocapture', 'custom-event'])
 
         await page.locator('[data-cy-input]').fill('hello posthog!')
         // blur the input
         await page.locator('body').click()
         // no change autocapture event
-        await page.expectCapturedEventsToBe(['$pageview', '$autocapture', 'custom-event'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'ade_autocapture', 'custom-event'])
     })
 
     test('obeys url allowlist', async ({ page, context }) => {
@@ -70,7 +70,7 @@ test.describe('autocapture config', () => {
         )
 
         await page.locator('[data-cy-custom-event-button]').click()
-        await page.expectCapturedEventsToBe(['$pageview', 'custom-event'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'custom-event'])
 
         await page.resetCapturedEvents()
         await start(
@@ -83,7 +83,7 @@ test.describe('autocapture config', () => {
         )
 
         await page.locator('[data-cy-custom-event-button]').click()
-        await page.expectCapturedEventsToBe(['$pageview', '$autocapture', 'custom-event'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'ade_autocapture', 'custom-event'])
     })
 
     test('obeys element allowlist', async ({ page, context }) => {
@@ -97,7 +97,7 @@ test.describe('autocapture config', () => {
         )
 
         await page.locator('[data-cy-custom-event-button]').click()
-        await page.expectCapturedEventsToBe(['$pageview', '$autocapture', 'custom-event'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'ade_autocapture', 'custom-event'])
 
         await page.resetCapturedEvents()
         await start(
@@ -110,7 +110,7 @@ test.describe('autocapture config', () => {
         )
 
         await page.locator('[data-cy-custom-event-button]').click()
-        await page.expectCapturedEventsToBe(['$pageview', 'custom-event'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'custom-event'])
     })
 
     test('obeys css selector allowlist', async ({ page, context }) => {
@@ -127,7 +127,7 @@ test.describe('autocapture config', () => {
         )
 
         await page.locator('[data-cy-custom-event-button]').click()
-        await page.expectCapturedEventsToBe(['$pageview', '$autocapture', 'custom-event'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'ade_autocapture', 'custom-event'])
 
         await page.resetCapturedEvents()
         await start(
@@ -140,6 +140,6 @@ test.describe('autocapture config', () => {
         )
 
         await page.locator('[data-cy-custom-event-button]').click()
-        await page.expectCapturedEventsToBe(['$pageview', 'custom-event'])
+        await page.expectCapturedEventsToBe(['ade_pageview', 'custom-event'])
     })
 })
