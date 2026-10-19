@@ -45,7 +45,7 @@ jobs:
                   sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
 
             - name: Sweep issues
-              uses: PostHog/posthog-watcher-action@2a52bc42a5c60b415218da3d9705fd4c4fc0e76c
+              uses: PostHog/posthog-watcher-action@1c47c46c8cd9647f6c146bb56fd436ae45387279
               with:
                   openai-api-key: ${{ secrets.POSTHOG_WATCHER_OPENAI_API_KEY }}
                   mode: sweep
